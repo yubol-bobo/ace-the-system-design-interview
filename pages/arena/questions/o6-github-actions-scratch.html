@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>O6. Design GitHub Actions from Scratch — SD-Guide</title>
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../index.html" class="active"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../resources/index.html"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../about/index.html"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a>
+        <span class="sep">›</span>
+        <a href="../index.html"><span data-lang="en">Arena</span><span data-lang="zh">竞技场</span></a>
+        <span class="sep">›</span>
+        <span>O6</span>
+      </div>
+
+      <article class="prose wide">
+        <div class="question-meta" style="margin-bottom:1rem;">
+          <span class="tag company-openai">OpenAI</span>
+          <span class="tag freq-2">★★ Frequent</span>
+          <span class="tag difficulty-hard">Hard</span>
+          <span class="tag">YAML</span><span class="tag">Secrets</span><span class="tag">RBAC</span>
+        </div>
+
+        <h1>
+          <span data-lang="en">O6 · Design GitHub Actions from Scratch</span>
+          <span data-lang="zh">O6 · 从零设计 GitHub Actions</span>
+        </h1>
+
+        <div class="callout openai">
+          <h4><span data-lang="en">Verified source</span><span data-lang="zh">经核实出处</span></h4>
+          <p>Prompt: "System Design: Design GitHub Actions from scratch." — <a href="https://www.jointaro.com" target="_blank" rel="noopener">Jointaro</a>, 2025-07-31 community report. Credibility <strong>C</strong>.</p>
+        </div>
+
+        <p><span data-lang="en">Use <strong>O5 as the skeleton</strong> and add two productization concerns that signal you understand the real shape of GitHub Actions.</span><span data-lang="zh">以 <strong>O5 作为骨架</strong>，增加两块产品化能力，体现你理解真实形态。</span></p><h2><span data-lang="en">Extra block 1 — Config parsing &amp; versioning</span><span data-lang="zh">加分块 1 — 配置解析与版本化</span></h2>
+<ul><li><span data-lang="en">Parse <code>.github/workflows/*.yml</code>; schema-validate on commit.</span><span data-lang="zh">解析 <code>.github/workflows/*.yml</code>；commit 时 schema 校验。</span></li><li><span data-lang="en">Pin to commit SHA for reproducibility; support version rollback.</span><span data-lang="zh">按 commit SHA 绑定以可复现；支持版本回滚。</span></li><li><span data-lang="en">Reject invalid config before producing a run, so UI shows an actionable error.</span><span data-lang="zh">产生 run 之前拒绝非法配置，UI 提示可操作的错误。</span></li></ul><h2><span data-lang="en">Extra block 2 — Event integration &amp; permissions</span><span data-lang="zh">加分块 2 — 事件集成与权限</span></h2>
+<ul><li><span data-lang="en">Ingest repo webhooks (push, PR); idempotent (dedup by delivery_id).</span><span data-lang="zh">采集 repo webhook（push/PR）；幂等（按 delivery_id 去重）。</span></li><li><span data-lang="en">Per-run permission token: minimum-scope, time-bounded, audience = runner.</span><span data-lang="zh">每 run 的权限 token：最小 scope、时限制、受众 = runner。</span></li><li><span data-lang="en"><strong>Secret masking</strong> is compulsory — scan runner stdout and log store for any regex match of stored secrets.</span><span data-lang="zh"><strong>Secret 脱敏</strong>是强制的——扫描 runner stdout 与日志，匹配已存 secret 的 regex。</span></li></ul><h2><span data-lang="en">Architecture sketch</span><span data-lang="zh">架构</span></h2>
+<div class="mermaid-container"><pre class="mermaid">
+flowchart LR
+  E[Repo Events] --> WH[Webhook Ingest]
+  WH --> P[Policy/Permissions]
+  P --> API[CI Control Plane]
+  API --> Q[Queue] --> R[Runner]
+  R --> L[Logs + Secret Masker]
+</pre></div><div class="callout warn"><h4><span data-lang="en">Follow-up they always ask</span><span data-lang="zh">必问追问</span></h4><p><span data-lang="en">How do you ensure a secret never leaks into logs? Answer: secret masking layer, minimum-privilege tokens, short-lived creds, audit trail of access.</span><span data-lang="zh">如何确保 secret 不泄漏到日志？答：脱敏层 + 最小权限 token + 短期凭证 + 访问审计链路。</span></p></div>
+
+        <h2><span data-lang="en">Related study-guide topics</span><span data-lang="zh">相关学习手册专题</span></h2>
+        <ul><li><a href="../../guide/classical/rate-limiter.html"><span data-lang="en">Rate limiting</span><span data-lang="zh">限流</span></a></li><li><a href="../../guide/safety/safety-engineering.html"><span data-lang="en">Safety engineering</span><span data-lang="zh">安全工程</span></a></li></ul>
+      </article>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

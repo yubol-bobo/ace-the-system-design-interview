@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stream & Batch Processing — SD-Guide</title>
+  <meta name="description" content="Kafka's log abstraction, MapReduce, Lambda vs Kappa, exactly-once via idempotent writes, event vs processing time, and watermarks.">
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../../../pages/arena/index.html" data-match="/arena"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../../pages/guide/index.html" class="active" data-match="/guide"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../../pages/resources/index.html" data-match="/resources"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../../pages/about/index.html" data-match="/about"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+
+      <div class="breadcrumb">
+        <a href="../../../pages/guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a>
+        <span>›</span>
+        <span class="crumb-category">Distributed Systems<span data-lang="zh" style="display:none">分布式系统</span></span>
+      </div>
+
+      <header class="page-header">
+        <h1 class="page-title">
+          <span data-lang="en">Stream & Batch Processing</span>
+          <span data-lang="zh">流与批处理</span>
+        </h1>
+        <div class="topic-meta">
+          <span class="tag" style="background:var(--openai-glow);border-color:var(--openai)">📚 DDIA Ch.10 · DDIA Ch.11</span><span class="tag">DDIA Ch.10</span><span class="tag">DDIA Ch.11</span><span class="tag">Kafka</span>
+        </div>
+        <p class="page-subtitle">
+          <span data-lang="en">Kafka's log abstraction, MapReduce, Lambda vs Kappa, exactly-once via idempotent writes, event vs processing time, and watermarks.</span>
+          <span data-lang="zh">Kafka 日志抽象、MapReduce、Lambda vs Kappa、通过幂等写实现 exactly-once、事件时间 vs 处理时间、水位。</span>
+        </p>
+      </header>
+
+      <article class="topic-prose">
+        <nav class="topic-toc">
+          <h4><span data-lang="en">On this page</span><span data-lang="zh">本页目录</span></h4>
+          <ol>
+            <li><a href="#s1"><span data-lang="en">The log as universal primitive</span><span data-lang="zh">日志作为通用原语</span></a></li>
+            <li><a href="#s2"><span data-lang="en">Batch processing and MapReduce</span><span data-lang="zh">批处理与 MapReduce</span></a></li>
+            <li><a href="#s3"><span data-lang="en">Stream processing primitives</span><span data-lang="zh">流处理原语</span></a></li>
+            <li><a href="#s4"><span data-lang="en">Event time vs processing time, watermarks</span><span data-lang="zh">事件时间 vs 处理时间、水位</span></a></li>
+            <li><a href="#s5"><span data-lang="en">Exactly-once (and why it is a lie)</span><span data-lang="zh">Exactly-once（以及它为何是个谎言）</span></a></li>
+            <li><a href="#s6"><span data-lang="en">Lambda vs Kappa architectures</span><span data-lang="zh">Lambda vs Kappa 架构</span></a></li>
+            <li><a href="#s7"><span data-lang="en">When to pick what</span><span data-lang="zh">何时选哪个</span></a></li>
+          </ol>
+        </nav>
+
+        <div data-lang="en">
+
+<h2 id="s1">The log as universal primitive</h2>
+<p>Kafka's central insight (Narkhede 2011, popularized by Kleppmann's Ch.11): an append-only <em>log</em> is a general-purpose primitive that unifies messaging, storage, and state replication. Producers append; consumers read at their own offsets; the log retains records for a configured window.</p>
+<ul>
+  <li><strong>Partitioned</strong>: one topic = N partitions; each partition is an ordered log with a single leader (backed by replication).</li>
+  <li><strong>Immutable</strong>: once written, never rewritten. Enables replay, time-travel debugging, and multiple consumers.</li>
+  <li><strong>Bounded retention</strong>: 7 days typical; tiered storage (Confluent, Redpanda) extends to months in object storage at 10× lower $/GB.</li>
+</ul>
+<div class="callout tip"><h4>Source cross-reference</h4><p>DDIA Ch.10 covers batch (MapReduce, Dataflow), Ch.11 covers streams (logs, exactly-once, event time). Both must be read together.</p></div>
+<div class="mermaid-container"><pre class="mermaid">
+flowchart LR
+    P1[Producer A] --&gt; T[[Topic: clicks<br/>partition 0]]
+    P2[Producer B] --&gt; T2[[Topic: clicks<br/>partition 1]]
+    T --&gt; C1[Consumer group X<br/>offset=1234]
+    T --&gt; C2[Consumer group Y<br/>offset=98]
+    T2 --&gt; C1
+    T2 --&gt; C2
+    C1 --&gt; S1[(Sink: warehouse)]
+    C2 --&gt; S2[(Real-time dashboard)]
+</pre></div>
+<p>Concrete throughput: a single Kafka broker on an r6i.4xlarge with NVMe sustains 1 GB/s in + 1 GB/s out across all its partitions. A LinkedIn-scale cluster (the original) handles 7 trillion messages/day.</p>
+
+<h2 id="s2">Batch processing and MapReduce</h2>
+<p>MapReduce (Dean &amp; Ghemawat 2004) is the grandparent of modern dataflow: <em>map</em> user-provided function over input partitions, <em>shuffle</em> by key, <em>reduce</em> per-key. Reads bounded input, writes bounded output, assumes you can retry any task.</p>
+<p>Key properties:</p>
+<ul>
+  <li><strong>Deterministic</strong>: same input → same output. Enables retry on task failure without polluting results.</li>
+  <li><strong>Materialize intermediate state to disk/HDFS</strong>. Slow but robust.</li>
+  <li><strong>Latency: minutes to hours</strong>. Never a user-facing service.</li>
+</ul>
+<p>Modern successors — Spark, Flink batch mode, BigQuery — trade disk materialization for in-memory shuffle, cutting latency ~5×. For LLM training data curation or daily user analytics, you want Spark/BigQuery, not raw MapReduce.</p>
+
+<h2 id="s3">Stream processing primitives</h2>
+<p>Three operator families:</p>
+<ol>
+  <li><strong>Stateless transforms</strong>: filter, map. Trivial.</li>
+  <li><strong>Windowed aggregations</strong>: count per 1-minute tumbling window, per 5-minute sliding window, per session. State = window → running aggregate.</li>
+  <li><strong>Stream-stream joins</strong>: join two event streams within a time bound. State = buffered side × join-key. Most memory-hungry.</li>
+</ol>
+<p>State must be <strong>durable</strong> (survive operator crash) and <strong>recoverable</strong> from the log. Flink stores state in RocksDB + periodic checkpoint to S3. Kafka Streams uses a local RocksDB + changelog topic in Kafka itself.</p>
+
+<h2 id="s4">Event time vs processing time, watermarks</h2>
+<p>Event time = when it happened in the real world; processing time = when your system sees it. A mobile client goes offline on a plane, sends events 6 hours later — event time is from 6 hours ago, processing time is now.</p>
+<p>Correct streaming must aggregate by event time. But event time arrivals are <em>out of order</em>: how long do you wait? Enter <strong>watermarks</strong> (Akidau et al. 2015 Dataflow paper): a watermark W means "no more events with timestamp &lt; W are expected." Windows close when the watermark passes their end.</p>
+<ul>
+  <li>Watermark too aggressive → late events are dropped, results are wrong.</li>
+  <li>Watermark too conservative → windows close slow, latency shoots up.</li>
+  <li>In practice: heuristic watermark (percentile of observed lag) + <em>allowed lateness</em> (emit an update when late events arrive) + <em>dead letter</em> for the truly stale.</li>
+</ul>
+
+<h2 id="s5">Exactly-once (and why it is a lie)</h2>
+<p>End-to-end "exactly-once" is achievable only if every side effect is <em>idempotent or transactional with the offset commit</em>. DDIA's framing: exactly-once = at-least-once delivery + idempotent processing.</p>
+<p>Mechanisms:</p>
+<ul>
+  <li><strong>Transactional offsets</strong>: Kafka 0.11+ supports transactions that atomically commit output records and consumer offsets. Works for Kafka-to-Kafka.</li>
+  <li><strong>Sink idempotency</strong>: writes include a unique record ID; the sink dedupes. S3 conditional writes, DynamoDB <code>ConditionExpression</code>, Postgres <code>ON CONFLICT DO NOTHING</code>.</li>
+  <li><strong>Two-phase commit to an external sink</strong>: Flink's TwoPhaseCommitSinkFunction — expensive, but works for JDBC and custom sinks.</li>
+</ul>
+<div class="callout warn"><h4>Anti-pattern</h4><p>Claiming "exactly-once" when your sink is a REST endpoint with no idempotency key. You have at-most-once (if you commit offsets before the HTTP call) or at-least-once (if after); you do not have exactly-once. Be honest with the interviewer.</p></div>
+
+<h2 id="s6">Lambda vs Kappa architectures</h2>
+<p><strong>Lambda</strong> (Marz 2011): run a batch job and a streaming job in parallel over the same data; the batch layer is authoritative, the stream gives low-latency approximate results; a serving layer merges. Pro: each layer tuned independently. Con: two codebases, two bug surfaces, two on-call rotations.</p>
+<p><strong>Kappa</strong> (Kreps 2014): only a streaming layer; to recompute history, replay the log from the beginning. Pro: one codebase. Con: replay time for a year of events can be long; state-heavy jobs eat RAM.</p>
+<table>
+  <thead><tr><th>Aspect</th><th>Lambda</th><th>Kappa</th></tr></thead>
+  <tbody>
+    <tr><td>Codebases</td><td>2 (batch + stream)</td><td>1</td></tr>
+    <tr><td>Backfill</td><td>Re-run batch job</td><td>Replay from log</td></tr>
+    <tr><td>State size</td><td>Lower per-job</td><td>Higher (all state in stream)</td></tr>
+    <tr><td>Typical use</td><td>Legacy analytics</td><td>Modern Flink/Kafka stacks</td></tr>
+  </tbody>
+</table>
+
+<h2 id="s7">When to pick what</h2>
+<ol>
+  <li><strong>Daily business reports</strong>, ML feature tables over last 30 days: pure batch (Spark on S3 or BigQuery). Simplest, cheapest, correct.</li>
+  <li><strong>Real-time dashboards, alerting, sub-minute personalization</strong>: streaming (Flink / Kafka Streams) with event-time windows.</li>
+  <li><strong>Correct long-tail + fresh short-tail</strong> (fraud detection, abuse moderation): Kappa with generous late-event reprocessing, idempotent sink.</li>
+  <li><strong>Training-data pipelines for LLMs</strong>: batch is typical; use streaming only for continuous evals or live safety signals.</li>
+</ol>
+<div class="callout openai"><h4>OpenAI-specific</h4><p>Usage metering and token billing are a classic Kappa use case: Kafka topic of every inference event, Flink job aggregates tokens per (org, model, minute), results land in a ledger DB keyed by idempotent <code>(request_id, event_kind)</code>. Replay the topic to rebuild ledgers after a bug.</p></div>
+<div class="callout anthropic"><h4>Anthropic-specific</h4><p>Safety signal pipelines (refusal rates, jailbreak attempts, policy hits) need both low latency and exact historical replay. Anthropic answers: stream processing for alerting + batch re-aggregation nightly for the safety team's gold dashboards. Mention event-time alignment across the two paths.</p></div>
+
+        </div>
+        <div data-lang="zh">
+
+<h2 id="s1">日志作为通用原语</h2>
+<p>Kafka 的核心洞察（Narkhede 2011，Kleppmann 第 11 章推广）：仅追加<em>日志</em>是统一消息、存储、状态复制的通用原语。Producer 追加，consumer 按自己的 offset 读，日志按配置保留。</p>
+<ul>
+  <li><strong>分区</strong>：一 topic = N 个 partition，每个是带 leader 的有序日志。</li>
+  <li><strong>不可变</strong>：写入后不改。支持回放、时光调试、多消费者。</li>
+  <li><strong>有限保留</strong>：通常 7 天；分层存储（Confluent、Redpanda）把冷数据放对象存储，成本降 10×。</li>
+</ul>
+<div class="callout tip"><h4>来源交叉引用</h4><p>DDIA 第 10 章讲批（MapReduce、Dataflow），第 11 章讲流（日志、exactly-once、事件时间）。必须一起读。</p></div>
+<div class="mermaid-container"><pre class="mermaid">
+flowchart LR
+    P1[Producer A] --&gt; T[[Topic: clicks<br/>partition 0]]
+    P2[Producer B] --&gt; T2[[Topic: clicks<br/>partition 1]]
+    T --&gt; C1[消费组 X<br/>offset=1234]
+    T --&gt; C2[消费组 Y<br/>offset=98]
+    T2 --&gt; C1
+    T2 --&gt; C2
+    C1 --&gt; S1[(数仓)]
+    C2 --&gt; S2[(实时看板)]
+</pre></div>
+<p>具体吞吐：r6i.4xlarge + NVMe 的单 broker 可持续 1 GB/s 入 + 1 GB/s 出。LinkedIn 级集群（原始）处理 7 万亿消息/天。</p>
+
+<h2 id="s2">批处理与 MapReduce</h2>
+<p>MapReduce（Dean &amp; Ghemawat 2004）是现代 dataflow 的祖父：<em>map</em> 用户函数到输入分片、按 key <em>shuffle</em>、按 key <em>reduce</em>。有界输入、有界输出，假定可重试。</p>
+<ul>
+  <li><strong>确定性</strong>：同输入 → 同输出。重试不污染。</li>
+  <li><strong>中间态物化到磁盘/HDFS</strong>：慢但稳。</li>
+  <li><strong>延迟：分钟到小时</strong>，绝不面向用户实时。</li>
+</ul>
+<p>现代后继——Spark、Flink batch、BigQuery——用内存 shuffle 替代磁盘，延迟降 ~5×。LLM 训练数据清洗、每日用户分析：Spark/BigQuery，不是裸 MapReduce。</p>
+
+<h2 id="s3">流处理原语</h2>
+<p>三类算子：</p>
+<ol>
+  <li><strong>无状态变换</strong>：filter、map。</li>
+  <li><strong>窗口聚合</strong>：每 1 分钟翻滚、每 5 分钟滑动、按会话。状态 = 窗口 → 累计值。</li>
+  <li><strong>流-流 join</strong>：两流按时间边界 join。状态 = 缓冲一侧 × join key。最吃内存。</li>
+</ol>
+<p>状态必须<strong>持久</strong>（崩溃后保留）且<strong>可从日志恢复</strong>。Flink 用 RocksDB + 定期 S3 checkpoint；Kafka Streams 用本地 RocksDB + Kafka changelog topic。</p>
+
+<h2 id="s4">事件时间 vs 处理时间、水位</h2>
+<p>事件时间 = 真实世界发生时间；处理时间 = 系统看到时间。飞机上移动端掉线，6 小时后上报——事件时间 6 小时前、处理时间当下。</p>
+<p>正确流处理按事件时间聚合。但事件<em>乱序</em>到达：等多久？<strong>水位</strong>（Akidau 等 2015 Dataflow 论文）：水位 W 意为「不再期待 timestamp &lt; W 的事件」。窗口末超过水位则关闭。</p>
+<ul>
+  <li>水位过激进 → 迟到事件被丢，结果错。</li>
+  <li>水位过保守 → 窗口关得慢，延迟飙升。</li>
+  <li>实践：启发式水位（观测 lag 百分位）+ <em>允许迟到</em>（迟到事件触发更新）+ 真正陈旧的进<em>死信</em>。</li>
+</ul>
+
+<h2 id="s5">Exactly-once（以及它为何是个谎言）</h2>
+<p>端到端「精确一次」只有在每个副作用<em>幂等或与 offset 提交一起事务化</em>时才可达。DDIA 的说法：exactly-once = at-least-once + 幂等处理。</p>
+<ul>
+  <li><strong>事务性 offset</strong>：Kafka 0.11+ 原子提交输出与消费 offset。Kafka-to-Kafka 有效。</li>
+  <li><strong>sink 幂等</strong>：写入带唯一 record ID，sink 去重。S3 条件写、DynamoDB <code>ConditionExpression</code>、Postgres <code>ON CONFLICT DO NOTHING</code>。</li>
+  <li><strong>外部 sink 2PC</strong>：Flink TwoPhaseCommitSinkFunction——贵但 JDBC 和自定义 sink 可用。</li>
+</ul>
+<div class="callout warn"><h4>反模式</h4><p>sink 是无幂等 key 的 REST 端点却声称「exactly-once」。你只能至多一次（HTTP 前提交 offset）或至少一次（HTTP 后），不可能 exactly-once。对面试官诚实。</p></div>
+
+<h2 id="s6">Lambda vs Kappa 架构</h2>
+<p><strong>Lambda</strong>（Marz 2011）：同数据上并行跑批和流；批层权威、流层低延迟近似；服务层合并。优点：各层独立调。缺点：两套代码、两套 bug、两套 on-call。</p>
+<p><strong>Kappa</strong>（Kreps 2014）：只留流层；回补历史就回放日志。优点：一套代码。缺点：一年事件回放耗时；状态重的作业吃内存。</p>
+<table>
+  <thead><tr><th>维度</th><th>Lambda</th><th>Kappa</th></tr></thead>
+  <tbody>
+    <tr><td>代码库</td><td>2（批+流）</td><td>1</td></tr>
+    <tr><td>回填</td><td>重跑批</td><td>回放日志</td></tr>
+    <tr><td>单作业状态</td><td>小</td><td>大</td></tr>
+    <tr><td>典型场景</td><td>老式分析</td><td>现代 Flink/Kafka 栈</td></tr>
+  </tbody>
+</table>
+
+<h2 id="s7">何时选哪个</h2>
+<ol>
+  <li><strong>每日业务报表</strong>、过去 30 天 ML 特征表：纯批（Spark on S3 或 BigQuery）。最简、最便宜、正确。</li>
+  <li><strong>实时看板、告警、分钟级个性化</strong>：流（Flink / Kafka Streams）按事件时间开窗。</li>
+  <li><strong>长尾正确 + 短尾新鲜</strong>（反欺诈、滥用审核）：Kappa，宽松迟到重处理，sink 幂等。</li>
+  <li><strong>LLM 训练数据流水线</strong>：批主导；仅连续 eval 或实时安全信号用流。</li>
+</ol>
+<div class="callout openai"><h4>OpenAI 专属</h4><p>用量计量与 token 计费是经典 Kappa 场景：每条推理事件进 Kafka topic，Flink 按 (org, model, 分钟) 聚合 token，落账本 DB，key = 幂等 <code>(request_id, event_kind)</code>。bug 后回放 topic 重建账本。</p></div>
+<div class="callout anthropic"><h4>Anthropic 专属</h4><p>安全信号（拒答率、越狱尝试、策略命中）既要低延迟又要精确历史回放。Anthropic 答法：流做告警 + 每晚批重聚为安全团队的金指标看板。两路的事件时间要对齐。</p></div>
+
+        </div>
+      </article>
+
+      <section class="topic-footer-links">
+        <a href="../../guide/distributed/transactions.html"><span class="label"><span data-lang="en">Previous</span><span data-lang="zh">上一</span></span><strong><span data-lang="en">Transactions & isolation</span><span data-lang="zh">事务与隔离</span></strong></a>
+        <a href="../../guide/distributed/storage-engines.html"><span class="label"><span data-lang="en">Next topic</span><span data-lang="zh">下一主题</span></span><strong><span data-lang="en">Storage engines</span><span data-lang="zh">存储引擎</span></strong></a>
+        <a href="../../arena/questions/o1-webhook-delivery-platform.html"><span class="label"><span data-lang="en">Arena</span><span data-lang="zh">真题</span></span><strong><span data-lang="en">Webhook delivery platform</span><span data-lang="zh">Webhook 投递平台</span></strong></a>
+        <a href="../../arena/questions/a14-batch-inference-api.html"><span class="label"><span data-lang="en">Arena</span><span data-lang="zh">真题</span></span><strong><span data-lang="en">Batch inference API</span><span data-lang="zh">批推理 API</span></strong></a>
+        <a href="../../arena/questions/a26-web-crawler.html"><span class="label"><span data-lang="en">Arena</span><span data-lang="zh">真题</span></span><strong><span data-lang="en">Web crawler</span><span data-lang="zh">网络爬虫</span></strong></a>
+      </section>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <p>
+        <span data-lang="en">© SD-Guide · Built for OpenAI &amp; Anthropic system design prep. Not affiliated with either company.</span>
+        <span data-lang="zh">© SD-Guide · 为 OpenAI 与 Anthropic 系统设计面试准备。与两家公司无关联。</span>
+      </p>
+    </div>
+  </footer>
+
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Transactions & Isolation — SD-Guide</title>
+  <meta name="description" content="ACID, the anomaly zoo (dirty read, lost update, phantom), snapshot isolation vs SSI, 2PC, sagas, and idempotency.">
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../../../pages/arena/index.html" data-match="/arena"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../../pages/guide/index.html" class="active" data-match="/guide"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../../pages/resources/index.html" data-match="/resources"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../../pages/about/index.html" data-match="/about"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+
+      <div class="breadcrumb">
+        <a href="../../../pages/guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a>
+        <span>›</span>
+        <span class="crumb-category">Distributed Systems<span data-lang="zh" style="display:none">分布式系统</span></span>
+      </div>
+
+      <header class="page-header">
+        <h1 class="page-title">
+          <span data-lang="en">Transactions & Isolation</span>
+          <span data-lang="zh">事务与隔离</span>
+        </h1>
+        <div class="topic-meta">
+          <span class="tag" style="background:var(--openai-glow);border-color:var(--openai)">📚 DDIA Ch.7 · Acing SDI Ch.5</span><span class="tag">DDIA Ch.7</span><span class="tag">Acing SDI Ch.5</span><span class="tag">isolation zoo</span>
+        </div>
+        <p class="page-subtitle">
+          <span data-lang="en">ACID, the anomaly zoo (dirty read, lost update, phantom), snapshot isolation vs SSI, 2PC, sagas, and idempotency.</span>
+          <span data-lang="zh">ACID、异常动物园（脏读、丢失更新、幻读）、快照隔离 vs SSI、2PC、saga、幂等性。</span>
+        </p>
+      </header>
+
+      <article class="topic-prose">
+        <nav class="topic-toc">
+          <h4><span data-lang="en">On this page</span><span data-lang="zh">本页目录</span></h4>
+          <ol>
+            <li><a href="#s1"><span data-lang="en">ACID — what each letter really means</span><span data-lang="zh">ACID —— 每个字母的真实含义</span></a></li>
+            <li><a href="#s2"><span data-lang="en">The anomaly zoo</span><span data-lang="zh">异常动物园</span></a></li>
+            <li><a href="#s3"><span data-lang="en">Isolation levels in practice</span><span data-lang="zh">实务中的隔离级别</span></a></li>
+            <li><a href="#s4"><span data-lang="en">Snapshot isolation vs SSI</span><span data-lang="zh">快照隔离 vs SSI</span></a></li>
+            <li><a href="#s5"><span data-lang="en">Two-phase commit</span><span data-lang="zh">两阶段提交</span></a></li>
+            <li><a href="#s6"><span data-lang="en">Sagas and compensations</span><span data-lang="zh">Saga 与补偿</span></a></li>
+            <li><a href="#s7"><span data-lang="en">Idempotency as a primitive</span><span data-lang="zh">幂等作为原语</span></a></li>
+          </ol>
+        </nav>
+
+        <div data-lang="en">
+
+<h2 id="s1">ACID — what each letter really means</h2>
+<p>Jim Gray coined ACID in 1981, and Andreas Reuter added the 'I' for Isolation in 1983. DDIA Ch.7 takes pains to point out that <strong>vendors mean different things by each letter</strong>; "ACID-compliant" on a brochure is marketing, not a spec.</p>
+<ul>
+  <li><strong>Atomicity</strong>: all-or-nothing on <em>crash</em>. Not about concurrency. Usually implemented via WAL + undo/redo.</li>
+  <li><strong>Consistency</strong>: invariants preserved. The <em>application's</em> job; the DB can only enforce declared constraints (FK, CHECK). Largely aspirational.</li>
+  <li><strong>Isolation</strong>: concurrent transactions do not interfere. The interesting letter. Serializability is the gold standard; nobody ships it by default because it is slow.</li>
+  <li><strong>Durability</strong>: once committed, survives a crash. <code>fsync</code> on the WAL to local SSD gives single-machine durability; replication to another zone gives datacenter-loss durability.</li>
+</ul>
+<div class="callout tip"><h4>Source cross-reference</h4><p>DDIA Ch.7 is the canonical reference; Acing SDI Ch.5 adds 2PC/saga case studies with idempotency patterns from e-commerce and payment systems.</p></div>
+
+<h2 id="s2">The anomaly zoo</h2>
+<p>What goes wrong without isolation?</p>
+<table>
+  <thead><tr><th>Anomaly</th><th>Scenario</th><th>Prevented by</th></tr></thead>
+  <tbody>
+    <tr><td>Dirty read</td><td>T2 reads T1's uncommitted writes; T1 aborts.</td><td>Read Committed</td></tr>
+    <tr><td>Dirty write</td><td>T2 overwrites T1's uncommitted write.</td><td>Read Committed (row lock)</td></tr>
+    <tr><td>Non-repeatable read</td><td>T1 reads x twice, sees different values because T2 committed between.</td><td>Repeatable Read / Snapshot</td></tr>
+    <tr><td>Lost update</td><td>Two T1/T2 do read-modify-write on x; one write is lost.</td><td>Explicit lock, <code>CAS</code>, or SI + write-conflict detection</td></tr>
+    <tr><td>Write skew</td><td>Two transactions each read a set, write based on it, together violate an invariant (e.g., both on-call doctors resign).</td><td>Serializable / SSI / materializing conflicts</td></tr>
+    <tr><td>Phantom</td><td>Range query repeated after another commit sees new rows.</td><td>Predicate lock / range lock / Serializable</td></tr>
+  </tbody>
+</table>
+<p>Write skew is the one that bites senior engineers. A "doctor on-call" invariant (at least one doctor must remain on-call) is violated when two resign concurrently — each reads 2 doctors, each decides it's fine to leave. Snapshot isolation does <em>not</em> prevent this.</p>
+
+<h2 id="s3">Isolation levels in practice</h2>
+<p>SQL standard levels are historical fiction; vendors implement what they can. Actual mapping (2024):</p>
+<ul>
+  <li><strong>Postgres default</strong>: Read Committed. Upgradable to Repeatable Read (= Snapshot Isolation) and Serializable (= SSI).</li>
+  <li><strong>MySQL InnoDB default</strong>: Repeatable Read (with weird phantom behavior — gap locks).</li>
+  <li><strong>Oracle</strong>: Read Committed and Serializable (their "Serializable" is actually Snapshot Isolation).</li>
+  <li><strong>Spanner</strong>: Strict Serializable (serializable + linearizable) by default.</li>
+  <li><strong>DynamoDB</strong>: Read Committed per-item; <code>TransactWriteItems</code> offers serializable across items in a single request.</li>
+</ul>
+<div class="callout warn"><h4>Anti-pattern</h4><p>Assuming "Repeatable Read" means repeatable read. MySQL's RR allows phantoms in some edge cases; Oracle's "Serializable" allows write skew. Always reference the actual isolation level <em>as implemented</em>, not the SQL-standard name.</p></div>
+
+<h2 id="s4">Snapshot isolation vs SSI</h2>
+<p><strong>Snapshot Isolation (SI)</strong>: each transaction reads from a consistent snapshot taken at its start. Writes are buffered; at commit, check if any key you wrote was also written by a committed concurrent txn — if so, abort (first-committer-wins). Implemented with MVCC (Postgres, Oracle). Fast, no read locks, prevents dirty/non-repeatable reads but <em>not write skew</em>.</p>
+<p><strong>Serializable Snapshot Isolation (SSI)</strong>: Cahill et al. 2008 (used by Postgres <code>SERIALIZABLE</code>, CockroachDB). Tracks read–write dependencies at runtime; aborts a transaction whose dependency graph forms a dangerous cycle. Gives true serializability at 10–30% throughput cost over SI. <strong>This is the default you want when write skew matters</strong> (finance, booking).</p>
+<p>Performance data: Postgres 15 on pgbench serializable vs read-committed shows about 20% throughput drop at low contention, 50%+ at high contention. Worth it when correctness matters; measure before shipping.</p>
+
+<h2 id="s5">Two-phase commit</h2>
+<p>2PC coordinates an atomic commit across N participants. Phase 1 (<em>Prepare</em>): coordinator asks all to prepare; each durably writes "ready" or "abort". Phase 2 (<em>Commit</em>): if all ready, coordinator writes "commit" and tells all; otherwise "abort".</p>
+<div class="mermaid-container"><pre class="mermaid">
+sequenceDiagram
+    participant C as Coordinator
+    participant P1 as Participant 1
+    participant P2 as Participant 2
+    C-&gt;&gt;P1: Prepare
+    C-&gt;&gt;P2: Prepare
+    P1--&gt;&gt;C: ready (durable)
+    P2--&gt;&gt;C: ready (durable)
+    C-&gt;&gt;C: write commit record
+    C-&gt;&gt;P1: Commit
+    C-&gt;&gt;P2: Commit
+    P1--&gt;&gt;C: ack
+    P2--&gt;&gt;C: ack
+</pre></div>
+<p>Fatal flaw: if the coordinator crashes after some participants voted ready but before the commit decision is replicated, those participants are <strong>stuck holding locks</strong> indefinitely (until a human runs recovery). This is why "XA transactions" have a bad reputation and why Spanner uses Paxos-backed coordinators so the decision itself is fault-tolerant.</p>
+<p><strong>Throughput cost</strong>: 2PC doubles the write latency (two rounds) and quadruples the WAL traffic. Budget ~20–50 ms per cross-shard commit in-region, hundreds of ms across regions.</p>
+
+<h2 id="s6">Sagas and compensations</h2>
+<p>When 2PC is too expensive (microservices across teams, different databases, long-running workflows), use a <strong>saga</strong>: a sequence of local transactions where each has a compensating action for rollback. Originally: Garcia-Molina &amp; Salem 1987 on long-lived transactions.</p>
+<p>Example — book a trip:</p>
+<ol>
+  <li>T1: reserve flight. Compensation: cancel flight.</li>
+  <li>T2: reserve hotel. Compensation: cancel hotel.</li>
+  <li>T3: charge card. Compensation: refund.</li>
+</ol>
+<p>If T3 fails, run T2-comp then T1-comp. <strong>Sagas are not ACID</strong>; you lose isolation — another transaction can see half-applied state. You must design idempotent compensations, handle compensation failures (retry queue, human escalation), and add <em>semantic locks</em> (mark "pending" rows) to prevent double booking. Acing SDI Ch.5 gives the pattern with failure-handling state machines.</p>
+
+<h2 id="s7">Idempotency as a primitive</h2>
+<p>At any layer above a single-node DB, retries are inevitable — client, load balancer, queue. Every mutation must therefore be <em>idempotent</em>: f(f(x)) = f(x).</p>
+<ul>
+  <li><strong>Idempotency key</strong>: client generates a UUID per logical operation, server stores "(key, result)" with TTL. Retries return the stored result, do not re-execute. Stripe popularized this for payments.</li>
+  <li><strong>Conditional writes</strong>: <code>UPDATE ... WHERE version = N</code>, DynamoDB <code>ConditionExpression</code>. Provides optimistic concurrency control.</li>
+  <li><strong>Upserts</strong>: <code>INSERT ... ON CONFLICT DO UPDATE</code>. Safe to retry.</li>
+</ul>
+<div class="callout openai"><h4>OpenAI-specific</h4><p>The <code>POST /v1/chat/completions</code> endpoint accepts a client-supplied <code>idempotency-key</code> (or uses request fingerprinting) so that a retried request does not double-charge tokens or duplicate tool calls. Mention this explicitly for any billing/agent question.</p></div>
+<div class="callout anthropic"><h4>Anthropic-specific</h4><p>For tool-calling agents that make external HTTP requests, sagas with explicit compensation beat 2PC every time. Anthropic interviewers look for: idempotency keys on tool calls, compensation action per tool, max-retry with exponential backoff, and a manual-review queue when compensation fails.</p></div>
+
+        </div>
+        <div data-lang="zh">
+
+<h2 id="s1">ACID —— 每个字母的真实含义</h2>
+<p>Jim Gray 1981 年造了 ACID，Andreas Reuter 1983 年加了 I（隔离）。DDIA 第 7 章特别强调<strong>各厂商对每个字母的含义都不一样</strong>；宣传页上的「ACID 兼容」是营销语不是规范。</p>
+<ul>
+  <li><strong>Atomicity（原子性）</strong>：崩溃时全有或全无。不是并发。WAL + undo/redo 实现。</li>
+  <li><strong>Consistency（一致性）</strong>：保不变式。是<em>应用</em>的职责；DB 只能强制声明的约束（FK、CHECK）。多半是愿景。</li>
+  <li><strong>Isolation（隔离性）</strong>：并发事务互不干扰。最有趣的字母。可串行化是金标，默认没人跑，因为慢。</li>
+  <li><strong>Durability（持久性）</strong>：提交后崩溃不丢。WAL <code>fsync</code> 到本地 SSD 保单机，跨 zone 复制保机房丢失。</li>
+</ul>
+<div class="callout tip"><h4>来源交叉引用</h4><p>DDIA 第 7 章是权威；Acing SDI 第 5 章补 2PC/saga 案例与电商/支付的幂等模式。</p></div>
+
+<h2 id="s2">异常动物园</h2>
+<p>没有隔离会出什么事？</p>
+<table>
+  <thead><tr><th>异常</th><th>场景</th><th>防御</th></tr></thead>
+  <tbody>
+    <tr><td>脏读</td><td>T2 读了 T1 未提交；T1 回滚。</td><td>Read Committed</td></tr>
+    <tr><td>脏写</td><td>T2 覆盖了 T1 未提交写。</td><td>Read Committed（行锁）</td></tr>
+    <tr><td>不可重复读</td><td>T1 两次读 x 不同，中间 T2 提交。</td><td>Repeatable Read / 快照</td></tr>
+    <tr><td>丢失更新</td><td>两个读-改-写，一次写被吞。</td><td>显式锁 / <code>CAS</code> / SI + 写冲突</td></tr>
+    <tr><td>写偏斜</td><td>两个事务各读一组、基于此写，合起来破坏不变式（两个值班医生同时辞职）。</td><td>Serializable / SSI / 物化冲突</td></tr>
+    <tr><td>幻读</td><td>同一范围查询再看到新行。</td><td>谓词锁 / 范围锁 / Serializable</td></tr>
+  </tbody>
+</table>
+<p>写偏斜专咬 senior。「至少一位值班医生」不变式下两人同时辞职——各看到还有 2 位、各以为可以走。快照隔离<em>防不住</em>这个。</p>
+
+<h2 id="s3">实务中的隔离级别</h2>
+<p>SQL 标准隔离级别是历史小说，厂商各自实现。2024 实际映射：</p>
+<ul>
+  <li><strong>Postgres 默认</strong>：Read Committed。可升至 Repeatable Read（= 快照隔离）与 Serializable（= SSI）。</li>
+  <li><strong>MySQL InnoDB 默认</strong>：Repeatable Read（带怪异幻读——gap lock）。</li>
+  <li><strong>Oracle</strong>：Read Committed 与 Serializable（其「Serializable」实为快照隔离）。</li>
+  <li><strong>Spanner</strong>：默认严格可串行化（可串行 + 线性一致）。</li>
+  <li><strong>DynamoDB</strong>：单条目 Read Committed；<code>TransactWriteItems</code> 单请求内多条目可串行。</li>
+</ul>
+<div class="callout warn"><h4>反模式</h4><p>假定「Repeatable Read」就是可重复读。MySQL RR 在边界允许幻读；Oracle「Serializable」允许写偏斜。永远引用<em>实际实现</em>的级别，不是标准名。</p></div>
+
+<h2 id="s4">快照隔离 vs SSI</h2>
+<p><strong>快照隔离（SI）</strong>：每个事务从启动时一致快照读。写先缓存；提交时检查写 key 是否被并发已提交事务写过，有则 abort（first-committer-wins）。MVCC 实现（Postgres、Oracle）。快，无读锁，防脏读/不可重复读，但<em>防不住写偏斜</em>。</p>
+<p><strong>可串行化快照隔离（SSI）</strong>：Cahill 等 2008（Postgres <code>SERIALIZABLE</code>、CockroachDB 用）。运行时追踪读写依赖，把危险环的事务 abort。真可串行化，比 SI 吞吐低 10–30%。<strong>写偏斜要命时（金融、订座）用这个。</strong></p>
+<p>性能数据：Postgres 15 pgbench 中 serializable vs read-committed 低竞争下吞吐降 ~20%，高竞争 50%+。正确性重要就值得，上线前测。</p>
+
+<h2 id="s5">两阶段提交</h2>
+<p>2PC 跨 N 个 participant 协调原子提交。阶段 1（<em>Prepare</em>）：coordinator 问全员，各自持久写「ready」或「abort」。阶段 2（<em>Commit</em>）：全 ready 则 coordinator 写 commit 记录并通知，否则 abort。</p>
+<div class="mermaid-container"><pre class="mermaid">
+sequenceDiagram
+    participant C as Coordinator
+    participant P1 as Participant 1
+    participant P2 as Participant 2
+    C-&gt;&gt;P1: Prepare
+    C-&gt;&gt;P2: Prepare
+    P1--&gt;&gt;C: ready（持久）
+    P2--&gt;&gt;C: ready（持久）
+    C-&gt;&gt;C: 写 commit 记录
+    C-&gt;&gt;P1: Commit
+    C-&gt;&gt;P2: Commit
+    P1--&gt;&gt;C: ack
+    P2--&gt;&gt;C: ack
+</pre></div>
+<p>致命缺陷：coordinator 在部分 participant 已 ready 但 commit 决定未复制出去时崩溃，这些 participant 将<strong>无限期持锁</strong>（待人工恢复）。这就是「XA 事务」名声差的原因，也是 Spanner 用 Paxos 支持 coordinator 的原因——决定本身容错。</p>
+<p><strong>吞吐代价</strong>：2PC 写延迟翻倍（两轮）、WAL 流量四倍。同区域跨分片提交 ~20–50 ms，跨区域几百 ms。</p>
+
+<h2 id="s6">Saga 与补偿</h2>
+<p>2PC 太贵时（跨团队微服务、不同 DB、长流程）用 <strong>saga</strong>：一系列本地事务，每个有回滚补偿。原典：Garcia-Molina &amp; Salem 1987 长事务论文。</p>
+<p>订行程例：</p>
+<ol>
+  <li>T1：订机票。补偿：退票。</li>
+  <li>T2：订酒店。补偿：退订。</li>
+  <li>T3：扣款。补偿：退款。</li>
+</ol>
+<p>T3 失败则跑 T2-comp 再 T1-comp。<strong>Saga 不是 ACID</strong>——你失去隔离，别的事务能看到半状态。补偿必须幂等、处理补偿失败（重试队列、人工升级）、加<em>语义锁</em>（pending 标记）防重复订。Acing SDI 第 5 章给出带失败态的状态机模式。</p>
+
+<h2 id="s7">幂等作为原语</h2>
+<p>单机 DB 以上的任何层级都会重试——客户端、LB、队列。每个写操作必须<em>幂等</em>：f(f(x)) = f(x)。</p>
+<ul>
+  <li><strong>幂等 key</strong>：客户端为每个逻辑操作生 UUID，服务端存「(key, result)」带 TTL。重试返存的结果，不再执行。Stripe 把此模式推广到支付。</li>
+  <li><strong>条件写</strong>：<code>UPDATE ... WHERE version = N</code>、DynamoDB <code>ConditionExpression</code>。乐观并发控制。</li>
+  <li><strong>upsert</strong>：<code>INSERT ... ON CONFLICT DO UPDATE</code>。安全重试。</li>
+</ul>
+<div class="callout openai"><h4>OpenAI 专属</h4><p><code>POST /v1/chat/completions</code> 接受客户端 <code>idempotency-key</code>（或用请求指纹），使重试请求不重复扣 token、不重复调用工具。任何计费/agent 题都要提这一点。</p></div>
+<div class="callout anthropic"><h4>Anthropic 专属</h4><p>调外部 HTTP 的工具型 agent，saga + 显式补偿永远优于 2PC。Anthropic 面试看：工具调用带幂等 key、每工具一个补偿动作、指数退避重试上限、补偿失败入人工审核队列。</p></div>
+
+        </div>
+      </article>
+
+      <section class="topic-footer-links">
+        <a href="../../guide/distributed/consensus.html"><span class="label"><span data-lang="en">Previous</span><span data-lang="zh">上一</span></span><strong><span data-lang="en">Consensus (Paxos/Raft)</span><span data-lang="zh">共识</span></strong></a>
+        <a href="../../guide/distributed/stream-batch.html"><span class="label"><span data-lang="en">Next topic</span><span data-lang="zh">下一主题</span></span><strong><span data-lang="en">Stream & batch processing</span><span data-lang="zh">流与批处理</span></strong></a>
+        <a href="../../arena/questions/o1-webhook-delivery-platform.html"><span class="label"><span data-lang="en">Arena</span><span data-lang="zh">真题</span></span><strong><span data-lang="en">Webhook delivery platform</span><span data-lang="zh">Webhook 投递平台</span></strong></a>
+        <a href="../../arena/questions/a25-agentic-system.html"><span class="label"><span data-lang="en">Arena</span><span data-lang="zh">真题</span></span><strong><span data-lang="en">Agentic system</span><span data-lang="zh">Agent 系统</span></strong></a>
+      </section>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <p>
+        <span data-lang="en">© SD-Guide · Built for OpenAI &amp; Anthropic system design prep. Not affiliated with either company.</span>
+        <span data-lang="zh">© SD-Guide · 为 OpenAI 与 Anthropic 系统设计面试准备。与两家公司无关联。</span>
+      </p>
+    </div>
+  </footer>
+
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

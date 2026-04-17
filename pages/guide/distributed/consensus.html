@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Consensus (Paxos, Raft) — SD-Guide</title>
+  <meta name="description" content="Leader election, fencing tokens, etcd/ZooKeeper patterns, split-brain avoidance — and why you rarely implement consensus yourself.">
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../../../pages/arena/index.html" data-match="/arena"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../../pages/guide/index.html" class="active" data-match="/guide"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../../pages/resources/index.html" data-match="/resources"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../../pages/about/index.html" data-match="/about"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+
+      <div class="breadcrumb">
+        <a href="../../../pages/guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a>
+        <span>›</span>
+        <span class="crumb-category">Distributed Systems<span data-lang="zh" style="display:none">分布式系统</span></span>
+      </div>
+
+      <header class="page-header">
+        <h1 class="page-title">
+          <span data-lang="en">Consensus (Paxos, Raft)</span>
+          <span data-lang="zh">共识 (Paxos, Raft)</span>
+        </h1>
+        <div class="topic-meta">
+          <span class="tag" style="background:var(--openai-glow);border-color:var(--openai)">📚 DDIA Ch.8 · DDIA Ch.9</span><span class="tag">DDIA Ch.9</span><span class="tag">Raft</span><span class="tag">split-brain</span>
+        </div>
+        <p class="page-subtitle">
+          <span data-lang="en">Leader election, fencing tokens, etcd/ZooKeeper patterns, split-brain avoidance — and why you rarely implement consensus yourself.</span>
+          <span data-lang="zh">选主、fencing token、etcd/ZooKeeper 模式、脑裂防范——以及为什么很少自己实现共识。</span>
+        </p>
+      </header>
+
+      <article class="topic-prose">
+        <nav class="topic-toc">
+          <h4><span data-lang="en">On this page</span><span data-lang="zh">本页目录</span></h4>
+          <ol>
+            <li><a href="#s1"><span data-lang="en">What consensus actually is</span><span data-lang="zh">共识到底是什么</span></a></li>
+            <li><a href="#s2"><span data-lang="en">Paxos intuition</span><span data-lang="zh">Paxos 直觉</span></a></li>
+            <li><a href="#s3"><span data-lang="en">Raft: consensus you can understand</span><span data-lang="zh">Raft：能理解的共识</span></a></li>
+            <li><a href="#s4"><span data-lang="en">Leader election & fencing tokens</span><span data-lang="zh">选主与 fencing token</span></a></li>
+            <li><a href="#s5"><span data-lang="en">etcd, ZooKeeper, and the right layer</span><span data-lang="zh">etcd、ZooKeeper 与正确的抽象层</span></a></li>
+            <li><a href="#s6"><span data-lang="en">Split-brain, FLP, and time</span><span data-lang="zh">脑裂、FLP 与时间</span></a></li>
+            <li><a href="#s7"><span data-lang="en">Interview-ready patterns</span><span data-lang="zh">面试级模式</span></a></li>
+          </ol>
+        </nav>
+
+        <div data-lang="en">
+
+<h2 id="s1">What consensus actually is</h2>
+<p>Consensus = making N nodes agree on a single value even though some crash, some are slow, and the network drops or reorders messages. DDIA Ch.9 formalizes it as four properties: <strong>uniform agreement</strong> (no two nodes decide differently), <strong>integrity</strong> (no node decides twice), <strong>validity</strong> (the decided value was proposed by some node), <strong>termination</strong> (every non-crashed node eventually decides).</p>
+<p>Every important use case reduces to consensus: leader election, atomic commit across shards (2PC on top of consensus = "transactions" in Spanner), linearizable register, uniqueness constraint. If you need linearizability across nodes, you need consensus or something equivalent.</p>
+<div class="callout tip"><h4>Source cross-reference</h4><p>DDIA Ch.8 ("Trouble with Distributed Systems") motivates why consensus is hard (no global clock, unreliable networks, partial failure). Ch.9 delivers the solutions. The two chapters belong together.</p></div>
+
+<h2 id="s2">Paxos intuition</h2>
+<p>Lamport's 1998 Paxos (single-decree) has two phases: <strong>Prepare</strong> (proposer picks ballot number n, asks majority "promise not to accept anything numbered &lt; n; tell me the highest-numbered value you've accepted"), and <strong>Accept</strong> (proposer sends value back to majority; if accepted, it is decided). A ballot succeeds only if a majority quorum participates, so two concurrent ballots cannot both succeed — the proof is by overlap at any single node.</p>
+<p>Multi-Paxos amortizes the Prepare phase by electing a stable leader who can run only Accept for a sequence of slots. In practice, multi-Paxos and Raft converge on nearly the same algorithm; the paper by Ongaro &amp; Ousterhout (2014) explicitly rewrote it for teachability.</p>
+
+<h2 id="s3">Raft: consensus you can understand</h2>
+<p>Raft has exactly three roles (follower, candidate, leader), one log per node, and a single RPC family (<code>AppendEntries</code>, <code>RequestVote</code>). Leader is elected for a <strong>term</strong> (monotonically increasing integer). All writes go through the leader; leader replicates to followers; entry is <em>committed</em> once a majority has stored it.</p>
+<div class="mermaid-container"><pre class="mermaid">
+sequenceDiagram
+    participant C as Client
+    participant L as Leader (term 5)
+    participant F1 as Follower 1
+    participant F2 as Follower 2
+    C-&gt;&gt;L: write(x=42)
+    L-&gt;&gt;L: append to log[idx=10]
+    par Replicate
+      L-&gt;&gt;F1: AppendEntries(term=5, idx=10, x=42)
+      L-&gt;&gt;F2: AppendEntries(term=5, idx=10, x=42)
+    end
+    F1--&gt;&gt;L: ok
+    F2--&gt;&gt;L: ok
+    L-&gt;&gt;L: majority reached, commit idx=10
+    L--&gt;&gt;C: committed
+    L-&gt;&gt;F1: AppendEntries(commitIdx=10)
+    L-&gt;&gt;F2: AppendEntries(commitIdx=10)
+</pre></div>
+<p>Concrete latency on a 3-node Raft cluster in one DC: median write ~2 ms (one intra-DC RTT × 1 round-trip). Across two DCs in same region: ~5 ms. Across continents: 80–150 ms, which is why Spanner co-locates most writes within a region and uses Paxos groups per partition rather than one global group.</p>
+<div class="callout warn"><h4>Anti-pattern</h4><p>Writing Raft from scratch for an interview. Interviewers want to hear "I'd use etcd/ZooKeeper for leader election and lock management." They do <strong>not</strong> want a bug-for-bug reimplementation; production Raft took the CockroachDB team 5 engineer-years to stabilize.</p></div>
+
+<h2 id="s4">Leader election &amp; fencing tokens</h2>
+<p>Raft/Paxos gives you a leader for a term. Two dangers remain:</p>
+<ol>
+  <li><strong>Stale leader</strong>: the old leader hasn't noticed it was deposed (paused VM, long GC). It may send a stale <code>write</code> to storage.</li>
+  <li><strong>Zombie writes</strong>: write issued before lease expired but arriving at storage after a new leader's write.</li>
+</ol>
+<p>Solution: <strong>fencing tokens</strong>. Every lease carries a monotonically increasing token. The storage layer rejects writes carrying a token older than the highest it has seen. Martin Kleppmann's blog post on "How to do distributed locking" (2016) popularized the pattern after Redis's Redlock was found to allow a similar failure.</p>
+<pre><code># Pseudocode
+lease = etcd.acquire_lease("db-leader")  # returns (ok, fence_token=47)
+storage.write(key, value, fence=47)  # storage rejects if fence &lt; previously_seen</code></pre>
+
+<h2 id="s5">etcd, ZooKeeper, and the right layer</h2>
+<table>
+  <thead><tr><th>System</th><th>Algorithm</th><th>Sweet spot</th></tr></thead>
+  <tbody>
+    <tr><td>ZooKeeper</td><td>ZAB (Paxos-like)</td><td>Config mgmt, leader election, service discovery. Hadoop/Kafka heritage.</td></tr>
+    <tr><td>etcd</td><td>Raft</td><td>Kubernetes' source of truth, service registry, small KV. Read-mostly workloads.</td></tr>
+    <tr><td>Consul</td><td>Raft</td><td>Service mesh + KV + multi-DC.</td></tr>
+    <tr><td>FoundationDB</td><td>Paxos + MVCC</td><td>Strongly consistent ordered KV, ACID. Snowflake/Apple use.</td></tr>
+  </tbody>
+</table>
+<p>Rule of thumb: consensus systems handle <em>10 k–50 k writes/sec cluster-wide</em>. They are <strong>not</strong> your primary data store for user data; they are the <em>coordination layer</em> that tells the primary store who the leader is, which shards exist, and what the config is. When a team puts 1 M ops/sec through ZooKeeper, they page at 3 a.m.</p>
+
+<h2 id="s6">Split-brain, FLP, and time</h2>
+<p><strong>FLP impossibility</strong> (Fischer, Lynch, Paterson 1985): in a fully asynchronous model with even one faulty node, no deterministic consensus algorithm can guarantee termination. Real systems escape by assuming partial synchrony — the network is "eventually" timely — and using timeouts. This is why Raft's election timeout (150–300 ms) matters: too short causes spurious elections, too long stretches outage windows.</p>
+<p><strong>Split-brain</strong> happens when two nodes both believe they are leader. Prevention: majority quorums (you cannot have two disjoint majorities in one cluster). A 4-node cluster is strictly worse than 3 (same fault tolerance, double the write cost). Always use <strong>odd-sized</strong> clusters: 3, 5, or 7.</p>
+<ul>
+  <li><strong>3 nodes</strong>: tolerate 1 failure; cheapest production choice.</li>
+  <li><strong>5 nodes</strong>: tolerate 2; standard for planetary services (etcd in GKE).</li>
+  <li><strong>7 nodes</strong>: tolerate 3; only if you have really loud pagers.</li>
+</ul>
+<div class="callout openai"><h4>OpenAI-specific</h4><p>Model-weight registry and experiment tracking are classic consensus-layer workloads: small data, linearizable reads, rare writes. Answer "how do you pick which model version serves traffic?" with "etcd cluster holding the current pointer + fencing token on the routing layer."</p></div>
+
+<h2 id="s7">Interview-ready patterns</h2>
+<ol>
+  <li><strong>Distributed lock with lease + fencing</strong>: acquire lease in etcd, get fence token, pass it to the resource on every call. The resource is the source of truth on fence ordering.</li>
+  <li><strong>Config distribution</strong>: store config blob in etcd; services watch and reload on change. Push via watches; pull periodically as backup.</li>
+  <li><strong>Leader of a worker pool</strong>: one worker holds an etcd lease, runs the singleton job (e.g., cron, compaction scheduler). Others wait. On lease expiry, they race; fencing protects the shared resource.</li>
+  <li><strong>2PC on top of consensus</strong>: Spanner pattern. Each partition's Paxos group is a participant; the coordinator writes the commit record to its own Paxos group. See <a href="../../guide/distributed/transactions.html">transactions</a>.</li>
+</ol>
+<div class="callout anthropic"><h4>Anthropic-specific</h4><p>Anthropic's interviewers probe "what happens during a rolling deploy?" Answer: Raft's joint-consensus membership change (or etcd's <code>learner</code> mode) lets you add/remove nodes one at a time without ever losing quorum. Describe the <code>Cold-new</code> configuration transition explicitly.</p></div>
+
+        </div>
+        <div data-lang="zh">
+
+<h2 id="s1">共识到底是什么</h2>
+<p>共识 = 在部分节点崩溃、部分慢、网络丢/乱序的条件下，让 N 个节点就一个值达成一致。DDIA 第 9 章形式化为四条：<strong>统一一致</strong>（任意两节点决定相同）、<strong>完整性</strong>（任一节点只决一次）、<strong>有效性</strong>（决定的值是某节点提出的）、<strong>终止性</strong>（非崩溃节点最终都能决）。</p>
+<p>所有重要用例都归约到共识：选主、跨分片原子提交（共识上的 2PC = Spanner 的「事务」）、线性一致寄存器、唯一性约束。跨节点的线性一致必然要共识或等价物。</p>
+<div class="callout tip"><h4>来源交叉引用</h4><p>DDIA 第 8 章讲为什么共识难（无全局时钟、不可靠网络、部分失败），第 9 章给答案。两章一起读。</p></div>
+
+<h2 id="s2">Paxos 直觉</h2>
+<p>Lamport 1998 的单决 Paxos 两阶段：<strong>Prepare</strong>（提案者选 ballot n，问多数派「不接受 &lt; n 的，并告诉我你已接受的最高编号值」），<strong>Accept</strong>（提案者把值发给多数派，被接受即决定）。ballot 要多数 quorum 才能成功，任意两节点必在某点重叠——这就是不能同时决两次的证明。</p>
+<p>Multi-Paxos 摊薄 Prepare：选出稳定 leader，连续 slot 只跑 Accept。实际上 multi-Paxos 和 Raft 几乎同一算法；Ongaro &amp; Ousterhout (2014) 把它为可教学性重写一遍。</p>
+
+<h2 id="s3">Raft：能理解的共识</h2>
+<p>Raft 只有三种角色（follower、candidate、leader）、一个日志、一个 RPC 家族（<code>AppendEntries</code>、<code>RequestVote</code>）。leader 按<strong>term</strong>（单调自增）选出。所有写经 leader，leader 复制到 follower，多数存储后<em>提交</em>。</p>
+<div class="mermaid-container"><pre class="mermaid">
+sequenceDiagram
+    participant C as 客户端
+    participant L as Leader (term 5)
+    participant F1 as Follower 1
+    participant F2 as Follower 2
+    C-&gt;&gt;L: write(x=42)
+    L-&gt;&gt;L: 追加日志 idx=10
+    par 复制
+      L-&gt;&gt;F1: AppendEntries(term=5, idx=10, x=42)
+      L-&gt;&gt;F2: AppendEntries(term=5, idx=10, x=42)
+    end
+    F1--&gt;&gt;L: ok
+    F2--&gt;&gt;L: ok
+    L-&gt;&gt;L: 多数达成，提交 idx=10
+    L--&gt;&gt;C: committed
+    L-&gt;&gt;F1: AppendEntries(commitIdx=10)
+    L-&gt;&gt;F2: AppendEntries(commitIdx=10)
+</pre></div>
+<p>同机房 3 节点 Raft 写中位数 ~2 ms（1 次 RTT）。同区域两机房 ~5 ms。跨大陆 80–150 ms，这也是 Spanner 把多数写锁在区域内、每分区一个 Paxos 组（而非一个全局组）的原因。</p>
+<div class="callout warn"><h4>反模式</h4><p>面试时从零写 Raft。面试官想听「我会用 etcd/ZooKeeper 做选主和锁」。他们<strong>不</strong>想要 bug-for-bug 复刻；CockroachDB 团队 5 工程年才把生产 Raft 稳定下来。</p></div>
+
+<h2 id="s4">选主与 fencing token</h2>
+<p>Raft/Paxos 给 term 级 leader。还有两个坑：</p>
+<ol>
+  <li><strong>陈旧 leader</strong>：老 leader 还没意识到被废（VM 挂起、GC 长），继续向存储发写。</li>
+  <li><strong>僵尸写</strong>：lease 过期前发出、在新 leader 之后才到达存储。</li>
+</ol>
+<p>解：<strong>fencing token</strong>。每个 lease 带单调 token；存储层拒绝 token 低于已见最高的写。Kleppmann 2016 博文「How to do distributed locking」推广此模式（Redis Redlock 就有类似失败）。</p>
+<pre><code>lease = etcd.acquire_lease("db-leader")  # 返回 (ok, fence=47)
+storage.write(key, value, fence=47)  # 若 fence &lt; 已见最高则拒</code></pre>
+
+<h2 id="s5">etcd、ZooKeeper 与正确的抽象层</h2>
+<table>
+  <thead><tr><th>系统</th><th>算法</th><th>最佳用途</th></tr></thead>
+  <tbody>
+    <tr><td>ZooKeeper</td><td>ZAB（类 Paxos）</td><td>配置管理、选主、服务发现。Hadoop/Kafka 血统。</td></tr>
+    <tr><td>etcd</td><td>Raft</td><td>K8s 的真源、注册表、小 KV。读多写少。</td></tr>
+    <tr><td>Consul</td><td>Raft</td><td>服务网格 + KV + 多 DC。</td></tr>
+    <tr><td>FoundationDB</td><td>Paxos + MVCC</td><td>强一致有序 KV、ACID。Snowflake/Apple 用。</td></tr>
+  </tbody>
+</table>
+<p>拇指规则：共识系统集群级<em>1–5 万写/秒</em>。它<strong>不是</strong>存用户数据的主库；是<em>协调层</em>，告诉主库谁是 leader、有哪些 shard、配置是什么。若你把 100 万 ops/秒压进 ZooKeeper，半夜 3 点报警。</p>
+
+<h2 id="s6">脑裂、FLP 与时间</h2>
+<p><strong>FLP 不可能</strong>（Fischer, Lynch, Paterson 1985）：完全异步模型下只要一个故障节点，没有确定性共识算法能保证终止。真实系统假定部分同步——网络「最终」及时——用超时绕过。Raft 选举超时 150–300 ms：太短导致多余选举，太长拉长故障窗口。</p>
+<p><strong>脑裂</strong>：两节点都认为自己是 leader。预防：多数派 quorum（同集群不可能有两个不相交多数）。4 节点严格劣于 3（同容错，双倍写成本）。永远用<strong>奇数</strong>：3、5、7。</p>
+<ul>
+  <li><strong>3 节点</strong>：容 1 故障，最便宜。</li>
+  <li><strong>5 节点</strong>：容 2，行星级服务标配（GKE 的 etcd）。</li>
+  <li><strong>7 节点</strong>：容 3，只在报警器特别响时用。</li>
+</ul>
+<div class="callout openai"><h4>OpenAI 专属</h4><p>模型权重注册表、实验跟踪是经典共识层负载：小数据、线性一致读、偶尔写。「如何选哪个模型版本对外服务？」答：etcd 集群存当前指针 + 路由层带 fencing token。</p></div>
+
+<h2 id="s7">面试级模式</h2>
+<ol>
+  <li><strong>lease + fencing 的分布式锁</strong>：etcd 拿 lease 取 fence token，每次调资源时带上。资源是 fence 序的真源。</li>
+  <li><strong>配置分发</strong>：etcd 存 blob，服务 watch 热加载；推送 + 兜底轮询。</li>
+  <li><strong>worker 池 leader</strong>：一个 worker 持 etcd lease，跑 singleton job（cron、压缩调度）；其余等待；过期后抢，fencing 保护共享资源。</li>
+  <li><strong>共识之上的 2PC</strong>：Spanner 模式。每分区 Paxos 组是 participant，coordinator 把 commit record 写到自己的 Paxos 组。见 <a href="../../guide/distributed/transactions.html">事务</a>。</li>
+</ol>
+<div class="callout anthropic"><h4>Anthropic 专属</h4><p>Anthropic 会问「滚动发布期间怎样？」答：Raft 联合共识成员变更（或 etcd 的 <code>learner</code> 模式）允许逐个加减节点、全程保 quorum。明确描述 <code>Cold-new</code> 配置过渡。</p></div>
+
+        </div>
+      </article>
+
+      <section class="topic-footer-links">
+        <a href="../../guide/distributed/partitioning.html"><span class="label"><span data-lang="en">Previous</span><span data-lang="zh">上一</span></span><strong><span data-lang="en">Partitioning & sharding</span><span data-lang="zh">分区与分片</span></strong></a>
+        <a href="../../guide/distributed/transactions.html"><span class="label"><span data-lang="en">Next topic</span><span data-lang="zh">下一主题</span></span><strong><span data-lang="en">Transactions & isolation</span><span data-lang="zh">事务与隔离</span></strong></a>
+        <a href="../../arena/questions/a24-key-value-store.html"><span class="label"><span data-lang="en">Arena</span><span data-lang="zh">真题</span></span><strong><span data-lang="en">Key-value store (Dynamo)</span><span data-lang="zh">键值存储 (Dynamo)</span></strong></a>
+        <a href="../../arena/questions/o4-design-slack.html"><span class="label"><span data-lang="en">Arena</span><span data-lang="zh">真题</span></span><strong><span data-lang="en">Design Slack</span><span data-lang="zh">设计 Slack</span></strong></a>
+      </section>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <p>
+        <span data-lang="en">© SD-Guide · Built for OpenAI &amp; Anthropic system design prep. Not affiliated with either company.</span>
+        <span data-lang="zh">© SD-Guide · 为 OpenAI 与 Anthropic 系统设计面试准备。与两家公司无关联。</span>
+      </p>
+    </div>
+  </footer>
+
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

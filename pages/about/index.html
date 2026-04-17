@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>About — SD-Guide</title>
+  <meta name="description" content="Why this site exists, how it was built, the methodology behind the arena, and an 8-week study plan for OpenAI & Anthropic system design interviews.">
+  <link rel="stylesheet" href="../../assets/css/main.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../arena/index.html" data-match="/arena"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../guide/index.html" data-match="/guide"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../resources/index.html" data-match="/resources"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="./index.html" class="active" data-match="/about"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+
+      <div class="breadcrumb">
+        <a href="../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a>
+        <span class="sep">›</span>
+        <span data-lang="en">About</span><span data-lang="zh">关于</span>
+      </div>
+
+      <header class="page-header">
+        <h1 class="page-title">
+          <span data-lang="en">About SD-Guide</span>
+          <span data-lang="zh">关于 SD-Guide</span>
+        </h1>
+        <p class="page-subtitle">
+          <span data-lang="en">A purpose-built, bilingual preparation hub for OpenAI and Anthropic system design interviews — built on verified real questions, the seven canonical books, and a rubric that reflects what those two companies actually grade.</span>
+          <span data-lang="zh">一个为 OpenAI 与 Anthropic 系统设计面试量身打造的中英双语备考平台——以可核实的真题、七本经典教材，以及贴近两家公司真实评分维度的能力模型为基础。</span>
+        </p>
+      </header>
+
+      <section class="guide-section">
+        <h2 class="guide-section-title">
+          <span data-lang="en">① Why this site exists</span>
+          <span data-lang="zh">① 为什么会有这个站</span>
+        </h2>
+        <article class="prose wide">
+          <p>
+            <span data-lang="en">System design at OpenAI and Anthropic is meaningfully different from the FAANG archetype. At OpenAI, the coding loop has become brutally hard — long multi-part algorithmic problems on top of an LLM-infra system round that expects you to talk about KV cache, continuous batching, and GPU economics in the same breath as Redis and Kafka. At Anthropic, the ML / LLM-infra depth is not optional, and there is an explicit <em>safety</em> gate: you can design the most elegant system in the world and still fail the loop for never mentioning misuse, jailbreaks, red-teaming, or evaluation. These are not the interviews you pass by grinding 20 Alex Xu drills.</span>
+            <span data-lang="zh">OpenAI 与 Anthropic 的系统设计面试与 FAANG 那套模板差异显著。OpenAI 的 coding 环节极其硬核——长篇多段的算法题叠加一轮 LLM 基础设施系统设计，面试官会希望你在谈 Redis、Kafka 的同时，自然带出 KV cache、continuous batching 与 GPU 成本结构。Anthropic 这边，ML / LLM 基建的深度不是可选项，并且有一道明确的<em>安全</em>关卡：你可以把系统画得再漂亮，只要全程不提 misuse、越狱、红队、评估，这一轮依然会被判不过。这不是刷 20 道 Alex Xu 就能通过的面试。</span>
+          </p>
+          <p>
+            <span data-lang="en">When I started preparing, I found no single source that did what I needed. The Chinese note-sharing sites leaned on secondhand summaries. English bootcamp content stopped at FAANG-era "design Twitter". Books went deep but were scattered — DDIA for distributed systems, Chip Huyen for ML platform, Gulli and Huyen again for agentic patterns, Alex Xu volumes for the framework, ByteByteGo for the visual shorthand, <em>Acing the System Design Interview</em> for the interview-mechanics layer, and the newer <em>Machine Learning System Design Interview</em> for end-to-end ML product rounds. And nobody combined that reading with a question bank that was actually labelled with credibility — who said they were asked this, where, and when.</span>
+            <span data-lang="zh">开始备考时我发现，没有任何一个单点能覆盖我需要的东西。中文笔记站大多依赖二手总结，英文 bootcamp 内容还停留在 FAANG 时代的「设计 Twitter」，而书籍深度够却零散——DDIA 讲分布式、Chip Huyen 讲 ML 平台、Gulli 与 Huyen 又共同覆盖 agentic patterns、Alex Xu 两卷给出框架、ByteByteGo 提供视觉速记、《Acing the System Design Interview》处理面试机制、新出的《Machine Learning System Design Interview》补上端到端 ML 题型。更没有人把这些阅读材料与一份带「可信度标注」的题库拼在一起——谁在什么时间、什么场合说自己被问过这道题。</span>
+          </p>
+          <p>
+            <span data-lang="en">This site is the thing I wished existed: a verified-provenance arena of real OpenAI and Anthropic questions (2023–2026), topic pages that synthesise the seven books into interview-executable answers, and a study plan that sequences the whole mess into eight weeks. It is opinionated, it is bilingual, and it optimises for one thing: you walking into the loop able to drive a 45-minute system design round cold.</span>
+            <span data-lang="zh">这个站就是我当时想要、却找不到的东西：一份带出处核实的 OpenAI / Anthropic 真题 Arena（2023–2026），把七本书压缩成面试可直接使用的专题页，再用一份八周学习计划把这摊内容串成线性路径。它有立场、支持中英双语，并且只为一件事服务：你走进面试室时，能够脱稿把一场 45 分钟的系统设计拉满。</span>
+          </p>
+        </article>
+      </section>
+
+      <section class="guide-section">
+        <h2 class="guide-section-title">
+          <span data-lang="en">② Methodology — how questions were collected and rated</span>
+          <span data-lang="zh">② 方法论——题目如何收集与评级</span>
+        </h2>
+        <p class="guide-section-lead">
+          <span data-lang="en">Every question in the arena carries a source link and a credibility grade. We treat candidate self-reports differently from a company's own publication, and the letter on the card tells you which is which at a glance.</span>
+          <span data-lang="zh">Arena 中每道题都附上出处链接与可信度评级。公司自家发布的内容与匿名自述显然不应一视同仁，卡片右上角的字母可以让你一眼分辨两者。</span>
+        </p>
+
+        <article class="prose wide">
+          <p>
+            <span data-lang="en">The raw pool was assembled from 2023–2026 interview reports across LeetCode Discuss, Blind, Exponent's question index, PracHub's onsite bank, Glassdoor, Jointaro mock-interview logs, GitHub repos of leaked take-homes, and a handful of open-source interview guides published directly by the companies themselves. Each candidate report was cross-referenced: if three independent posts on Blind / LeetCode / Jointaro converged on roughly the same prompt in the same quarter, we treated that as one corroborated question and merged the variants. Questions with a single anonymous source were kept but visibly downgraded. Questions we could not source to a real interview within the 2023–2026 window were cut — there are no filler "just in case" problems.</span>
+            <span data-lang="zh">原始题池汇总自 2023–2026 年的面经，来源包括：LeetCode Discuss、Blind、Exponent 题库、PracHub 的 Onsite 题集、Glassdoor、Jointaro 模拟面试记录、GitHub 上的泄露 take-home，以及公司自己公开的少量面试指南。每条候选人自述都要交叉核对：如果同一季度在 Blind、LeetCode、Jointaro 上有三条独立帖子大致指向同一题目，则合并为一条、统一变体。只有单一匿名来源的题目保留但显著降级。无法回溯到 2023–2026 真实面试的题目一律删除——没有「以防万一」的灌水题。</span>
+          </p>
+
+          <h3><span data-lang="en">Credibility scale S / A / B / C / D</span><span data-lang="zh">可信度评级 S / A / B / C / D</span></h3>
+
+          <table>
+            <thead>
+              <tr>
+                <th><span data-lang="en">Grade</span><span data-lang="zh">评级</span></th>
+                <th><span data-lang="en">Source type</span><span data-lang="zh">出处类型</span></th>
+                <th><span data-lang="en">Example</span><span data-lang="zh">示例</span></th>
+                <th><span data-lang="en">How to treat it</span><span data-lang="zh">如何对待</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>S</strong></td>
+                <td><span data-lang="en">Official / first-party — the company's own publication or interview guide.</span><span data-lang="zh">官方 / 第一手——公司自己发布的内容或面试指南。</span></td>
+                <td><span data-lang="en">Anthropic's public interview guide, OpenAI engineering blog describing real production trade-offs they ask about.</span><span data-lang="zh">Anthropic 公开的面试指南；OpenAI 工程博客中描述他们会追问的生产权衡。</span></td>
+                <td><span data-lang="en">Treat as ground truth. If S says "we ask about X", they ask about X.</span><span data-lang="zh">视作事实。S 级说「会问 X」，就是会问。</span></td>
+              </tr>
+              <tr>
+                <td><strong>A</strong></td>
+                <td><span data-lang="en">Paper or official open source — peer-reviewed or maintained by the company.</span><span data-lang="zh">论文或官方开源——同行评审或公司维护。</span></td>
+                <td><span data-lang="en">arxiv papers on Constitutional AI, <code>github.com/anthropics</code>, OpenAI's evals repo, vLLM paper.</span><span data-lang="zh">Constitutional AI 的 arxiv 论文、<code>github.com/anthropics</code>、OpenAI evals 仓库、vLLM 论文。</span></td>
+                <td><span data-lang="en">Near-ground-truth for technical content, not for interview phrasing.</span><span data-lang="zh">技术内容近似事实，但不代表面试官原话。</span></td>
+              </tr>
+              <tr>
+                <td><strong>B</strong></td>
+                <td><span data-lang="en">Structured question bank marked "Asked at" a given company.</span><span data-lang="zh">结构化题库且标注「Asked at」某公司。</span></td>
+                <td><span data-lang="en">PracHub onsite listings, Exponent curated library, paid interview platforms with moderation.</span><span data-lang="zh">PracHub onsite 列表、Exponent 精选题库、有审核的付费面试平台。</span></td>
+                <td><span data-lang="en">Trustworthy direction; exact wording may be paraphrased.</span><span data-lang="zh">方向可信，但原文可能已被改写。</span></td>
+              </tr>
+              <tr>
+                <td><strong>C</strong></td>
+                <td><span data-lang="en">Anonymous candidate self-report.</span><span data-lang="zh">匿名候选人自述。</span></td>
+                <td><span data-lang="en">LeetCode Discuss, Blind posts, Jointaro anonymised mock logs, 1point3acres threads.</span><span data-lang="zh">LeetCode Discuss、Blind 帖子、Jointaro 匿名模拟记录、一亩三分地帖子。</span></td>
+                <td><span data-lang="en">Useful signal, especially when multiple independent posts agree. Single-source C's get a warning badge.</span><span data-lang="zh">有参考价值，尤其在多源吻合时。单一来源的 C 会带警示标。</span></td>
+              </tr>
+              <tr>
+                <td><strong>D</strong></td>
+                <td><span data-lang="en">General blog or secondary re-posting without fresh evidence.</span><span data-lang="zh">未提供新证据的二手博客或转帖。</span></td>
+                <td><span data-lang="en">Medium summaries, WeChat gongzhonghao posts quoting a Blind thread from two years ago.</span><span data-lang="zh">Medium 总结、引用两年前 Blind 帖子的微信公众号文章。</span></td>
+                <td><span data-lang="en">Kept only when corroborating something else; never a sole source for an arena entry.</span><span data-lang="zh">仅在佐证其它证据时保留；绝不作为唯一来源。</span></td>
+              </tr>
+            </tbody>
+          </table>
+
+          <p>
+            <span data-lang="en">Roughly 15% of the current arena sits at S/A, 40% at B, 40% at C with multi-source corroboration, and the residual 5% at single-source C marked with a visible warning. Anything D-only was cut. The grade is printed on every arena card so you can budget your attention accordingly — burn your mock-interview time on S and A first.</span>
+            <span data-lang="zh">当前 Arena 中大约 15% 属 S/A，40% 属 B，40% 属于多源互证的 C，剩余 5% 是带明显警告的单源 C。仅 D 级的一律剔除。每张 Arena 卡片都会标注评级——把有限的模拟面试时间优先花在 S 与 A 上。</span>
+          </p>
+        </article>
+      </section>
+
+      <section class="guide-section">
+        <h2 class="guide-section-title">
+          <span data-lang="en">③ The 8-week study plan</span>
+          <span data-lang="zh">③ 八周备考计划</span>
+        </h2>
+        <p class="guide-section-lead">
+          <span data-lang="en">Budget roughly 12–15 hours per week. The plan assumes a working engineer with solid coding fundamentals and some distributed systems intuition, but no specific LLM-infra background. Each week pairs reading with at least two arena attempts — reading alone does not build the verbal motor skill you need.</span>
+          <span data-lang="zh">每周预算约 12–15 小时。计划针对有扎实编码功底、有一定分布式系统直觉、但缺乏 LLM 基建专项经验的在职工程师设计。每周都把阅读与至少两道 Arena 实战搭配——光读不练，练不出面试现场需要的「口头肌肉」。</span>
+        </p>
+
+        <div class="mermaid-container"><pre class="mermaid">
+timeline
+  title 8-Week System Design Prep (12-15 hrs / week)
+  Week 1-2 : Foundations and Framework
+           : Estimation drills
+           : 3 Alex Xu + 3 OpenAI classical arena
+  Week 3-4 : Distributed Systems Deep Dive
+           : DDIA Ch.5-9 (replication, partitioning, consensus, txns)
+           : Pair each chapter with an arena question
+  Week 5-6 : LLM Systems
+           : Gulli + Chip Huyen (serving, RAG, agentic, training, eval)
+           : Drill Anthropic arena questions
+  Week 7   : ML and Safety + Mock Interviews
+           : Constitutional AI + red-team + eval pipelines
+           : Mocks with friend or Exponent
+  Week 8   : Polish and Dress Rehearsals
+           : 2-3 behavioural stories incl. safety-catch
+           : Full 45-min rehearsals, frameworks cold
+        </pre></div>
+
+        <article class="prose wide">
+          <table>
+            <thead>
+              <tr>
+                <th><span data-lang="en">Week</span><span data-lang="zh">周次</span></th>
+                <th><span data-lang="en">Focus</span><span data-lang="zh">重点</span></th>
+                <th><span data-lang="en">Reading</span><span data-lang="zh">阅读</span></th>
+                <th><span data-lang="en">Arena drills</span><span data-lang="zh">Arena 练习</span></th>
+                <th><span data-lang="en">Hrs</span><span data-lang="zh">小时</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>1</td>
+                <td><span data-lang="en">Framework + estimation</span><span data-lang="zh">框架 + 估算</span></td>
+                <td><span data-lang="en">Alex Xu V1 Ch.1–3; ByteByteGo numbers cheat sheet.</span><span data-lang="zh">Alex Xu V1 第 1–3 章；ByteByteGo 数字速查。</span></td>
+                <td><span data-lang="en">3 Alex Xu classical designs solo-timed at 45 min.</span><span data-lang="zh">3 道 Alex Xu 经典题，45 分钟计时独立完成。</span></td>
+                <td>12</td>
+              </tr>
+              <tr>
+                <td>2</td>
+                <td><span data-lang="en">Classical SD under OpenAI lens</span><span data-lang="zh">OpenAI 视角下的经典题</span></td>
+                <td><span data-lang="en">Acing the SD Interview Ch.1–4; revisit framework.</span><span data-lang="zh">《Acing the SD Interview》第 1–4 章；回看框架。</span></td>
+                <td><span data-lang="en">3 OpenAI classical arena questions (rate-limiter, pastebin-style, notification).</span><span data-lang="zh">3 道 OpenAI 风格经典题（限流器、Pastebin 类、通知系统）。</span></td>
+                <td>13</td>
+              </tr>
+              <tr>
+                <td>3</td>
+                <td><span data-lang="en">Replication &amp; partitioning</span><span data-lang="zh">复制与分区</span></td>
+                <td><span data-lang="en">DDIA Ch.5–6.</span><span data-lang="zh">DDIA 第 5–6 章。</span></td>
+                <td><span data-lang="en">2 arena questions where quorum / consistent hashing are central.</span><span data-lang="zh">2 道以 quorum / 一致性哈希为核心的 Arena。</span></td>
+                <td>14</td>
+              </tr>
+              <tr>
+                <td>4</td>
+                <td><span data-lang="en">Transactions &amp; consensus</span><span data-lang="zh">事务与共识</span></td>
+                <td><span data-lang="en">DDIA Ch.7–9; Raft paper skim.</span><span data-lang="zh">DDIA 第 7–9 章；略读 Raft 论文。</span></td>
+                <td><span data-lang="en">2 arena questions where isolation level or leader election matters.</span><span data-lang="zh">2 道以隔离级别或 leader 选举为关键的题目。</span></td>
+                <td>14</td>
+              </tr>
+              <tr>
+                <td>5</td>
+                <td><span data-lang="en">LLM serving + RAG</span><span data-lang="zh">LLM 推理 + RAG</span></td>
+                <td><span data-lang="en">Gulli Ch. on serving + RAG; Chip Huyen DMLS serving chapter.</span><span data-lang="zh">Gulli 推理与 RAG 相关章节；Chip Huyen《DMLS》推理章。</span></td>
+                <td><span data-lang="en">3 Anthropic arena questions: inference service, RAG, long-context eval.</span><span data-lang="zh">3 道 Anthropic Arena：推理服务、RAG、长上下文评估。</span></td>
+                <td>15</td>
+              </tr>
+              <tr>
+                <td>6</td>
+                <td><span data-lang="en">Agentic + training infra</span><span data-lang="zh">Agent 与训练基建</span></td>
+                <td><span data-lang="en">Agentic Design Patterns (full); Chip Huyen on training-data pipelines.</span><span data-lang="zh">《Agentic Design Patterns》全书；Chip Huyen 训练数据流水线相关章节。</span></td>
+                <td><span data-lang="en">2 arena questions on agent orchestration / tool-use + 1 on distributed training.</span><span data-lang="zh">2 道 agent 编排 / 工具调用题 + 1 道分布式训练题。</span></td>
+                <td>15</td>
+              </tr>
+              <tr>
+                <td>7</td>
+                <td><span data-lang="en">ML platform + safety + mocks</span><span data-lang="zh">ML 平台 + 安全 + 模拟面试</span></td>
+                <td><span data-lang="en">ML SD Interview book (selected); Anthropic safety posts; Constitutional AI paper.</span><span data-lang="zh">《ML SD Interview》选读；Anthropic 安全博客；Constitutional AI 论文。</span></td>
+                <td><span data-lang="en">2 live mocks with a friend or Exponent coach; 1 safety-heavy arena question solo.</span><span data-lang="zh">与朋友或 Exponent 教练做 2 次真人 mock；独立完成 1 道安全主导的 Arena。</span></td>
+                <td>14</td>
+              </tr>
+              <tr>
+                <td>8</td>
+                <td><span data-lang="en">Polish &amp; dress rehearsals</span><span data-lang="zh">打磨与彩排</span></td>
+                <td><span data-lang="en">Re-read your own notes; refine 2–3 behavioural stories including one "caught-a-safety-issue" story.</span><span data-lang="zh">重读自己的笔记；打磨 2–3 个行为面故事，含一则「发现并阻止一个安全问题」。</span></td>
+                <td><span data-lang="en">Two full 45-minute dress rehearsals, walking the frameworks cold from memory.</span><span data-lang="zh">两次完整 45 分钟彩排，脱稿默画框架。</span></td>
+                <td>12</td>
+              </tr>
+            </tbody>
+          </table>
+        </article>
+      </section>
+
+      <section class="guide-section">
+        <h2 class="guide-section-title">
+          <span data-lang="en">④ How to use this site</span>
+          <span data-lang="zh">④ 如何使用这个站</span>
+        </h2>
+        <article class="prose wide">
+          <p>
+            <span data-lang="en">Don't feel obliged to read the Study Guide linearly. Start from whatever your weakest area is — probably LLM serving or safety if you're coming from a traditional backend background, probably distributed consensus if you're coming from an ML background. The one rule: never call a topic page "done" until you have attempted its linked arena question. Reading without drilling is how people walk into the loop with the illusion of competence.</span>
+            <span data-lang="zh">不必按顺序通读学习手册。从最弱的一项切入即可——后端背景的同学多数最弱在 LLM 推理与 safety，ML 背景的同学往往栽在分布式共识上。唯一的硬性规则：只有把专题页关联的 Arena 真题至少做过一道，才算「这页学完」。只读不做，就是带着「假性掌握」走进面试的典型路径。</span>
+          </p>
+
+          <div class="guide-grid">
+            <div class="guide-card">
+              <div class="guide-card-num">A</div>
+              <h3><span data-lang="en">Mode A — Cram (2 weeks out)</span><span data-lang="zh">模式 A — 冲刺（面试前两周）</span></h3>
+              <p><span data-lang="en">Triage the arena by company tag, skim only the companion topic pages of the questions you hit, and force yourself through 3 full 45-minute mock questions — ideally one OpenAI classical, one Anthropic LLM-infra, one safety-heavy.</span><span data-lang="zh">按公司 tag 对 Arena 做分流，只略读命中题目所关联的专题页，强迫自己完整做 3 道 45 分钟 mock——最好是一道 OpenAI 经典、一道 Anthropic LLM 基建、一道安全主导题。</span></p>
+            </div>
+            <div class="guide-card">
+              <div class="guide-card-num">B</div>
+              <h3><span data-lang="en">Mode B — Deep prep (8 weeks)</span><span data-lang="zh">模式 B — 深度备考（八周）</span></h3>
+              <p><span data-lang="en">Follow the 8-week plan above. This is the mode that gets you from "competent backend engineer" to "actually capable of driving an Anthropic round" — not faster.</span><span data-lang="zh">按上面的八周计划执行。这是从「合格的后端工程师」走到「真的能撑起 Anthropic 一轮」的模式，没法再压缩。</span></p>
+            </div>
+            <div class="guide-card">
+              <div class="guide-card-num">C</div>
+              <h3><span data-lang="en">Mode C — Continuous</span><span data-lang="zh">模式 C — 长期维护</span></h3>
+              <p><span data-lang="en">One topic page per week alongside your day job, rotating across foundations, distributed, LLM, ML, safety. Compounds over a year into genuinely senior-level depth.</span><span data-lang="zh">在职期间每周啃一页专题，在基础、分布式、LLM、ML、安全之间轮换。一年积累下来，能达到真正的 senior 级深度。</span></p>
+            </div>
+          </div>
+
+          <div class="callout tip">
+            <h4><span data-lang="en">Practical tip</span><span data-lang="zh">实操建议</span></h4>
+            <p><span data-lang="en">Keep a personal answer-template per topic as you go — your own 90-second opener for "design an LLM inference service", "design a RAG system", "design a rate limiter". Having these cold saves 5–7 minutes in the real interview for the interesting parts.</span><span data-lang="zh">边学边维护一份属于你自己的答题模板——为「设计 LLM 推理服务」「设计 RAG」「设计限流器」各写一段 90 秒开场白。把它们背熟，真实面试里就能给后续深挖节省 5–7 分钟。</span></p>
+          </div>
+        </article>
+      </section>
+
+      <section class="guide-section">
+        <h2 class="guide-section-title">
+          <span data-lang="en">⑤ Evaluation rubric — what they actually grade</span>
+          <span data-lang="zh">⑤ 评分维度——他们真正在打分的东西</span>
+        </h2>
+        <p class="guide-section-lead">
+          <span data-lang="en">These are the six signals introduced on the home page, expanded here with "bad answer" vs "good answer" phrasing. Interviewers at OpenAI and Anthropic take structured notes against dimensions that map, roughly, to these six.</span>
+          <span data-lang="zh">这是首页六个信号的展开版，每个信号都给出「差答案」与「好答案」的具体语感。OpenAI 与 Anthropic 的面试官打分表大致就是这六个维度的变体。</span>
+        </p>
+
+        <article class="prose wide">
+          <h3><span data-lang="en">1. Abstraction</span><span data-lang="zh">1. 抽象能力</span></h3>
+          <p><span data-lang="en">Can you carve a fuzzy prompt into clean subsystems, name each, and articulate the contract between them? Strong candidates introduce names like "scheduler", "KV cache manager", "policy filter" <em>before</em> they draw a box. Weak candidates draw boxes first, then retrofit names.</span><span data-lang="zh">能否把一个模糊需求切成边界清晰的子系统、命名、讲清彼此契约？强候选人会先说「我把它切成 scheduler、KV cache manager、policy filter」<em>再</em>画框；弱候选人先画框再硬塞名字。</span></p>
+          <p><em><span data-lang="en">Bad: "I'll put an API gateway here, then a backend, then a database."</span><span data-lang="zh">差：「我画个 API gateway，再画个后端，再画个数据库。」</span></em></p>
+          <p><em><span data-lang="en">Good: "There are four concerns — ingress and auth, request scheduling under variable-length workloads, model execution on GPUs, and safety mediation. Let me solve each separately and then compose them."</span><span data-lang="zh">好：「这里有四个关注点——入口与鉴权、变长负载下的请求调度、GPU 上的模型执行，以及安全中介。我会分别解决，再组合起来。」</span></em></p>
+
+          <h3><span data-lang="en">2. Trade-off articulation</span><span data-lang="zh">2. 权衡表达</span></h3>
+          <p><span data-lang="en">Every design decision costs something. The signal is whether you volunteer the cost before the interviewer has to drag it out of you. "Consistent hashing lets us rebalance cheaply but hurts range queries and complicates multi-key transactions" is what the rubric rewards.</span><span data-lang="zh">每个设计决定都有代价。打分看的是你是否主动说出代价，而不是等面试官挖。像「一致性哈希让再平衡便宜，但代价是范围查询变差、多 key 事务复杂化」，这才是评分表想听到的。</span></p>
+          <p><em><span data-lang="en">Bad: "I'll use Redis because it's fast."</span><span data-lang="zh">差：「我用 Redis，因为它快。」</span></em></p>
+          <p><em><span data-lang="en">Good: "Redis for hot cache gives us sub-ms reads and simple invalidation, at the cost of memory footprint and a weaker durability story — I'll pair it with Postgres as the source of truth and accept the cache-consistency window."</span><span data-lang="zh">好：「热缓存走 Redis 拿到亚毫秒读和简单失效，代价是内存开销与较弱的持久性——因此配 Postgres 作为事实源，并接受一段缓存一致性窗口。」</span></em></p>
+
+          <h3><span data-lang="en">3. Failure-mode reasoning</span><span data-lang="zh">3. 失败模式推理</span></h3>
+          <p><span data-lang="en">What breaks first under load, partial failure, or adversarial input? Great candidates name the failure mode before it happens: "head-of-line blocking on the scheduler queue when a long-prefill request lands alongside decodes; I'd use chunked prefill and separate queues."</span><span data-lang="zh">在高负载、部分失败或对抗输入下，哪里最先坏？优秀候选人会在故障发生前主动命名它：「当长 prefill 请求和 decode 撞在 scheduler 队列里时会队头阻塞；我会用 chunked prefill 加独立队列。」</span></p>
+          <p><em><span data-lang="en">Bad: "If the database goes down, we return an error."</span><span data-lang="zh">差：「数据库挂了就返回错误。」</span></em></p>
+          <p><em><span data-lang="en">Good: "The first failure mode I worry about is replication lag on the follower when a write burst hits — stale reads, potential read-your-writes violation. I'd route a user's reads to the leader by user-id stickiness, and monitor replica lag SLI."</span><span data-lang="zh">好：「我最先担心写突发时 follower 的复制延迟——会出现陈旧读、可能违反 read-your-writes。我按 user-id 粘性把「你自己的读」路由到 leader，并监控复制延迟 SLI。」</span></em></p>
+
+          <h3><span data-lang="en">4. Scale reasoning</span><span data-lang="zh">4. 规模推理</span></h3>
+          <p><span data-lang="en">Back-of-envelope numbers, and whether they pass the smell test. If you say "10k QPS" and the interviewer asks "per shard or total?" you should already know. Cost per 1M tokens, GPU memory per request, bytes per row — these should fall out of your mouth without hesitation.</span><span data-lang="zh">快速估算，以及估算结果是否合常识。如果你说「10k QPS」，面试官追问「每个分片还是总的？」，你应已备好答案。每百万 token 成本、每请求 GPU 显存、每行字节数——这些数字应该脱口而出。</span></p>
+          <p><em><span data-lang="en">Bad: "I'll shard it so it scales."</span><span data-lang="zh">差：「我分片一下就能扩。」</span></em></p>
+          <p><em><span data-lang="en">Good: "Prefill is ~100 TFLOPs per 1k-token prompt on a 70B model, so an A100 at ~300 TFLOPs sustained can do roughly 3 prefills/sec. With 1k concurrent users averaging one request per 10s, I need ~33 A100s for prefill alone — call it 40 for headroom."</span><span data-lang="zh">好：「70B 模型上每 1k token 的 prefill 约 100 TFLOPs，一块持续 ~300 TFLOPs 的 A100 每秒能做约 3 次 prefill。1k 并发用户平均每人 10 秒一请求，仅 prefill 就需要 ~33 张 A100，留余量按 40 张算。」</span></em></p>
+
+          <h3><span data-lang="en">5. Driving the conversation</span><span data-lang="zh">5. 主导对话</span></h3>
+          <p><span data-lang="en">45 minutes is short. The interviewer wants to see you set the agenda, park tangents, call your own time, and ask them for preferences at decision points — not wait passively for prompts. "I want to spend 10 more minutes on the scheduler and then pivot to safety; does that split work for you?" is a senior move.</span><span data-lang="zh">45 分钟很短。面试官希望看你主动排议程、把岔路暂挂、自己报时、在决策点主动征询偏好，而不是被动等题。「我打算在 scheduler 上再花 10 分钟，然后切到 safety，你觉得这个比例合适吗？」是明显的高级信号。</span></p>
+          <p><em><span data-lang="en">Bad: Stays silent, waits for the next nudge.</span><span data-lang="zh">差：全程沉默，等下一句提示。</span></em></p>
+          <p><em><span data-lang="en">Good: "We've got 30 minutes left. The two deep-dives I'd pick are continuous batching and safety mediation — which do you want first?"</span><span data-lang="zh">好：「还有 30 分钟。我想挑两个深挖：continuous batching 与 safety 中介——你想先看哪个？」</span></em></p>
+
+          <h3><span data-lang="en">6. Safety (the Anthropic gate)</span><span data-lang="zh">6. 安全（Anthropic 的准入门）</span></h3>
+          <p><span data-lang="en">At Anthropic this is not a bonus — it is a gate. Any question can be failed by designing the perfect system and never mentioning misuse, jailbreaks, red-teaming, content policy, or evaluation. Even for an OpenAI classical system question, a one-sentence mention of abuse prevention at the end buys you a free signal.</span><span data-lang="zh">在 Anthropic，这不是加分项，而是门槛。任何一题都可能因为「把系统画完美、全程不提 misuse / 越狱 / 红队 / 内容政策 / 评估」而直接判负。即便是 OpenAI 的经典题，末尾加一句滥用防护也能白拿一个正向信号。</span></p>
+          <p><em><span data-lang="en">Bad: Never brings up the word "safety", "abuse", or "evaluation" unprompted.</span><span data-lang="zh">差：全程不主动提及「safety」「滥用」或「评估」。</span></em></p>
+          <p><em><span data-lang="en">Good: "Before we close — three safety hooks I'd wire in from day one: input policy filter, per-tenant rate limit tied to an abuse score, and an offline red-team eval pipeline that replays a curated jailbreak set against every model version before rollout."</span><span data-lang="zh">好：「收尾前再讲三个第一天就要接好的 safety 钩子：输入策略过滤、与滥用分数挂钩的按租户限流、以及在每次模型上线前用一组精选越狱集回放的离线红队评估流水线。」</span></em></p>
+        </article>
+      </section>
+
+      <section class="guide-section">
+        <h2 class="guide-section-title">
+          <span data-lang="en">⑥ Tech stack of this site</span>
+          <span data-lang="zh">⑥ 本站技术栈</span>
+        </h2>
+        <article class="prose wide">
+          <p>
+            <span data-lang="en">Deliberately boring. Static HTML, one CSS file, one JS file, and Mermaid for diagrams — no framework, no build step, no tracker. Bilingual content is a pair of spans per visible string, flipped by toggling a class on the html element (see <code>assets/js/app.js</code>). Theme (light/dark) is stored in <code>localStorage</code> and applied on first paint to avoid a flash.</span>
+            <span data-lang="zh">刻意保持朴素。静态 HTML + 一个 CSS 文件 + 一个 JS 文件 + Mermaid 画图——无框架、无构建步骤、无埋点。双语实现是每个可见字符串配一对 span，由根元素上的 class 切换（见 <code>assets/js/app.js</code>）。主题（明/暗）存于 <code>localStorage</code>，在首绘前应用以避免闪烁。</span>
+          </p>
+          <p>
+            <span data-lang="en">Total footprint: ~45 HTML files, ~1000 lines of CSS, ~200 lines of JS. The whole site fits in a single git clone and renders offline. Anyone can fork it, delete my text, keep the scaffolding, and have a personal interview-prep site in an afternoon.</span>
+            <span data-lang="zh">整体体量：约 45 个 HTML 文件、约 1000 行 CSS、约 200 行 JS。整站一次 git clone 就能离线打开。任何人都可以 fork，删掉我的文字、保留骨架，一个下午就能搭起自己的面经备考站。</span>
+          </p>
+          <div class="callout">
+            <h4><span data-lang="en">Why no framework?</span><span data-lang="zh">为什么不用框架？</span></h4>
+            <p><span data-lang="en">Because the content, not the stack, is the value. A static site that loads in 80 ms on a cheap laptop respects the reader. Also, I wanted the markup I was writing to look identical to what a candidate would draft on a whiteboard.</span><span data-lang="zh">因为价值在内容而不在技术栈。在一台普通笔记本上 80 ms 就能加载完的站点，是对读者的尊重。另外，我希望自己写的 markup 与候选人在白板上会画的东西长得一样。</span></p>
+          </div>
+        </article>
+      </section>
+
+      <section class="guide-section">
+        <h2 class="guide-section-title">
+          <span data-lang="en">⑦ Changelog &amp; roadmap</span>
+          <span data-lang="zh">⑦ 更新日志与路线图</span>
+        </h2>
+        <article class="prose wide">
+          <h3><span data-lang="en">Status as of April 2026</span><span data-lang="zh">2026 年 4 月状态</span></h3>
+          <ul>
+            <li><span data-lang="en">36+ arena questions, all with sourced-and-graded provenance.</span><span data-lang="zh">36+ 道 Arena 真题，全部带有出处与评级。</span></li>
+            <li><span data-lang="en">20 topic pages covering foundations, distributed systems, LLM infra, ML platform, and safety.</span><span data-lang="zh">20 个专题页，覆盖基础、分布式、LLM 基建、ML 平台与 safety。</span></li>
+            <li><span data-lang="en">2 deep-research markdown reports (one on LLM serving, one on safety evaluation pipelines).</span><span data-lang="zh">2 份深度研究 markdown（一份关于 LLM 推理，一份关于 safety 评估流水线）。</span></li>
+            <li><span data-lang="en">Full Chinese parity on every page — not machine-translated.</span><span data-lang="zh">所有页面完整中文对齐——非机器翻译。</span></li>
+          </ul>
+
+          <h3><span data-lang="en">Roadmap</span><span data-lang="zh">路线图</span></h3>
+          <ul>
+            <li><span data-lang="en">Add 10 more Anthropic-flavoured batch &amp; evaluation questions, with emphasis on the "how would you grade this model" framing.</span><span data-lang="zh">新增 10 道 Anthropic 风格的批处理与评估题，重点在「你会如何给这个模型打分」的叙事。</span></li>
+            <li><span data-lang="en">A mock-interview companion mode: timed prompts, checklist-based self-grading against the 6-signal rubric.</span><span data-lang="zh">上线模拟面试伴侣模式：计时出题，按六信号评分表做清单式自评。</span></li>
+            <li><span data-lang="en">English-Chinese system-design glossary — every term from CAP to PagedAttention with both phrasings.</span><span data-lang="zh">中英系统设计词表——从 CAP 到 PagedAttention，每个术语附上双语表达。</span></li>
+            <li><span data-lang="en">MCP-agents deep-dive page once the MCP ecosystem stabilises more.</span><span data-lang="zh">待 MCP 生态更稳定后，新增 MCP-agents 深度专题页。</span></li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="guide-section">
+        <h2 class="guide-section-title">
+          <span data-lang="en">⑧ Not affiliated · contact</span>
+          <span data-lang="zh">⑧ 非官方声明 · 联系方式</span>
+        </h2>
+        <article class="prose wide">
+          <div class="callout warn">
+            <h4><span data-lang="en">Not affiliated</span><span data-lang="zh">非官方声明</span></h4>
+            <p><span data-lang="en">SD-Guide is an independent study project. It is not affiliated with, endorsed by, or sponsored by OpenAI or Anthropic. Company names, trademarks, and question attributions are used solely for educational reference. Any errors are mine; any sensitive leaked material reported to us is removed on request.</span><span data-lang="zh">SD-Guide 是一个独立的学习项目，与 OpenAI 或 Anthropic 没有任何隶属、背书或赞助关系。公司名、商标与题目归属仅用于教学参考。任何错误由本站承担；如有涉及敏感或违规泄露内容，收到通知后立即删除。</span></p>
+          </div>
+          <p>
+            <span data-lang="en">Feedback, corrections, and new question reports are welcome. File a GitHub issue (placeholder: <code>github.com/your-handle/sd-guide/issues</code>) or email <code>yourname@example.com</code>. Please anonymise any candidate-identifying details before sending — respect the people whose reports power this site.</span>
+            <span data-lang="zh">欢迎反馈、勘误与新题提交。可在 GitHub 提交 issue（占位：<code>github.com/your-handle/sd-guide/issues</code>），或发邮件至 <code>yourname@example.com</code>。投递前请抹去可识别候选人身份的信息——请尊重那些贡献了面经的候选人。</span>
+          </p>
+        </article>
+      </section>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <p>
+        <span data-lang="en">© SD-Guide · Built for OpenAI &amp; Anthropic system design prep. Not affiliated with either company.</span>
+        <span data-lang="zh">© SD-Guide · 为 OpenAI 与 Anthropic 系统设计面试准备。与两家公司无关联。</span>
+      </p>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="../../assets/js/app.js"></script>
+</body>
+</html>

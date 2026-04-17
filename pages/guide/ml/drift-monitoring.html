@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Drift Detection & Monitoring — SD-Guide</title>
+  <meta name="description" content="A deployed model is a decaying asset. This note covers the three kinds of drift (data, label, concept), the statistical tests that detect them (PSI, KS, KL), the monitoring stack (Arize, WhyLabs, Evidently), retraining triggers, and the LLM-specific drifts (prompt drift, output drift) that neither book fully predicted.">
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../../../pages/arena/index.html" data-match="/arena"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../../pages/guide/index.html" class="active" data-match="/guide"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../../pages/resources/index.html" data-match="/resources"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../../pages/about/index.html" data-match="/about"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+
+      <div class="breadcrumb">
+        <a href="../../../pages/guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a>
+        <span>›</span>
+        <span class="crumb-category">ML Systems<span data-lang="zh" style="display:none">ML 系统</span></span>
+      </div>
+
+      <header class="page-header">
+        <h1 class="page-title">
+          <span data-lang="en">Drift Detection & Monitoring</span>
+          <span data-lang="zh">漂移检测与监控</span>
+        </h1>
+        <div class="topic-meta">
+          <span class="tag" style="background:var(--openai-glow);border-color:var(--openai)">📚 Chip Huyen Ch.8 · Chip Huyen Ch.9</span><span class="tag">PSI</span><span class="tag">KS test</span><span class="tag">KL divergence</span><span class="tag">Retraining</span><span class="tag">LLM drift</span>
+        </div>
+        <p class="page-subtitle">
+          <span data-lang="en">A deployed model is a decaying asset. This note covers the three kinds of drift (data, label, concept), the statistical tests that detect them (PSI, KS, KL), the monitoring stack (Arize, WhyLabs, Evidently), retraining triggers, and the LLM-specific drifts (prompt drift, output drift) that neither book fully predicted.</span>
+          <span data-lang="zh">上线模型是会衰减的资产。本文覆盖三种漂移（数据、标签、概念）、检测它们的统计检验（PSI、KS、KL）、监控栈（Arize、WhyLabs、Evidently）、再训练触发条件，以及两本书都未完全覆盖的 LLM 专属漂移（prompt drift、output drift）。</span>
+        </p>
+      </header>
+
+      <article class="topic-prose">
+        <nav class="topic-toc">
+          <h4><span data-lang="en">On this page</span><span data-lang="zh">本页目录</span></h4>
+          <ol>
+            <li><a href="#s1"><span data-lang="en">The three drifts</span><span data-lang="zh">三种漂移</span></a></li>
+            <li><a href="#s2"><span data-lang="en">Statistical tests (PSI, KS, KL)</span><span data-lang="zh">统计检验（PSI、KS、KL）</span></a></li>
+            <li><a href="#s3"><span data-lang="en">Monitoring stack & SLOs</span><span data-lang="zh">监控栈与 SLO</span></a></li>
+            <li><a href="#s4"><span data-lang="en">Retraining triggers</span><span data-lang="zh">再训练触发条件</span></a></li>
+            <li><a href="#s5"><span data-lang="en">LLM-specific drift</span><span data-lang="zh">LLM 专属漂移</span></a></li>
+            <li><a href="#s6"><span data-lang="en">What trips up candidates</span><span data-lang="zh">候选人常见翻车点</span></a></li>
+          </ol>
+        </nav>
+
+        <div data-lang="en">
+
+        <div class="callout openai">
+          <h4>Source cross-reference</h4>
+          <p>Chip Huyen <strong>Ch.8 "Data Distribution Shifts and Monitoring"</strong> and <strong>Ch.9 "Continual Learning and Test in Production"</strong>. The terminology (covariate / label / concept drift) is from the Chapelle 2009 tutorial; Chip Huyen is the practitioner synthesis you should cite in interviews.</p>
+        </div>
+
+        <h2 id="s1">The three drifts</h2>
+        <p>A model learns a joint distribution <code>P(X, Y)</code>. Production can violate the training assumption in three distinct ways, and the response for each differs:</p>
+        <ul>
+          <li><strong>Data (covariate) drift</strong>: <code>P(X)</code> changes while <code>P(Y|X)</code> stays stable. Example: traffic mix shifts to mobile after an app launch; features like screen-size distribution move. Fix: re-weight training data or retrain with fresh features.</li>
+          <li><strong>Label drift</strong>: <code>P(Y)</code> changes. Example: fraud rate triples during a holiday. Often co-occurs with data drift. Fix: recalibrate, adjust thresholds, or retrain.</li>
+          <li><strong>Concept drift</strong>: <code>P(Y|X)</code> changes &mdash; the underlying relationship shifts. Example: a spam classifier trained pre-LLM stops catching LLM-generated phishing; the same features now mean something different. Fix: retrain is mandatory; re-weighting cannot recover concept drift.</li>
+        </ul>
+        <div class="mermaid-container"><pre class="mermaid">
+flowchart TB
+  drift{Which part of<br/>P(X,Y) changed?}
+  drift -- "P(X) only" --> d1[Covariate drift<br/>-&gt; reweight / retrain]
+  drift -- "P(Y) only" --> d2[Label drift<br/>-&gt; recalibrate / retrain]
+  drift -- "P(Y|X)" --> d3[Concept drift<br/>-&gt; retrain mandatory]
+        </pre></div>
+
+        <h2 id="s2">Statistical tests (PSI, KS, KL)</h2>
+        <p>Knowing the three drifts matters only if you can measure them. Four workhorse tests:</p>
+        <ol>
+          <li><strong>PSI (Population Stability Index)</strong> for binned univariate distributions: <code>PSI = &Sigma; (p_i &minus; q_i) &middot; ln(p_i / q_i)</code>. Rules of thumb: &lt;0.1 stable, 0.1&ndash;0.25 moderate shift, &gt;0.25 significant shift. PSI is the standard in banking; it is cheap, interpretable, and catches the common case.</li>
+          <li><strong>Kolmogorov-Smirnov (KS) test</strong>: non-parametric test on continuous distributions, uses max CDF gap. Good for small samples and heavy-tailed features. Report p-value with a Bonferroni correction if you are testing many features.</li>
+          <li><strong>KL divergence</strong>: <code>KL(p||q) = &Sigma; p log(p/q)</code>. Asymmetric; use Jensen-Shannon if you want symmetric. Strong sensitivity to tail differences; most useful when you already trust your binning.</li>
+          <li><strong>Chi-squared</strong> for categorical features.</li>
+        </ol>
+        <div class="callout tip">
+          <h4>Concrete numbers</h4>
+          <p>Monitor at two cadences: (a) <strong>hourly</strong> PSI on top-20 features with a 7-day rolling reference; (b) <strong>daily</strong> KS on each continuous feature with training distribution as reference. Alert SLO: 3 consecutive intervals over threshold. Typical false-positive rate target &lt; 2 alerts/week per model.</p>
+        </div>
+
+        <h2 id="s3">Monitoring stack &amp; SLOs</h2>
+        <p>A full monitoring stack has four layers:</p>
+        <ol>
+          <li><strong>Feature monitoring</strong>: PSI/KS/chi-squared on every input feature, plus missingness rate and unique-value drift.</li>
+          <li><strong>Prediction monitoring</strong>: output distribution drift, score calibration (Brier, ECE), and "prediction entropy" (does the model collapse to one class?).</li>
+          <li><strong>Outcome monitoring</strong>: online business metric (CTR, conversion, revenue) with confidence intervals and per-slice breakdowns.</li>
+          <li><strong>System monitoring</strong>: latency p50/p95/p99, error rate, GPU utilisation, feature-store lookup failures. Shared with non-ML services.</li>
+        </ol>
+        <p>Off-the-shelf tools: <strong>Arize AI</strong> and <strong>WhyLabs</strong> are SaaS with built-in drift dashboards and embeddings monitoring; <strong>Evidently</strong> is the dominant open-source library &mdash; it plugs into Airflow or a notebook and emits HTML/JSON drift reports. For custom stacks, Prometheus + Grafana for numerics plus Great Expectations for schema is a minimum viable combo. SageMaker Model Monitor and Vertex AI Model Monitoring are the default on their respective clouds.</p>
+
+        <h2 id="s4">Retraining triggers</h2>
+        <p>Chip Huyen Ch.9 lists four trigger policies; interviews love when you enumerate trade-offs:</p>
+        <ul>
+          <li><strong>Scheduled</strong>: every N days. Simple, predictable, wastes compute when data is stable, too slow for fast-moving domains.</li>
+          <li><strong>Data-based</strong>: retrain when drift metric crosses threshold for K consecutive windows. Sensitive to metric choice.</li>
+          <li><strong>Performance-based</strong>: retrain when online metric drops by &Delta;X vs rolling baseline. Requires labels &mdash; expensive or delayed in many domains.</li>
+          <li><strong>Continual</strong>: micro-batches every few minutes, online learning. Only justified where domain shifts within hours (news feed, fraud).</li>
+        </ul>
+        <p>A pragmatic default: <em>weekly scheduled + drift-triggered early retrain + performance-triggered emergency retrain</em>. Always pair with the shadow/canary discipline from the lifecycle page &mdash; a retrain is a new model and must go through the full rollout ladder.</p>
+
+        <h2 id="s5">LLM-specific drift</h2>
+        <p>Neither Chip Huyen book fully covers what OpenAI and Anthropic interviewers now ask. Three LLM-specific drifts:</p>
+        <ul>
+          <li><strong>Prompt drift</strong>: your prompt template includes a phrase a provider fine-tune begins handling differently (e.g. behaviour on "system: you are a helpful assistant" changes between GPT-4 minor versions). Detect by running a golden-prompt eval suite nightly and alerting on response distribution shift.</li>
+          <li><strong>Output drift</strong>: same input, different outputs, due to upstream model updates or temperature creep. Measure via output embedding similarity (sentence-transformers) against a reference fixture set, alert if cosine drops below 0.85 on &gt;5% of fixtures.</li>
+          <li><strong>User-population drift</strong>: the kinds of questions users ask shift. Detect by clustering embeddings of live prompts weekly and tracking cluster mass. Rising new clusters = new use case = new evaluation needs.</li>
+        </ul>
+        <div class="mermaid-container"><pre class="mermaid">
+flowchart LR
+  prod[Live LLM traffic] --> emb[Embed prompts]
+  emb --> cluster[Weekly cluster<br/>HDBSCAN]
+  cluster --> compare{Compare vs<br/>last week}
+  compare -- new cluster --> alert[Alert: new use case]
+  compare -- cluster mass shift --> eval[Trigger re-eval + maybe retrain]
+  prod --> golden[Run golden<br/>prompt suite]
+  golden --> sim[Output similarity<br/>vs fixtures]
+  sim --> alert
+        </pre></div>
+
+        <h2 id="s6">What trips up candidates</h2>
+        <div class="callout warn">
+          <h4>Anti-patterns</h4>
+          <ul>
+            <li><strong>"We monitor accuracy"</strong> &mdash; in most domains labels arrive days or weeks late (delayed feedback). You cannot rely on accuracy as the primary alert signal; you need feature and prediction monitoring that fires before labels land.</li>
+            <li><strong>"PSI on everything"</strong> &mdash; with 10,000 features, you will get thousands of alerts daily. Rank features by training-time importance and monitor only the top 20 aggressively.</li>
+            <li><strong>"Retrain on every drift alert"</strong> &mdash; creates a feedback loop that amplifies noise. Gate retrains on sustained drift + offline improvement test.</li>
+          </ul>
+        </div>
+        <div class="callout openai">
+          <h4>OpenAI framing</h4>
+          <p>Expect questions like "how would you know your routing model degraded?" &mdash; probe around prediction entropy and per-tenant slice metrics, since one customer's workload can mask aggregate drift.</p>
+        </div>
+        <div class="callout anthropic">
+          <h4>Anthropic framing</h4>
+          <p>Drift monitoring becomes a <em>safety signal</em>: a shift in refusal rate or jailbreak-attempt-per-1k-prompts is as important as accuracy. Expect the discussion to include "what would you escalate to the on-call safety reviewer?" &mdash; answer with clear thresholds and a human-in-the-loop path.</p>
+        </div>
+
+        </div>
+        <div data-lang="zh">
+
+        <div class="callout openai">
+          <h4>来源对照</h4>
+          <p>Chip Huyen <strong>第 8 章「数据分布偏移与监控」</strong>与 <strong>第 9 章「持续学习与线上测试」</strong>。术语（协变量/标签/概念漂移）来自 Chapelle 2009 tutorial；Chip Huyen 是面试里最值得引用的实践综合源。</p>
+        </div>
+
+        <h2 id="s1">三种漂移</h2>
+        <p>模型学的是联合分布 <code>P(X, Y)</code>。生产环境有三种打破训练假设的方式，每一种的应对不同：</p>
+        <ul>
+          <li><strong>数据（协变量）漂移</strong>：<code>P(X)</code> 变了，<code>P(Y|X)</code> 没变。例：App 发版后移动端流量上升，屏幕尺寸分布改变。对策：重加权训练数据或用新特征重训。</li>
+          <li><strong>标签漂移</strong>：<code>P(Y)</code> 变了。例：假日期间欺诈率翻三倍。常与数据漂移并发。对策：重校准、调阈值或重训。</li>
+          <li><strong>概念漂移</strong>：<code>P(Y|X)</code> 变了——底层关系变了。例：LLM 时代前训练的垃圾分类器抓不到 LLM 生成的钓鱼，同样特征含义已变。对策：必须重训，重加权救不了概念漂移。</li>
+        </ul>
+        <div class="mermaid-container"><pre class="mermaid">
+flowchart TB
+  drift{P(X,Y) 的哪部分<br/>变了？}
+  drift -- "仅 P(X)" --> d1[协变量漂移<br/>-&gt; 重加权/重训]
+  drift -- "仅 P(Y)" --> d2[标签漂移<br/>-&gt; 重校准/重训]
+  drift -- "P(Y|X)" --> d3[概念漂移<br/>-&gt; 必须重训]
+        </pre></div>
+
+        <h2 id="s2">统计检验（PSI、KS、KL）</h2>
+        <p>三种漂移必须能被测出来才有意义。四个常用检验：</p>
+        <ol>
+          <li><strong>PSI（群体稳定性指数）</strong>，对分箱单变量：<code>PSI = &Sigma; (p_i &minus; q_i) &middot; ln(p_i / q_i)</code>。经验阈值：&lt;0.1 稳定，0.1&ndash;0.25 中度偏移，&gt;0.25 显著偏移。银行业标配，便宜、可解释、能抓常见情况。</li>
+          <li><strong>KS 检验</strong>：连续分布的非参检验，用 CDF 最大差。适合小样本和重尾特征。多特征同时测时要做 Bonferroni 校正。</li>
+          <li><strong>KL 散度</strong>：<code>KL(p||q) = &Sigma; p log(p/q)</code>，不对称——想对称请用 JS 散度。对尾部差异敏感，适合已信任分箱的场景。</li>
+          <li><strong>卡方</strong>：处理类别型特征。</li>
+        </ol>
+        <div class="callout tip">
+          <h4>具体数字</h4>
+          <p>两种监控节奏：(a) <strong>每小时</strong>对 Top-20 特征算 PSI，参考窗口 7 天滚动；(b) <strong>每日</strong>对连续特征做 KS，参考训练分布。告警 SLO：连续 3 个窗口越阈值。单模型假阳性目标 &lt; 2 次/周。</p>
+        </div>
+
+        <h2 id="s3">监控栈与 SLO</h2>
+        <p>完整监控栈有四层：</p>
+        <ol>
+          <li><strong>特征监控</strong>：每个输入的 PSI/KS/卡方，加上缺失率与唯一值漂移。</li>
+          <li><strong>预测监控</strong>：输出分布漂移、校准度（Brier、ECE）、「预测熵」（是否塌缩到某一类）。</li>
+          <li><strong>结果监控</strong>：线上业务指标（CTR、转化、收入），含置信区间与分片分解。</li>
+          <li><strong>系统监控</strong>：延迟 p50/p95/p99、错误率、GPU 利用率、特征查询失败。与非 ML 服务共用。</li>
+        </ol>
+        <p>现成工具：<strong>Arize AI</strong>、<strong>WhyLabs</strong> 是 SaaS，自带漂移与 embedding 监控面板；<strong>Evidently</strong> 是主流开源库，可接入 Airflow 或 Notebook 输出 HTML/JSON 漂移报告。自研最小组合：Prometheus + Grafana 看数值 + Great Expectations 看 schema。SageMaker Model Monitor、Vertex AI Model Monitoring 分别是 AWS / GCP 的默认选择。</p>
+
+        <h2 id="s4">再训练触发条件</h2>
+        <p>Chip Huyen Ch.9 列出四种触发策略，面试官喜欢看你把权衡讲清楚：</p>
+        <ul>
+          <li><strong>定时</strong>：每 N 天一次。简单、可预期；数据稳定时浪费算力，高速变化场景跟不上。</li>
+          <li><strong>数据触发</strong>：漂移指标连续 K 个窗口越阈值。对指标选择敏感。</li>
+          <li><strong>性能触发</strong>：线上指标相对滚动基线下降 &Delta;X 时触发。需要标签——很多场景标签贵或迟到。</li>
+          <li><strong>持续学习</strong>：分钟级微批在线学习。只有在领域几小时内就变化（新闻流、欺诈）时才值得。</li>
+        </ul>
+        <p>务实默认：<em>周定时 + 漂移触发提前重训 + 性能触发紧急重训</em>。必须配合生命周期页讲过的 shadow/canary 流程——重训出来的就是新模型，必须走完灰度梯子。</p>
+
+        <h2 id="s5">LLM 专属漂移</h2>
+        <p>两本 Chip Huyen 都未完全覆盖 OpenAI / Anthropic 现在会问的 LLM 场景。三种 LLM 专属漂移：</p>
+        <ul>
+          <li><strong>Prompt drift</strong>：prompt 模板里的一句话在模型提供方小版本更新后行为变化（例如 GPT-4 两个小版本对「system: you are a helpful assistant」的处理不同）。对策：夜间跑「金 prompt 套件」，告警响应分布偏移。</li>
+          <li><strong>Output drift</strong>：同输入输出变了，来源可能是上游模型更新或温度漂移。用 sentence-transformers 把输出 embed，对固定 fixture 集做相似度，&gt;5% 的 fixture 余弦 &lt; 0.85 时告警。</li>
+          <li><strong>用户群漂移</strong>：用户提问的种类变化。每周对线上 prompt embedding 做聚类，追踪簇质量。新簇涌现 = 新用例 = 需要新评估。</li>
+        </ul>
+        <div class="mermaid-container"><pre class="mermaid">
+flowchart LR
+  prod[线上 LLM 流量] --> emb[Prompt embedding]
+  emb --> cluster[每周 HDBSCAN<br/>聚类]
+  cluster --> compare{对比上周}
+  compare -- 新簇 --> alert[告警：新用例]
+  compare -- 簇质量偏移 --> eval[触发再评估 / 重训]
+  prod --> golden[跑金 prompt<br/>套件]
+  golden --> sim[输出相似度<br/>对比 fixture]
+  sim --> alert
+        </pre></div>
+
+        <h2 id="s6">候选人常见翻车点</h2>
+        <div class="callout warn">
+          <h4>反模式</h4>
+          <ul>
+            <li><strong>「我们监控准确率」</strong>——多数业务的标签延迟几天到几周。把准确率当主告警信号会慢到看不见事故；必须靠特征和预测监控提前发现。</li>
+            <li><strong>「给所有特征都上 PSI」</strong>——10,000 个特征每天会出几千条告警。按训练期重要性取前 20 重点监控即可。</li>
+            <li><strong>「漂移一响就重训」</strong>——会形成放大噪声的反馈循环。重训要用「持续漂移 + 离线改进测试」把关。</li>
+          </ul>
+        </div>
+        <div class="callout openai">
+          <h4>OpenAI 侧重</h4>
+          <p>常考「你怎么知道路由模型退化了？」——重点讲预测熵与按租户分片的指标，因为某个客户的流量会掩盖整体漂移。</p>
+        </div>
+        <div class="callout anthropic">
+          <h4>Anthropic 侧重</h4>
+          <p>漂移监控本身就是<em>安全信号</em>：拒答率变化或每千次提问中的越狱尝试数跟准确率一样重要。常被问「你会把什么上报给值班的安全审核员？」——答出清晰阈值与人工介入流程。</p>
+        </div>
+
+        </div>
+      </article>
+
+      <section class="topic-footer-links">
+        <a href="./recommenders.html"><span class="label"><span data-lang="en">Next</span><span data-lang="zh">下一篇</span></span><strong><span data-lang="en">Recommenders & Ranking</span><span data-lang="zh">推荐与排序</span></strong></a>
+        <a href="./ml-lifecycle.html"><span class="label"><span data-lang="en">Prev</span><span data-lang="zh">上一篇</span></span><strong><span data-lang="en">ML Lifecycle & Platform</span><span data-lang="zh">ML 生命周期与平台</span></strong></a>
+        <a href="../../arena/questions/o13-nsfw-detection.html"><span class="label"><span data-lang="en">Arena</span><span data-lang="zh">真题</span></span><strong><span data-lang="en">O13 · NSFW detection at scale</span><span data-lang="zh">O13 · 大规模 NSFW 检测</span></strong></a>
+        <a href="../llm/llm-evaluation.html"><span class="label"><span data-lang="en">Related</span><span data-lang="zh">相关</span></span><strong><span data-lang="en">LLM Evaluation</span><span data-lang="zh">LLM 评估</span></strong></a>
+      </section>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <p>
+        <span data-lang="en">© SD-Guide · Built for OpenAI &amp; Anthropic system design prep. Not affiliated with either company.</span>
+        <span data-lang="zh">© SD-Guide · 为 OpenAI 与 Anthropic 系统设计面试准备。与两家公司无关联。</span>
+      </p>
+    </div>
+  </footer>
+
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

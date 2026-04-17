@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>A27. Design a Banking App — SD-Guide</title>
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../index.html" class="active"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../resources/index.html"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../about/index.html"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a>
+        <span class="sep">›</span>
+        <a href="../index.html"><span data-lang="en">Arena</span><span data-lang="zh">竞技场</span></a>
+        <span class="sep">›</span>
+        <span>A27</span>
+      </div>
+
+      <article class="prose wide">
+        <div class="question-meta" style="margin-bottom:1rem;">
+          <span class="tag company-anthropic">Anthropic</span>
+          <span class="tag freq-2">★★ Frequent</span>
+          <span class="tag difficulty-medium">Medium-Hard</span>
+          <span class="tag">ACID</span><span class="tag">Ledger</span><span class="tag">Audit</span>
+        </div>
+
+        <h1>
+          <span data-lang="en">A27 · Design a Banking App</span>
+          <span data-lang="zh">A27 · 设计银行应用</span>
+        </h1>
+
+        <div class="callout anthropic">
+          <h4><span data-lang="en">Verified source</span><span data-lang="zh">经核实出处</span></h4>
+          <p>Prompt: "Design a Banking App." — interviewing.io. Credibility <strong>C/D</strong>.</p>
+        </div>
+
+        <h2><span data-lang="en">Core concerns (traditional SD)</span><span data-lang="zh">核心考察（传统系统设计）</span></h2>
+<ul><li><span data-lang="en"><strong>Double-entry ledger</strong>: every transfer = two entries (debit + credit). Enforce <code>SUM(balance) = 0</code> invariant.</span><span data-lang="zh"><strong>双重记账</strong>：每次转账 = 两条记录（借 + 贷）。强制 <code>SUM(balance) = 0</code> 不变量。</span></li><li><span data-lang="en"><strong>Idempotent transfers</strong>: idempotency_key; safe retries.</span><span data-lang="zh"><strong>幂等转账</strong>：idempotency_key；重试安全。</span></li><li><span data-lang="en"><strong>Two-phase commit</strong> or <strong>saga</strong> for cross-account / cross-system transfers.</span><span data-lang="zh"><strong>两阶段提交</strong>或<strong>Saga</strong>用于跨账户/跨系统转账。</span></li><li><span data-lang="en"><strong>Audit log</strong>: append-only, cryptographically chained entries.</span><span data-lang="zh"><strong>审计日志</strong>：追加式、密码学链接条目。</span></li><li><span data-lang="en"><strong>Fraud detection</strong>: rules + ML model; decision latency &lt; 100ms.</span><span data-lang="zh"><strong>反欺诈</strong>：规则 + ML；决策延迟 &lt; 100ms。</span></li></ul><h2><span data-lang="en">Data model</span><span data-lang="zh">数据模型</span></h2>
+<pre><code>Account(account_id, owner_id, currency, status)
+LedgerEntry(entry_id, account_id, amount, currency, ref_tx_id, created_at)
+-- Invariant: for each tx, SUM(entries.amount) = 0
+Transaction(tx_id, idempotency_key, status, initiated_at)</code></pre>
+
+        <h2><span data-lang="en">Related study-guide topics</span><span data-lang="zh">相关学习手册专题</span></h2>
+        <ul><li><a href="../../guide/distributed/transactions.html"><span data-lang="en">Transactions &amp; isolation</span><span data-lang="zh">事务与隔离</span></a></li></ul>
+      </article>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

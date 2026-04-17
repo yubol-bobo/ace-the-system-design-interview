@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Resources — SD-Guide</title>
+  <meta name="description" content="Curated books, blogs, courses, platforms, papers and repos for OpenAI &amp; Anthropic system design interview prep.">
+  <link rel="stylesheet" href="../../assets/css/main.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../arena/index.html" data-match="/arena"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../guide/index.html" data-match="/guide"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="./index.html" class="active" data-match="/resources"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../about/index.html" data-match="/about"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+
+      <div class="breadcrumb">
+        <a href="../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a>
+        <span>›</span>
+        <span><span data-lang="en">Resources</span><span data-lang="zh">资源</span></span>
+      </div>
+
+      <header class="page-header">
+        <h1 class="page-title">
+          <span data-lang="en">Resources</span>
+          <span data-lang="zh">资源汇总</span>
+        </h1>
+        <p class="page-subtitle">
+          <span data-lang="en">Everything you should read, watch, practice against, and star — ranked and annotated for OpenAI and Anthropic system design interview prep. Start with the top three books, layer in the blogs, then use the platforms for drill practice.</span>
+          <span data-lang="zh">为 OpenAI 与 Anthropic 系统设计面试整理的「该读、该看、该练、该 star」清单，全部排名 + 注释。顺序建议：先吃透前三本书，叠加博客，再用平台做真题训练。</span>
+        </p>
+      </header>
+
+      <!-- =================================================== -->
+      <!-- 1. Canonical books, ranked                          -->
+      <!-- =================================================== -->
+      <section class="guide-section">
+        <h2 class="guide-section-title">
+          <span data-lang="en">① Canonical Books, Ranked</span>
+          <span data-lang="zh">① 核心书单（排名）</span>
+        </h2>
+        <p class="guide-section-lead">
+          <span data-lang="en">Seven books covering distributed systems, ML systems, LLM systems, agents, and the interview process itself. Rank reflects leverage per hour of reading for OpenAI/Anthropic prep, not general quality.</span>
+          <span data-lang="zh">涵盖分布式系统、ML 系统、LLM 系统、Agent 与面试流程的七本书。排名按「每小时阅读对 OpenAI/Anthropic 准备的杠杆」，不代表整体好坏。</span>
+        </p>
+        <div class="callout">
+          <table style="width:100%;border-collapse:collapse;">
+            <thead>
+              <tr style="border-bottom:1px solid var(--border);">
+                <th style="text-align:left;padding:0.5rem;"><span data-lang="en">#</span><span data-lang="zh">排名</span></th>
+                <th style="text-align:left;padding:0.5rem;"><span data-lang="en">Title / Author</span><span data-lang="zh">书名 / 作者</span></th>
+                <th style="text-align:left;padding:0.5rem;"><span data-lang="en">Why</span><span data-lang="zh">为何必读</span></th>
+                <th style="text-align:left;padding:0.5rem;"><span data-lang="en">Key chapters</span><span data-lang="zh">关键章节</span></th>
+                <th style="text-align:left;padding:0.5rem;"><span data-lang="en">Best for</span><span data-lang="zh">最适合</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style="border-bottom:1px solid var(--border);">
+                <td style="padding:0.5rem;"><span class="tag">1</span></td>
+                <td style="padding:0.5rem;"><strong>Designing Data-Intensive Applications</strong><br/>Martin Kleppmann · O'Reilly · 2017</td>
+                <td style="padding:0.5rem;"><span data-lang="en">The distributed-systems bible. Every deep-dive at either company expects DDIA-level mental models.</span><span data-lang="zh">分布式系统圣经。两家公司的深挖都默认你掌握 DDIA 级心智模型。</span></td>
+                <td style="padding:0.5rem;">Ch.5 (Replication), Ch.7 (Transactions), Ch.9 (Consensus), Ch.11 (Streams)</td>
+                <td style="padding:0.5rem;"><span class="tag">distributed systems</span></td>
+              </tr>
+              <tr style="border-bottom:1px solid var(--border);">
+                <td style="padding:0.5rem;"><span class="tag">2</span></td>
+                <td style="padding:0.5rem;"><strong>Designing Machine Learning Systems</strong><br/>Chip Huyen · O'Reilly · 2022</td>
+                <td style="padding:0.5rem;"><span data-lang="en">Canonical ML-system lifecycle reference. Terminology in most ML interviews comes directly from this book.</span><span data-lang="zh">ML 系统生命周期的权威参考。面试里多数术语直接出自本书。</span></td>
+                <td style="padding:0.5rem;">Ch.7 (Deployment), Ch.8 (Drift), Ch.9 (Continual), Ch.10 (MLOps)</td>
+                <td style="padding:0.5rem;"><span class="tag">ML systems</span></td>
+              </tr>
+              <tr style="border-bottom:1px solid var(--border);">
+                <td style="padding:0.5rem;"><span class="tag">3</span></td>
+                <td style="padding:0.5rem;"><strong>System Design Interview Vol. 1</strong><br/>Alex Xu · 2nd ed · 2020</td>
+                <td style="padding:0.5rem;"><span data-lang="en">The interview-ready templates. Best source of practice answers with clear diagrams.</span><span data-lang="zh">最接近面试的模板书，带清晰图示的练习答案首选。</span></td>
+                <td style="padding:0.5rem;">Ch.3 (framework), Ch.4 (rate limiter), Ch.6 (KV store), Ch.11 (news feed)</td>
+                <td style="padding:0.5rem;"><span class="tag">interview templates</span></td>
+              </tr>
+              <tr style="border-bottom:1px solid var(--border);">
+                <td style="padding:0.5rem;"><span class="tag">4</span></td>
+                <td style="padding:0.5rem;"><strong>Agentic Design Patterns</strong><br/>Antonio Gulli · Springer · 2024</td>
+                <td style="padding:0.5rem;"><span data-lang="en">The canonical taxonomy of agent patterns — routing, reflection, MCP, A2A, guardrails. Directly relevant to Anthropic agent questions.</span><span data-lang="zh">Agent 模式的权威分类：routing、reflection、MCP、A2A、guardrails。Anthropic agent 题目直接命中。</span></td>
+                <td style="padding:0.5rem;">Ch.5 (Tool Use), Ch.7 (Multi-Agent), Ch.14 (RAG), Ch.18 (Guardrails)</td>
+                <td style="padding:0.5rem;"><span class="tag">agents · safety</span></td>
+              </tr>
+              <tr style="border-bottom:1px solid var(--border);">
+                <td style="padding:0.5rem;"><span class="tag">5</span></td>
+                <td style="padding:0.5rem;"><strong>Acing the System Design Interview</strong><br/>Zhiyong Tan · Manning · 2024</td>
+                <td style="padding:0.5rem;"><span data-lang="en">Best single source on the interview process itself — NFRs, reflection, self-assessment, functional partitioning.</span><span data-lang="zh">面试流程最强单本来源：NFR、反思、自评、功能拆分。</span></td>
+                <td style="padding:0.5rem;">Ch.1-3 (framework+NFRs), Ch.4 (DB scaling), Ch.13 (CDN), Ch.16 (feed)</td>
+                <td style="padding:0.5rem;"><span class="tag">interview process</span></td>
+              </tr>
+              <tr style="border-bottom:1px solid var(--border);">
+                <td style="padding:0.5rem;"><span class="tag">6</span></td>
+                <td style="padding:0.5rem;"><strong>Machine Learning Design Interview</strong><br/>Khang Pham · 2022</td>
+                <td style="padding:0.5rem;"><span data-lang="en">Case-by-case ML architectures from YouTube, Feed, Airbnb, LinkedIn. Complements Chip Huyen.</span><span data-lang="zh">YouTube、Feed、Airbnb、LinkedIn 的逐案 ML 架构；与 Chip Huyen 互补。</span></td>
+                <td style="padding:0.5rem;">Ch.2 (primer), Ch.3 (YouTube), Ch.4 (feed), Ch.7 (Airbnb), Ch.8 (search)</td>
+                <td style="padding:0.5rem;"><span class="tag">ML case studies</span></td>
+              </tr>
+              <tr>
+                <td style="padding:0.5rem;"><span class="tag">7</span></td>
+                <td style="padding:0.5rem;"><strong>ByteByteGo Big Archive 2023</strong><br/>Alex Xu (compilation) · 2023</td>
+                <td style="padding:0.5rem;"><span data-lang="en">Visual cheat-sheet for breadth recall — latency numbers, load balancing, DB sharding, real-world tech stacks.</span><span data-lang="zh">宽度记忆的视觉速查：延迟数字、负载均衡、分片、公司真实技术栈。</span></td>
+                <td style="padding:0.5rem;"><span data-lang="en">Latency numbers; LB algorithms; DB sharding; Kafka deep dive; Netflix/Uber stacks</span><span data-lang="zh">延迟数字；LB 算法；分片；Kafka；Netflix/Uber 架构</span></td>
+                <td style="padding:0.5rem;"><span class="tag">visual recall</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- =================================================== -->
+      <!-- 2. Essential blogs & newsletters                    -->
+      <!-- =================================================== -->
+      <section class="guide-section">
+        <h2 class="guide-section-title">
+          <span data-lang="en">② Essential Blogs &amp; Newsletters</span>
+          <span data-lang="zh">② 必读博客与 Newsletter</span>
+        </h2>
+        <p class="guide-section-lead">
+          <span data-lang="en">Books give you structure; blogs give you freshness. These eight cover 90% of what a prepared candidate cites in 2026.</span>
+          <span data-lang="zh">书提供结构，博客提供新鲜度。以下八个覆盖 2026 年一位合格候选人引用的 90%。</span>
+        </p>
+        <div class="guide-grid">
+          <a class="guide-card" href="https://huyenchip.com" target="_blank" rel="noopener">
+            <h3><span data-lang="en">Chip Huyen</span><span data-lang="zh">Chip Huyen</span></h3>
+            <p><span data-lang="en">huyenchip.com — long-form essays on ML systems, LLM stack, and agent evals; author of DMLS.</span><span data-lang="zh">huyenchip.com——ML 系统、LLM 栈、Agent 评估的长文；DMLS 作者。</span></p>
+          </a>
+          <a class="guide-card" href="https://eugeneyan.com" target="_blank" rel="noopener">
+            <h3><span data-lang="en">Eugene Yan</span><span data-lang="zh">Eugene Yan</span></h3>
+            <p><span data-lang="en">eugeneyan.com — pragmatic ML patterns from Amazon; great on RAG, evaluation, and product-ML.</span><span data-lang="zh">eugeneyan.com——Amazon 视角的务实 ML 模式；RAG、评估、产品 ML 写得极好。</span></p>
+          </a>
+          <a class="guide-card" href="https://hamel.dev" target="_blank" rel="noopener">
+            <h3><span data-lang="en">Hamel Husain</span><span data-lang="zh">Hamel Husain</span></h3>
+            <p><span data-lang="en">hamel.dev — hands-on LLM evals, fine-tuning field notes, and practical agent debugging.</span><span data-lang="zh">hamel.dev——动手的 LLM 评估、微调笔记、Agent 调试实战。</span></p>
+          </a>
+          <a class="guide-card" href="https://www.anthropic.com/news" target="_blank" rel="noopener">
+            <h3><span data-lang="en">Anthropic Engineering</span><span data-lang="zh">Anthropic 工程博客</span></h3>
+            <p><span data-lang="en">anthropic.com/news — Constitutional AI, RSP, interpretability, tool use. Required reading before any Anthropic round.</span><span data-lang="zh">anthropic.com/news——CAI、RSP、可解释性、工具调用。Anthropic 面试前必读。</span></p>
+          </a>
+          <a class="guide-card" href="https://openai.com/blog" target="_blank" rel="noopener">
+            <h3><span data-lang="en">OpenAI Engineering</span><span data-lang="zh">OpenAI 工程博客</span></h3>
+            <p><span data-lang="en">openai.com/blog — model launches, system cards, Preparedness framework, API best practices.</span><span data-lang="zh">openai.com/blog——模型发布、system card、Preparedness 框架、API 最佳实践。</span></p>
+          </a>
+          <a class="guide-card" href="http://highscalability.com" target="_blank" rel="noopener">
+            <h3><span data-lang="en">High Scalability</span><span data-lang="zh">High Scalability</span></h3>
+            <p><span data-lang="en">highscalability.com — decade of "how X scaled" case studies across Netflix, Discord, Reddit, WhatsApp.</span><span data-lang="zh">highscalability.com——十年的「X 如何扩容」案例库，涵盖 Netflix、Discord、Reddit、WhatsApp。</span></p>
+          </a>
+          <a class="guide-card" href="https://aws.amazon.com/blogs/architecture/" target="_blank" rel="noopener">
+            <h3><span data-lang="en">AWS / GCP Architecture</span><span data-lang="zh">AWS / GCP 架构博客</span></h3>
+            <p><span data-lang="en">aws.amazon.com/blogs/architecture &amp; cloud.google.com/blog — reference architectures used in production at Fortune 500 customers.</span><span data-lang="zh">AWS 与 Google Cloud 架构博客——500 强客户生产级的参考架构。</span></p>
+          </a>
+          <a class="guide-card" href="https://www.deeplearning.ai/the-batch/" target="_blank" rel="noopener">
+            <h3><span data-lang="en">The Batch</span><span data-lang="zh">The Batch</span></h3>
+            <p><span data-lang="en">deeplearning.ai/the-batch — Andrew Ng's weekly summary of ML / LLM news, with editorial commentary.</span><span data-lang="zh">deeplearning.ai/the-batch——吴恩达团队每周 ML/LLM 速报，带解读。</span></p>
+          </a>
+        </div>
+      </section>
+
+      <!-- =================================================== -->
+      <!-- 3. Courses                                          -->
+      <!-- =================================================== -->
+      <section class="guide-section">
+        <h2 class="guide-section-title">
+          <span data-lang="en">③ Courses</span>
+          <span data-lang="zh">③ 课程</span>
+        </h2>
+        <p class="guide-section-lead">
+          <span data-lang="en">Pick one paid course; do not buy multiple. They overlap heavily and the returns on a second course are low.</span>
+          <span data-lang="zh">付费课程挑一个即可，别重复买。内容高度重叠，第二门的边际收益很低。</span>
+        </p>
+        <div class="guide-grid">
+          <a class="guide-card" href="https://bytebytego.com" target="_blank" rel="noopener">
+            <h3><span data-lang="en">ByteByteGo</span><span data-lang="zh">ByteByteGo</span></h3>
+            <p><span data-lang="en">bytebytego.com — Alex Xu's video course; same visual style as the books. Good for passive review.</span><span data-lang="zh">bytebytego.com——Alex Xu 的视频课，延续书的视觉风格；适合被动复习。</span></p>
+            <span class="tag"><span data-lang="en">subscription</span><span data-lang="zh">订阅制</span></span>
+          </a>
+          <a class="guide-card" href="https://www.educative.io/courses/grokking-the-system-design-interview" target="_blank" rel="noopener">
+            <h3><span data-lang="en">Grokking the System Design Interview</span><span data-lang="zh">Grokking 系统设计面试</span></h3>
+            <p><span data-lang="en">Educative.io — the longest-standing interactive course; text-based with inline diagrams.</span><span data-lang="zh">Educative.io——口碑最老的交互式课程，文本为主，内嵌图示。</span></p>
+            <span class="tag"><span data-lang="en">one-time</span><span data-lang="zh">一次买断</span></span>
+          </a>
+          <a class="guide-card" href="https://hellointerview.com" target="_blank" rel="noopener">
+            <h3><span data-lang="en">Hello Interview</span><span data-lang="zh">Hello Interview</span></h3>
+            <p><span data-lang="en">hellointerview.com — FAANG-focused with mock-interview videos; newer and targeted at L5+/staff.</span><span data-lang="zh">hellointerview.com——FAANG 导向，含模面视频；较新，面向 L5+/Staff 级。</span></p>
+            <span class="tag"><span data-lang="en">freemium</span><span data-lang="zh">半免费</span></span>
+          </a>
+          <a class="guide-card" href="https://www.tryexponent.com" target="_blank" rel="noopener">
+            <h3><span data-lang="en">Exponent</span><span data-lang="zh">Exponent</span></h3>
+            <p><span data-lang="en">tryexponent.com — peer mock interviews + curated video answers; strongest for actually practicing out loud.</span><span data-lang="zh">tryexponent.com——同伴互练 + 精选视频答案；练「说」这项最强。</span></p>
+            <span class="tag"><span data-lang="en">subscription</span><span data-lang="zh">订阅制</span></span>
+          </a>
+        </div>
+      </section>
+
+      <!-- =================================================== -->
+      <!-- 4. Interview practice platforms                     -->
+      <!-- =================================================== -->
+      <section class="guide-section">
+        <h2 class="guide-section-title">
+          <span data-lang="en">④ Interview Practice Platforms</span>
+          <span data-lang="zh">④ 面试练习平台</span>
+        </h2>
+        <p class="guide-section-lead">
+          <span data-lang="en">Cross-reference what interviewers at OpenAI and Anthropic are actually asking in the last 3 months. Signal-to-noise varies; use multiple.</span>
+          <span data-lang="zh">交叉验证过去 3 个月 OpenAI 与 Anthropic 面试官实际在问什么。信噪比差异大，建议多平台对照。</span>
+        </p>
+        <div class="guide-grid">
+          <a class="guide-card" href="https://leetcode.com/discuss/interview-question/system-design" target="_blank" rel="noopener">
+            <h3><span data-lang="en">LeetCode Discuss — System Design</span><span data-lang="zh">LeetCode Discuss · 系统设计</span></h3>
+            <p><span data-lang="en">leetcode.com/discuss — search by company tag ("OpenAI", "Anthropic") for freshest leaks.</span><span data-lang="zh">leetcode.com/discuss——按公司标签搜「OpenAI」「Anthropic」可看最新泄题。</span></p>
+          </a>
+          <a class="guide-card" href="https://www.teamblind.com" target="_blank" rel="noopener">
+            <h3><span data-lang="en">TeamBlind</span><span data-lang="zh">TeamBlind</span></h3>
+            <p><span data-lang="en">teamblind.com — search "Anthropic system design" and "OpenAI onsite". Often has loop structure, interviewer names, and comp.</span><span data-lang="zh">teamblind.com——搜「Anthropic system design」「OpenAI onsite」常能拿到面试流程、面试官风格、薪资。</span></p>
+          </a>
+          <a class="guide-card" href="https://www.jointaro.com" target="_blank" rel="noopener">
+            <h3><span data-lang="en">Jointaro</span><span data-lang="zh">Jointaro</span></h3>
+            <p><span data-lang="en">jointaro.com — senior-engineer community, staff-level interview threads, coaching sessions.</span><span data-lang="zh">jointaro.com——高级工程师社区，Staff 级面试帖，付费 coaching。</span></p>
+          </a>
+          <a class="guide-card" href="https://prachub.com" target="_blank" rel="noopener">
+            <h3><span data-lang="en">PracHub</span><span data-lang="zh">PracHub</span></h3>
+            <p><span data-lang="en">prachub.com — crowd-sourced interview-question DB; tag-filter by company + round.</span><span data-lang="zh">prachub.com——众包面经库，可按公司 + 轮次筛选。</span></p>
+          </a>
+          <a class="guide-card" href="https://www.glassdoor.com" target="_blank" rel="noopener">
+            <h3><span data-lang="en">Glassdoor</span><span data-lang="zh">Glassdoor</span></h3>
+            <p><span data-lang="en">glassdoor.com — search "Anthropic interview questions" / "OpenAI interview questions". Older but broad.</span><span data-lang="zh">glassdoor.com——搜 Anthropic / OpenAI 面试题。陈旧但面广。</span></p>
+          </a>
+        </div>
+      </section>
+
+      <!-- =================================================== -->
+      <!-- 5. Key papers to memorise                           -->
+      <!-- =================================================== -->
+      <section class="guide-section">
+        <h2 class="guide-section-title">
+          <span data-lang="en">⑤ Key Papers to Memorise</span>
+          <span data-lang="zh">⑤ 必背论文</span>
+        </h2>
+        <p class="guide-section-lead">
+          <span data-lang="en">You do not need to have read each end-to-end — but you must know the core claim, the key numbers, and the one diagram each paper is famous for. Interviewers love "so what's the intuition behind X" questions.</span>
+          <span data-lang="zh">不必一字不落地读完——但必须会讲每篇的核心主张、关键数字和标志性图。面试官很爱问「X 背后的直觉是什么」。</span>
+        </p>
+        <div class="callout">
+          <table style="width:100%;border-collapse:collapse;">
+            <thead>
+              <tr style="border-bottom:1px solid var(--border);">
+                <th style="text-align:left;padding:0.5rem;"><span data-lang="en">Paper</span><span data-lang="zh">论文</span></th>
+                <th style="text-align:left;padding:0.5rem;"><span data-lang="en">Year</span><span data-lang="zh">年份</span></th>
+                <th style="text-align:left;padding:0.5rem;"><span data-lang="en">Why it matters</span><span data-lang="zh">为何重要</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style="border-bottom:1px solid var(--border);">
+                <td style="padding:0.5rem;"><a href="https://www.allthingsdistributed.com/files/amazon-dynamo-sosp2007.pdf" target="_blank" rel="noopener">Dynamo</a></td>
+                <td style="padding:0.5rem;">2007</td>
+                <td style="padding:0.5rem;"><span data-lang="en">Eventually consistent KV store; consistent hashing + quorum + vector clocks. Alex Xu Ch.6 is a direct descendant.</span><span data-lang="zh">最终一致的 KV 存储；一致性哈希+quorum+vector clock。Alex Xu 第 6 章即其直系后裔。</span></td>
+              </tr>
+              <tr style="border-bottom:1px solid var(--border);">
+                <td style="padding:0.5rem;"><a href="https://research.google/pubs/bigtable-a-distributed-storage-system-for-structured-data-2/" target="_blank" rel="noopener">Bigtable</a></td>
+                <td style="padding:0.5rem;">2006</td>
+                <td style="padding:0.5rem;"><span data-lang="en">LSM-tree-based wide column store; direct ancestor of HBase, Cassandra, ScyllaDB.</span><span data-lang="zh">基于 LSM 的宽列存储；HBase、Cassandra、ScyllaDB 的直系祖先。</span></td>
+              </tr>
+              <tr style="border-bottom:1px solid var(--border);">
+                <td style="padding:0.5rem;"><a href="https://notes.stephenholiday.com/Kafka.pdf" target="_blank" rel="noopener">Kafka</a></td>
+                <td style="padding:0.5rem;">2011</td>
+                <td style="padding:0.5rem;"><span data-lang="en">Durable, partitioned, replayable log. The default answer to "how do your services talk?"</span><span data-lang="zh">持久、分区、可重放日志。「你的服务之间怎么通信」的默认答案。</span></td>
+              </tr>
+              <tr style="border-bottom:1px solid var(--border);">
+                <td style="padding:0.5rem;"><a href="https://research.google/pubs/mapreduce-simplified-data-processing-on-large-clusters/" target="_blank" rel="noopener">MapReduce</a></td>
+                <td style="padding:0.5rem;">2004</td>
+                <td style="padding:0.5rem;"><span data-lang="en">Batch-processing abstraction that launched the entire big-data ecosystem.</span><span data-lang="zh">启动整个大数据生态的批处理抽象。</span></td>
+              </tr>
+              <tr style="border-bottom:1px solid var(--border);">
+                <td style="padding:0.5rem;"><a href="https://raft.github.io/raft.pdf" target="_blank" rel="noopener">Raft</a></td>
+                <td style="padding:0.5rem;">2014</td>
+                <td style="padding:0.5rem;"><span data-lang="en">Understandable consensus. Know leader election, log replication, and safety properties.</span><span data-lang="zh">可理解版的共识。leader 选举、日志复制、安全性属性要能讲。</span></td>
+              </tr>
+              <tr style="border-bottom:1px solid var(--border);">
+                <td style="padding:0.5rem;"><a href="https://arxiv.org/abs/2309.06180" target="_blank" rel="noopener">vLLM / PagedAttention</a></td>
+                <td style="padding:0.5rem;">2023</td>
+                <td style="padding:0.5rem;"><span data-lang="en">Kwon et al. — KV cache as paged memory; 2-4x throughput over HuggingFace. Foundational for LLM serving interviews.</span><span data-lang="zh">Kwon 等——KV cache 分页管理，相对 HF 吞吐 2-4x。LLM 推理面试必备。</span></td>
+              </tr>
+              <tr style="border-bottom:1px solid var(--border);">
+                <td style="padding:0.5rem;"><a href="https://arxiv.org/abs/2205.14135" target="_blank" rel="noopener">FlashAttention</a></td>
+                <td style="padding:0.5rem;">2022</td>
+                <td style="padding:0.5rem;"><span data-lang="en">Dao et al. — IO-aware attention kernel; linear memory instead of quadratic. Enables long-context training.</span><span data-lang="zh">Dao 等——IO 感知 attention kernel；线性内存代替二次方。使长上下文训练成为可能。</span></td>
+              </tr>
+              <tr style="border-bottom:1px solid var(--border);">
+                <td style="padding:0.5rem;"><a href="https://arxiv.org/abs/2211.17192" target="_blank" rel="noopener">Speculative Decoding</a></td>
+                <td style="padding:0.5rem;">2023</td>
+                <td style="padding:0.5rem;"><span data-lang="en">Leviathan et al. — draft-verify loop gives 2-3x decode speedup without quality loss.</span><span data-lang="zh">Leviathan 等——draft-verify 循环，质量无损下解码 2-3x 提速。</span></td>
+              </tr>
+              <tr style="border-bottom:1px solid var(--border);">
+                <td style="padding:0.5rem;"><a href="https://arxiv.org/abs/2212.08073" target="_blank" rel="noopener">Constitutional AI</a></td>
+                <td style="padding:0.5rem;">2022</td>
+                <td style="padding:0.5rem;"><span data-lang="en">Bai et al. — self-critique by written principles; foundation of Anthropic's alignment stack.</span><span data-lang="zh">Bai 等——按书面原则自我批判；Anthropic 对齐栈的地基。</span></td>
+              </tr>
+              <tr style="border-bottom:1px solid var(--border);">
+                <td style="padding:0.5rem;"><a href="https://arxiv.org/abs/2005.14165" target="_blank" rel="noopener">GPT-3</a></td>
+                <td style="padding:0.5rem;">2020</td>
+                <td style="padding:0.5rem;"><span data-lang="en">Brown et al. — in-context / few-shot learning at 175B scale. The paper that changed the field.</span><span data-lang="zh">Brown 等——175B 规模的 in-context/few-shot 学习。改写行业的论文。</span></td>
+              </tr>
+              <tr style="border-bottom:1px solid var(--border);">
+                <td style="padding:0.5rem;"><a href="https://cdn.openai.com/papers/gpt-4.pdf" target="_blank" rel="noopener">GPT-4 Technical Report</a></td>
+                <td style="padding:0.5rem;">2023</td>
+                <td style="padding:0.5rem;"><span data-lang="en">OpenAI — predictable scaling, system card structure, and the "model spec" approach.</span><span data-lang="zh">OpenAI——可预测的扩展、system card 结构、model spec 方法论。</span></td>
+              </tr>
+              <tr style="border-bottom:1px solid var(--border);">
+                <td style="padding:0.5rem;"><a href="https://arxiv.org/abs/1909.08053" target="_blank" rel="noopener">Megatron-LM</a></td>
+                <td style="padding:0.5rem;">2019</td>
+                <td style="padding:0.5rem;"><span data-lang="en">Shoeybi et al. — tensor parallelism recipe still used everywhere in 2026.</span><span data-lang="zh">Shoeybi 等——2026 年仍随处可见的 tensor 并行方案。</span></td>
+              </tr>
+              <tr style="border-bottom:1px solid var(--border);">
+                <td style="padding:0.5rem;"><a href="https://arxiv.org/abs/1910.02054" target="_blank" rel="noopener">ZeRO / FSDP</a></td>
+                <td style="padding:0.5rem;">2019</td>
+                <td style="padding:0.5rem;"><span data-lang="en">Rajbhandari et al. — optimiser / grad / param sharding; lets you fit 100B+ on commodity clusters.</span><span data-lang="zh">Rajbhandari 等——优化器/梯度/参数分片；百亿+ 也能在普通集群训练。</span></td>
+              </tr>
+              <tr style="border-bottom:1px solid var(--border);">
+                <td style="padding:0.5rem;"><a href="https://arxiv.org/abs/2203.15556" target="_blank" rel="noopener">Chinchilla</a></td>
+                <td style="padding:0.5rem;">2022</td>
+                <td style="padding:0.5rem;"><span data-lang="en">Hoffmann et al. — compute-optimal scaling: 20 tokens per parameter. Overturned GPT-3 intuitions.</span><span data-lang="zh">Hoffmann 等——算力最优扩展：每参数 20 token。推翻 GPT-3 直觉。</span></td>
+              </tr>
+              <tr style="border-bottom:1px solid var(--border);">
+                <td style="padding:0.5rem;"><a href="https://arxiv.org/abs/2001.08361" target="_blank" rel="noopener">Scaling Laws</a></td>
+                <td style="padding:0.5rem;">2020</td>
+                <td style="padding:0.5rem;"><span data-lang="en">Kaplan et al. — predictable loss vs compute/params/data; the planning tool for all foundation-model teams.</span><span data-lang="zh">Kaplan 等——loss 对算力/参数/数据的可预测关系；所有基础模型团队的规划工具。</span></td>
+              </tr>
+              <tr>
+                <td style="padding:0.5rem;"><a href="https://arxiv.org/abs/2106.09685" target="_blank" rel="noopener">LoRA</a></td>
+                <td style="padding:0.5rem;">2021</td>
+                <td style="padding:0.5rem;"><span data-lang="en">Hu et al. — low-rank adapters; the default fine-tuning method for 2024-2026.</span><span data-lang="zh">Hu 等——低秩 adapter；2024-2026 默认微调方法。</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- =================================================== -->
+      <!-- 6. GitHub repos                                     -->
+      <!-- =================================================== -->
+      <section class="guide-section">
+        <h2 class="guide-section-title">
+          <span data-lang="en">⑥ GitHub Repos to Know</span>
+          <span data-lang="zh">⑥ 必知 GitHub 仓库</span>
+        </h2>
+        <p class="guide-section-lead">
+          <span data-lang="en">Skim the READMEs and scan one core file each. Being able to say "I have actually looked at vLLM's scheduler" separates serious candidates from the rest.</span>
+          <span data-lang="zh">至少扫一遍每个仓库的 README 并读一个核心文件。能说出「我真的看过 vLLM 的调度器」的候选人明显更有竞争力。</span>
+        </p>
+        <div class="guide-grid">
+          <a class="guide-card" href="https://github.com/vllm-project/vllm" target="_blank" rel="noopener">
+            <h3><span data-lang="en">vLLM</span><span data-lang="zh">vLLM</span></h3>
+            <p><span data-lang="en">PagedAttention + continuous batching reference implementation. Read <code>vllm/engine/llm_engine.py</code>.</span><span data-lang="zh">PagedAttention + continuous batching 参考实现。重点看 <code>vllm/engine/llm_engine.py</code>。</span></p>
+          </a>
+          <a class="guide-card" href="https://github.com/microsoft/DeepSpeed" target="_blank" rel="noopener">
+            <h3><span data-lang="en">DeepSpeed</span><span data-lang="zh">DeepSpeed</span></h3>
+            <p><span data-lang="en">ZeRO / 3D-parallel training library. Study the ZeRO stage-3 docs.</span><span data-lang="zh">ZeRO / 3D 并行训练库。重点看 ZeRO stage-3 文档。</span></p>
+          </a>
+          <a class="guide-card" href="https://github.com/NVIDIA/Megatron-LM" target="_blank" rel="noopener">
+            <h3><span data-lang="en">Megatron-LM</span><span data-lang="zh">Megatron-LM</span></h3>
+            <p><span data-lang="en">NVIDIA's tensor-parallel reference for large LLMs; canonical TP splits.</span><span data-lang="zh">NVIDIA 大 LLM 的 tensor 并行参考；经典 TP 切分。</span></p>
+          </a>
+          <a class="guide-card" href="https://github.com/NVIDIA/TensorRT-LLM" target="_blank" rel="noopener">
+            <h3><span data-lang="en">TensorRT-LLM</span><span data-lang="zh">TensorRT-LLM</span></h3>
+            <p><span data-lang="en">Production inference runtime on NVIDIA GPUs; fused kernels, quantisation, in-flight batching.</span><span data-lang="zh">NVIDIA GPU 上的生产推理运行时；融合算子、量化、in-flight batching。</span></p>
+          </a>
+          <a class="guide-card" href="https://github.com/pytorch/pytorch" target="_blank" rel="noopener">
+            <h3><span data-lang="en">PyTorch FSDP</span><span data-lang="zh">PyTorch FSDP</span></h3>
+            <p><span data-lang="en">Fully Sharded Data Parallel inside PyTorch core. See <code>torch/distributed/fsdp/</code>.</span><span data-lang="zh">PyTorch 核内置的 FSDP。重点看 <code>torch/distributed/fsdp/</code>。</span></p>
+          </a>
+          <a class="guide-card" href="https://github.com/ray-project/ray" target="_blank" rel="noopener">
+            <h3><span data-lang="en">Ray</span><span data-lang="zh">Ray</span></h3>
+            <p><span data-lang="en">Distributed task runtime powering many LLM training / serving stacks; Ray Serve for online.</span><span data-lang="zh">众多 LLM 训练/推理栈背后的分布式任务运行时；Ray Serve 用于在线。</span></p>
+          </a>
+          <a class="guide-card" href="https://github.com/ggerganov/llama.cpp" target="_blank" rel="noopener">
+            <h3><span data-lang="en">llama.cpp</span><span data-lang="zh">llama.cpp</span></h3>
+            <p><span data-lang="en">CPU + quantised inference reference. Go-to when the interview turns to edge / on-device.</span><span data-lang="zh">CPU + 量化推理参考。边缘/端上话题的首选示例。</span></p>
+          </a>
+          <a class="guide-card" href="https://github.com/anthropics/performance-takehome" target="_blank" rel="noopener">
+            <h3><span data-lang="en">Anthropic Performance Take-home</span><span data-lang="zh">Anthropic 性能 Take-home</span></h3>
+            <p><span data-lang="en">github.com/anthropics/performance-takehome — their public perf-engineering take-home; a direct window into the bar.</span><span data-lang="zh">github.com/anthropics/performance-takehome——Anthropic 公开的性能工程 take-home；能直接窥见他们的标准。</span></p>
+          </a>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <p>
+        <span data-lang="en">© SD-Guide · Built for OpenAI &amp; Anthropic system design prep. Not affiliated with either company.</span>
+        <span data-lang="zh">© SD-Guide · 为 OpenAI 与 Anthropic 系统设计面试准备。与两家公司无关联。</span>
+      </p>
+    </div>
+  </footer>
+
+  <script src="../../assets/js/app.js"></script>
+</body>
+</html>

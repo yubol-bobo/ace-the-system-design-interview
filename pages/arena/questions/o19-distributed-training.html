@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>O19. Distributed ML Training Platform — SD-Guide</title>
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../index.html" class="active"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../resources/index.html"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../about/index.html"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a>
+        <span class="sep">›</span>
+        <a href="../index.html"><span data-lang="en">Arena</span><span data-lang="zh">竞技场</span></a>
+        <span class="sep">›</span>
+        <span>O19</span>
+      </div>
+
+      <article class="prose wide">
+        <div class="question-meta" style="margin-bottom:1rem;">
+          <span class="tag company-openai">OpenAI</span>
+          <span class="tag freq-2">★★ Frequent</span>
+          <span class="tag difficulty-hard">Staff-level</span>
+          <span class="tag">3D Parallelism</span><span class="tag">ZeRO</span><span class="tag">Checkpoint</span>
+        </div>
+
+        <h1>
+          <span data-lang="en">O19 · Distributed ML Training Platform</span>
+          <span data-lang="zh">O19 · 分布式 ML 训练平台</span>
+        </h1>
+
+        <div class="callout openai">
+          <h4><span data-lang="en">Verified source</span><span data-lang="zh">经核实出处</span></h4>
+          <p>Prompt: "Design a Distributed ML Training Platform." — Hello Interview (Staff-level). Credibility <strong>D</strong>.</p>
+        </div>
+
+        <h2><span data-lang="en">Clarify scope</span><span data-lang="zh">范围澄清</span></h2>
+<ul><li><span data-lang="en">Target model sizes? 1B vs 100B parameters pull wildly different architectures.</span><span data-lang="zh">目标模型规模？1B vs 100B 参数对应架构差异巨大。</span></li><li><span data-lang="en">Users: internal researchers or external customers?</span><span data-lang="zh">用户：内部研究者还是外部客户？</span></li><li><span data-lang="en">Hardware: homogeneous GPU cluster or multi-region multi-type?</span><span data-lang="zh">硬件：同构 GPU 集群还是跨区多型号？</span></li></ul><h2><span data-lang="en">Three orthogonal parallelism strategies</span><span data-lang="zh">三种正交并行策略</span></h2>
+<ul><li><span data-lang="en"><strong>Data Parallel (DP)</strong>: replicate model, shard data, AllReduce gradients. ZeRO-1/2/3 progressively shards optimizer states, gradients, parameters.</span><span data-lang="zh"><strong>数据并行 (DP)</strong>：复制模型、切分数据、AllReduce 梯度。ZeRO-1/2/3 渐进分片优化器状态、梯度、参数。</span></li><li><span data-lang="en"><strong>Tensor Parallel (TP)</strong>: split weight matrices within a layer. High bandwidth needed (NVLink-only).</span><span data-lang="zh"><strong>张量并行 (TP)</strong>：层内切分权重矩阵。对带宽要求高（仅限 NVLink）。</span></li><li><span data-lang="en"><strong>Pipeline Parallel (PP)</strong>: split layers across stages, feed micro-batches to fill the pipe. Bubble ratio &lt; 25% needs micro-batches &gt; 4× stages.</span><span data-lang="zh"><strong>流水线并行 (PP)</strong>：跨阶段切分层，用微批次填充流水线。Bubble 率 &lt; 25% 需要微批次 &gt; 4× 阶段数。</span></li></ul><h2><span data-lang="en">Production recipe (3D parallelism)</span><span data-lang="zh">生产配方（3D 并行）</span></h2>
+<p><span data-lang="en"><strong>Intra-node TP</strong> (NVLink) + <strong>PP</strong> across nodes + <strong>DP</strong> across replicas. Meta Llama 3 uses topology-aware comm patterns.</span><span data-lang="zh"><strong>节点内 TP</strong>（NVLink）+ <strong>跨节点 PP</strong> + <strong>副本间 DP</strong>。Meta Llama 3 采用拓扑感知通信模式。</span></p><h2><span data-lang="en">Platform services</span><span data-lang="zh">平台服务</span></h2>
+<div class="mermaid-container"><pre class="mermaid">
+flowchart LR
+  UI[CLI / UI] --> SCH[Job Scheduler]
+  SCH --> RES[Resource Manager]
+  RES --> GPU[GPU Fleet]
+  SCH --> CKPT[Checkpoint Service]
+  CKPT --> S3[(Object Store)]
+  GPU --> METRICS[Metrics / Profiler]
+  GPU --> ELA[Elastic Reshard]
+</pre></div><h2><span data-lang="en">Fault tolerance is mandatory</span><span data-lang="zh">容错是必选项</span></h2>
+<ul><li><span data-lang="en">Periodic checkpoints every N steps (memory-map + async upload).</span><span data-lang="zh">每 N 步周期 checkpoint（memory-map + 异步上传）。</span></li><li><span data-lang="en">Elastic training: detect GPU failure, reschedule job with same checkpoint, resume.</span><span data-lang="zh">弹性训练：检测 GPU 故障 → 用同 checkpoint 重调度 → 恢复。</span></li><li><span data-lang="en">Loss-spike detection: auto-rollback to prior checkpoint; gradient clip.</span><span data-lang="zh">Loss-spike 检测：自动回滚至前一 checkpoint；梯度裁剪。</span></li></ul><div class="callout openai"><h4><span data-lang="en">Anthropic's take</span><span data-lang="zh">Anthropic 视角</span></h4><p><span data-lang="en">RE interviews explicitly ask: "Pre-training a 100B model — loss spike appears. Data issue? LR? Hardware?" Candidates are expected to walk through diagnosis and checkpoint-revert strategy.</span><span data-lang="zh">RE 面试明确问：「预训练 100B 模型出现 loss spike——是数据、LR、还是硬件问题？」候选人需能讲清诊断路径与 checkpoint 回滚策略。</span></p></div>
+
+        <h2><span data-lang="en">Related study-guide topics</span><span data-lang="zh">相关学习手册专题</span></h2>
+        <ul><li><a href="../../guide/llm/distributed-training.html"><span data-lang="en">Distributed training deep dive</span><span data-lang="zh">分布式训练深度</span></a></li><li><a href="../../guide/ml/ml-lifecycle.html"><span data-lang="en">ML lifecycle</span><span data-lang="zh">ML 生命周期</span></a></li></ul>
+      </article>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

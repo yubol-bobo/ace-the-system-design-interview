@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Distributed Training — SD-Guide</title>
+  <meta name="description" content="Data, tensor, and pipeline parallel; ZeRO/FSDP; 3D parallelism; activation checkpointing; mixed precision; fault-tolerant checkpointing at 10k+ GPU scale.">
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../../../pages/arena/index.html" data-match="/arena"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../../pages/guide/index.html" class="active" data-match="/guide"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../../pages/resources/index.html" data-match="/resources"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../../pages/about/index.html" data-match="/about"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+
+      <div class="breadcrumb">
+        <a href="../../../pages/guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a>
+        <span>›</span>
+        <span class="crumb-category">LLM Systems<span data-lang="zh" style="display:none">LLM 系统</span></span>
+      </div>
+
+      <header class="page-header">
+        <h1 class="page-title">
+          <span data-lang="en">Distributed Training</span>
+          <span data-lang="zh">分布式训练</span>
+        </h1>
+        <div class="topic-meta">
+          <span class="tag" style="background:var(--openai-glow);border-color:var(--openai)">📚 Megatron-LM · DeepSpeed ZeRO · PyTorch FSDP</span><span class="tag">FSDP/ZeRO-3</span><span class="tag">Megatron TP</span><span class="tag">3D parallelism</span><span class="tag">bf16/fp8</span>
+        </div>
+        <p class="page-subtitle">
+          <span data-lang="en">Data, tensor, and pipeline parallel; ZeRO/FSDP; 3D parallelism; activation checkpointing; mixed precision; fault-tolerant checkpointing at 10k+ GPU scale.</span>
+          <span data-lang="zh">数据、张量、流水并行；ZeRO/FSDP；3D 并行；激活 checkpointing；混合精度；万卡规模容错 checkpoint。</span>
+        </p>
+      </header>
+
+      <article class="topic-prose">
+        <nav class="topic-toc">
+          <h4><span data-lang="en">On this page</span><span data-lang="zh">本页目录</span></h4>
+          <ol>
+            <li><a href="#s1"><span data-lang="en">Why distributed training</span><span data-lang="zh">为什么要分布式训练</span></a></li>
+            <li><a href="#s2"><span data-lang="en">Data parallelism, ZeRO, FSDP</span><span data-lang="zh">数据并行、ZeRO、FSDP</span></a></li>
+            <li><a href="#s3"><span data-lang="en">Tensor and pipeline parallelism</span><span data-lang="zh">张量并行与流水并行</span></a></li>
+            <li><a href="#s4"><span data-lang="en">Activation memory: checkpointing, sequence parallel</span><span data-lang="zh">激活内存：checkpoint、序列并行</span></a></li>
+            <li><a href="#s5"><span data-lang="en">Checkpointing, resilience, and scale</span><span data-lang="zh">checkpoint、韧性、规模</span></a></li>
+            <li><a href="#s6"><span data-lang="en">Networking, cost, anti-patterns, checklist</span><span data-lang="zh">网络、成本、反模式、清单</span></a></li>
+          </ol>
+        </nav>
+
+        <div data-lang="en">
+
+<h2 id="s1">Why distributed training</h2>
+<p>A Llama-70B model in fp16 has 140 GB of weights. Gradients are another 140 GB, optimizer states (Adam: m + v in fp32) another 560 GB — total ~840 GB <em>just for state</em>, before activations. An H100 has 80 GB HBM. You cannot train this on a single GPU. Distributed training is not optional; it's how every frontier model is made.</p>
+<p>Three dimensions of parallelism define the design space, and modern systems compose all three (<strong>3D parallelism</strong>):</p>
+<ul>
+  <li><strong>Data parallel (DP)</strong> — replicate the model, split the batch across replicas, all-reduce gradients.</li>
+  <li><strong>Tensor parallel (TP)</strong> — split each layer's matrices across devices within a node.</li>
+  <li><strong>Pipeline parallel (PP)</strong> — split the layers themselves across stages.</li>
+</ul>
+<p>Anchor numbers: training Llama-3-70B on the public recipe took ~7M H100-hours across 16k H100s for roughly two weeks. Throughput was ~400 TFLOPS/GPU sustained (out of ~990 fp16 theoretical). Model FLOPs Utilization (MFU) of 40–45% is the realistic target.</p>
+<div class="callout tip"><h4>Source cross-reference</h4><p>Key papers: <em>Megatron-LM</em> (Shoeybi 2019) for tensor parallelism, <em>GPipe</em> (Huang 2019) and <em>PipeDream</em> (Narayanan 2019) for pipeline parallelism, <em>ZeRO</em> (Rajbhandari 2020) and <em>ZeRO-Infinity</em> for optimizer-state sharding, and PyTorch's <em>FSDP</em> (Zhao 2023). DeepSpeed and NVIDIA Megatron-Core are the production implementations.</p></div>
+
+<h2 id="s2">Data parallelism, ZeRO, FSDP</h2>
+<h3>Classic DP</h3>
+<p>All GPUs hold a full model copy. Each processes a different micro-batch. After backward, <code>all_reduce</code> the gradients. Simple, but memory blows up: every GPU stores full weights + grads + optimizer state.</p>
+<h3>ZeRO (DeepSpeed)</h3>
+<p>Shard the state across DP ranks:</p>
+<ul>
+  <li><strong>ZeRO-1</strong>: shard optimizer states (Adam m, v). ~4× memory reduction for Adam fp32.</li>
+  <li><strong>ZeRO-2</strong>: also shard gradients. ~8× reduction.</li>
+  <li><strong>ZeRO-3</strong>: also shard weights. Only the shard needed for the current layer is gathered via <code>all_gather</code>, freed after use. Equivalent to FSDP.</li>
+</ul>
+<h3>FSDP (PyTorch)</h3>
+<p>PyTorch's implementation of ZeRO-3. FSDP wraps modules into units; during forward, it all-gathers a unit's weights, runs it, re-shards. During backward, it all-gathers again for grad computation, then reduce-scatters gradients. Communication = 1.5× all-reduce vs DDP but memory is 1/N.</p>
+<p>FSDP is the default recipe for training LLMs in 2024–2025 PyTorch. Named siblings: HSDP (Hybrid Sharded Data Parallel — shard within a node, replicate across nodes, reducing inter-node traffic).</p>
+
+<h2 id="s3">Tensor and pipeline parallelism</h2>
+<h3>Tensor parallel (TP)</h3>
+<p>Split a matrix multiply <code>Y = X @ W</code> across devices. Column-wise split of W: each device holds a column slice, outputs a column slice of Y. Row-wise split of W: each device holds a row slice, produces a partial sum; <code>all_reduce</code> to combine. Megatron-LM alternates these cleverly to minimize communication: one all-reduce per transformer block instead of two.</p>
+<p>TP is <em>intra-node</em> only in practice (NVLink at 900 GB/s between 8 GPUs). Cross-node TP (over IB at 400 Gb/s) collapses throughput. Rule: TP ≤ 8 (one node).</p>
+<h3>Pipeline parallel (PP)</h3>
+<p>Split the transformer into stages; GPU 0 has layers 0–7, GPU 1 has 8–15, etc. Micro-batches flow through like a factory line. Problem: "bubble" — the first and last micro-batches leave idle time. 1F1B (one-forward-one-backward) schedule in Megatron or interleaved schedule in PipeDream-Flush minimize bubble.</p>
+<p>PP is typically used across nodes when TP + FSDP isn't enough. Budget: 4–16 pipeline stages.</p>
+<h3>3D parallelism</h3>
+<p>The real recipe: TP=8 (intra-node) × PP=8 (inter-node) × DP=N (with ZeRO). A 1024-GPU cluster becomes TP8 × PP8 × DP16. This is how GPT-3, PaLM, Llama-3 were all trained.</p>
+<div class="mermaid-container"><pre class="mermaid">
+flowchart TB
+  subgraph Node0[Node 0 - 8 H100s, TP=8]
+    G0[GPU 0 layer 0..7 slice] --- G1[GPU 1 layer 0..7 slice]
+    G1 --- G2[...]
+  end
+  subgraph Node1[Node 1 - PP stage 2, TP=8]
+    H0[GPU 0 layer 8..15] --- H1[GPU 1 layer 8..15]
+  end
+  Node0 -->|activations over IB| Node1
+  Node1 --> Next[...]
+  DP[Data-parallel replicas<br/>FSDP sharding across nodes]
+</pre></div>
+
+<h2 id="s4">Activation memory: checkpointing, sequence parallel</h2>
+<p>Even with sharded weights, <em>activations</em> (stored for backward) can dominate memory for long sequences. For a transformer at <code>seq_len=8192, batch=4, layers=80, d_model=8192, fp16</code>, activations ≈ 100+ GB per GPU.</p>
+<h3>Activation / gradient checkpointing</h3>
+<p>Don't store all activations; recompute during backward. Saves ~60–80% activation memory at the cost of ~30% extra FLOPs (one extra forward). Essentially mandatory for &gt;7B models.</p>
+<h3>Sequence parallel (Megatron)</h3>
+<p>LayerNorm and dropout activations are still replicated across TP ranks. Sequence parallel splits these along the sequence axis, recovering 2–4× activation memory within an existing TP group. Negligible extra communication.</p>
+<h3>Mixed precision</h3>
+<p>Train in bf16/fp16 for matmuls; keep a fp32 master copy of weights and optimizer states. Automatic Mixed Precision (AMP) is standard. On H100, fp8 training (with Transformer Engine) gives another 2× speedup with careful loss scaling — used by Nvidia/Meta/Anthropic for frontier runs.</p>
+
+<h2 id="s5">Checkpointing, resilience, and scale</h2>
+<h3>Checkpoint size</h3>
+<p>Llama-70B + optimizer state ≈ 840 GB. At 16k GPUs, a naive per-rank save is 840 GB × 16k replicas = petabytes. Real recipes:</p>
+<ul>
+  <li>Shard the checkpoint across ranks (each saves its FSDP shard).</li>
+  <li>Async / offload to CPU+NVMe while training continues.</li>
+  <li>Resume loads shards in parallel; ~2–5 minutes on a modern cluster.</li>
+</ul>
+<p>Checkpoint every 500–2000 steps. Skipping even one costs many GPU-hours if a node fails.</p>
+<h3>Failure rates</h3>
+<p>Interview number: on a 16k-GPU cluster, expect 1+ hardware failure per day (GPUs fall off the bus, NVLink link errors, node reboots). Training must tolerate this. Standard pattern:</p>
+<ul>
+  <li>Health-check ring (torch.distributed.elastic) detects dead workers.</li>
+  <li>Kill and requeue the job on remaining-healthy machines.</li>
+  <li>Resume from last checkpoint.</li>
+  <li>Meta's Llama 3 paper reports average of 2 interruptions per day across the run; achieved 90%+ "effective training time".</li>
+</ul>
+<div class="mermaid-container"><pre class="mermaid">
+flowchart LR
+  T[Training step] --&gt; C{step %% N == 0?}
+  C --&gt;|no| T
+  C --&gt;|yes| S[Snapshot shards<br/>each rank to local NVMe]
+  S --&gt; U[Upload to S3/GCS<br/>async]
+  F[Failure detector] --&gt; R[Restart job]
+  R --&gt; L[Load latest checkpoint<br/>from S3]
+  L --&gt; T
+</pre></div>
+
+<h2 id="s6">Networking, cost, anti-patterns, checklist</h2>
+<h3>Networking</h3>
+<p>At scale, network is the bottleneck. Modern clusters use:</p>
+<ul>
+  <li><strong>NVLink</strong> 900 GB/s intra-node (H100 NVSwitch).</li>
+  <li><strong>InfiniBand</strong> 400 Gb/s (NDR) or RoCE per GPU inter-node.</li>
+  <li><strong>Fat-tree / rail-optimized topology</strong>: each GPU has a dedicated NIC mapped to a "rail"; all-reduce across rails stays collision-free.</li>
+  <li><strong>NCCL</strong> library for collectives; topology-aware ring-allreduce or tree-allreduce.</li>
+</ul>
+<p>Communication-to-compute ratio determines MFU. ZeRO-3 adds ~50% more comm than DDP. Overlap comm with compute (NCCL streams) is crucial.</p>
+<h3>Cost</h3>
+<p>H100 at ~$3/hour on cloud. 16k GPUs × 2 weeks × $3 = $16M for a 70B pretraining run. Reserved/on-prem clusters drop this 2–3×. Efficient sharding is not a nicety — saving 10% MFU saves $1.6M.</p>
+<div class="callout openai"><h4>OpenAI-specific</h4><p>OpenAI's public training papers are sparse, but their GPT-4 technical report confirms massive-scale training with "predictable scaling" — extrapolating loss curves from small runs. Implied infra: custom network on Azure, mixed TP/PP/DP at ~25k GPU scale. Their RLHF pipeline uses a separate reward-model cluster in tight loop with the policy trainer.</p></div>
+<div class="callout anthropic"><h4>Anthropic-specific</h4><p>Anthropic trains on AWS Trainium + Nvidia, across multiple regions. Their safety-first approach means "preparedness" evals are run on intermediate checkpoints; unsafe capabilities may halt the run. Constitutional AI fine-tuning adds another training stage after pretraining, with RLAIF (AI-generated feedback) replacing parts of RLHF.</p></div>
+<div class="callout warn"><h4>Anti-patterns</h4>
+<ul>
+  <li><strong>TP across nodes</strong>. Inter-node IB is 10× slower than NVLink. Throughput dies.</li>
+  <li><strong>No gradient clipping</strong>. One bad batch spikes the loss and corrupts optimizer state. Always clip (1.0 is common).</li>
+  <li><strong>Fully synchronous checkpointing</strong>. Stops training for minutes per save. Use async + double-buffered.</li>
+  <li><strong>Ignoring stragglers</strong>. One slow GPU slows the whole step. Monitor per-rank step time.</li>
+  <li><strong>Optimizer in fp16</strong>. Overflows and NaNs. Keep fp32 master weights.</li>
+</ul></div>
+<p><strong>Whiteboard checklist:</strong> model size → memory budget (weights + grad + optim + act) → pick parallelism (TP=8 intra-node, PP for layer count, FSDP/ZeRO-3 for DP) → activation checkpointing + sequence parallel → bf16/fp8 mixed precision → sharded async checkpoints → health-check + requeue → NCCL comm-compute overlap → MFU target 40%+ → cost estimate.</p>
+
+        </div>
+        <div data-lang="zh">
+
+<h2 id="s1">为什么要分布式训练</h2>
+<p>Llama-70B fp16 权重 140 GB。梯度再 140 GB，优化器状态（Adam：m + v 在 fp32）再 560 GB——仅状态就 ~840 GB，还没算激活。H100 HBM 80 GB。单卡训不了。分布式训练不是可选，是前沿模型的唯一做法。</p>
+<p>三维并行定义设计空间，现代系统三者组合（<strong>3D 并行</strong>）：</p>
+<ul>
+  <li><strong>数据并行 (DP)</strong>——复制模型，batch 按副本切，all-reduce 梯度。</li>
+  <li><strong>张量并行 (TP)</strong>——每层矩阵按节点内设备切。</li>
+  <li><strong>流水并行 (PP)</strong>——按层切到不同 stage。</li>
+</ul>
+<p>锚点数：Llama-3-70B 公开食谱约 ~700 万 H100 小时、16000 H100 两周。吞吐维持 ~400 TFLOPS/GPU（理论 fp16 ~990）。MFU（模型 FLOPS 利用率）40-45% 是现实目标。</p>
+<div class="callout tip"><h4>参考来源</h4><p>关键论文：<em>Megatron-LM</em>（Shoeybi 2019）TP，<em>GPipe</em>（Huang 2019）与 <em>PipeDream</em>（Narayanan 2019）PP，<em>ZeRO</em>（Rajbhandari 2020）与 ZeRO-Infinity 优化器状态切片，PyTorch <em>FSDP</em>（Zhao 2023）。DeepSpeed 与 NVIDIA Megatron-Core 是生产实现。</p></div>
+
+<h2 id="s2">数据并行、ZeRO、FSDP</h2>
+<h3>经典 DP</h3>
+<p>所有 GPU 存满模型。各自处理不同 micro-batch。backward 后 <code>all_reduce</code> 梯度。简单，但内存爆炸：每卡存全权重 + 梯度 + 优化器状态。</p>
+<h3>ZeRO (DeepSpeed)</h3>
+<p>状态按 DP rank 切：</p>
+<ul>
+  <li><strong>ZeRO-1</strong>：切优化器状态（Adam m、v）。对 fp32 Adam 约 4× 减内存。</li>
+  <li><strong>ZeRO-2</strong>：再切梯度。~8× 减。</li>
+  <li><strong>ZeRO-3</strong>：再切权重。只在当前层需要时 <code>all_gather</code>，用完释放。等价于 FSDP。</li>
+</ul>
+<h3>FSDP (PyTorch)</h3>
+<p>PyTorch 的 ZeRO-3 实现。FSDP 把模块包成 unit；forward 时 all-gather unit 权重、运行、再切片。backward 时再 all-gather 算梯度，再 reduce-scatter 梯度。通信 = DDP 的 1.5× all-reduce，内存是 1/N。</p>
+<p>FSDP 是 2024-2025 PyTorch 训 LLM 的默认食谱。同门：HSDP（Hybrid Sharded DP——节点内切片、节点间复制，减跨节点流量）。</p>
+
+<h2 id="s3">张量并行与流水并行</h2>
+<h3>张量并行 (TP)</h3>
+<p>把矩阵乘 <code>Y = X @ W</code> 切到多设备。W 列切：每设备持一列片，输出 Y 的一列片。W 行切：每设备持一行片，产生部分和，<code>all_reduce</code> 合并。Megatron-LM 交替使用，把每 transformer block 从两次 all-reduce 降到一次。</p>
+<p>TP 实践上<em>仅在节点内</em>（NVLink 8 卡间 900 GB/s）。跨节点 TP（IB 400 Gb/s）吞吐崩。规则：TP ≤ 8（单节点）。</p>
+<h3>流水并行 (PP)</h3>
+<p>transformer 按层切 stage；GPU 0 拿 0-7 层，GPU 1 拿 8-15，等。micro-batch 像流水线流。问题："气泡"——首末 micro-batch 有空闲。Megatron 1F1B（one-forward-one-backward）或 PipeDream-Flush 交错调度减气泡。</p>
+<p>TP + FSDP 不够时跨节点上 PP。预算：4-16 个流水 stage。</p>
+<h3>3D 并行</h3>
+<p>真食谱：TP=8（节点内）× PP=8（节点间）× DP=N（带 ZeRO）。1024 卡集群 = TP8 × PP8 × DP16。GPT-3、PaLM、Llama-3 都这么训。</p>
+<div class="mermaid-container"><pre class="mermaid">
+flowchart TB
+  subgraph Node0[节点 0 - 8 H100, TP=8]
+    G0[GPU 0 层 0..7 片] --- G1[GPU 1 层 0..7 片]
+    G1 --- G2[...]
+  end
+  subgraph Node1[节点 1 - PP stage 2, TP=8]
+    H0[GPU 0 层 8..15] --- H1[GPU 1 层 8..15]
+  end
+  Node0 -->|激活走 IB| Node1
+  Node1 --> Next[...]
+  DP[数据并行副本<br/>FSDP 跨节点切片]
+</pre></div>
+
+<h2 id="s4">激活内存：checkpoint、序列并行</h2>
+<p>即使权重切片，<em>激活</em>（backward 用）在长序列下也能吃满内存。transformer <code>seq_len=8192, batch=4, layers=80, d_model=8192, fp16</code> 时激活 ≈ 每卡 100+ GB。</p>
+<h3>激活/梯度 checkpointing</h3>
+<p>不全存激活，backward 时重算。省 60-80% 激活内存，代价多约 30% FLOPS（多一次 forward）。&gt;7B 模型基本必备。</p>
+<h3>序列并行 (Megatron)</h3>
+<p>LayerNorm 和 dropout 激活仍在 TP rank 间复制。序列并行沿序列轴切，在已有 TP 组内再省 2-4× 激活内存，额外通信可忽略。</p>
+<h3>混合精度</h3>
+<p>矩阵乘 bf16/fp16，保留 fp32 权重与优化器状态主副本。AMP 是标准。H100 上 fp8 训练（配 Transformer Engine）再 2× 加速，需谨慎 loss scaling——NVIDIA/Meta/Anthropic 的前沿 run 都用。</p>
+
+<h2 id="s5">checkpoint、韧性与规模</h2>
+<h3>checkpoint 大小</h3>
+<p>Llama-70B + 优化器状态 ≈ 840 GB。16000 卡下朴素每 rank 存 = 840 GB × 16000 = PB 级。真食谱：</p>
+<ul>
+  <li>checkpoint 按 rank 切（各存自己的 FSDP 片）。</li>
+  <li>训练继续的同时异步/卸载到 CPU+NVMe。</li>
+  <li>恢复时各片并行加载；现代集群 2-5 分钟。</li>
+</ul>
+<p>每 500-2000 步存一次。节点故障时跳过一次就是很多 GPU 小时。</p>
+<h3>故障率</h3>
+<p>面试数：16000 卡集群每日期望 1+ 硬件故障（GPU 掉线、NVLink 错、节点重启）。训练必须容忍。标准模式：</p>
+<ul>
+  <li>健康检查环（torch.distributed.elastic）检测死 worker。</li>
+  <li>杀掉并在剩余健康机上重新排入。</li>
+  <li>从最新 checkpoint 恢复。</li>
+  <li>Meta Llama 3 论文报告平均每日 2 次中断，达到 90%+ "有效训练时间"。</li>
+</ul>
+<div class="mermaid-container"><pre class="mermaid">
+flowchart LR
+  T[训练步] --&gt; C{step 能被 N 整除?}
+  C --&gt;|否| T
+  C --&gt;|是| S[快照分片<br/>各 rank 到本地 NVMe]
+  S --&gt; U[异步上传 S3/GCS]
+  F[故障检测] --&gt; R[重启作业]
+  R --&gt; L[从 S3 加载最新 checkpoint]
+  L --&gt; T
+</pre></div>
+
+<h2 id="s6">网络、成本、反模式、清单</h2>
+<h3>网络</h3>
+<p>规模下网络是瓶颈。现代集群：</p>
+<ul>
+  <li><strong>NVLink</strong> 900 GB/s 节点内（H100 NVSwitch）。</li>
+  <li><strong>InfiniBand</strong> 400 Gb/s (NDR) 或 RoCE per GPU 跨节点。</li>
+  <li><strong>Fat-tree / rail-optimized 拓扑</strong>：每 GPU 专属 NIC 映射到 "rail"，跨 rail all-reduce 无碰撞。</li>
+  <li><strong>NCCL</strong> 做集合通信，拓扑感知 ring-allreduce 或 tree-allreduce。</li>
+</ul>
+<p>通信计算比决定 MFU。ZeRO-3 比 DDP 多约 50% 通信。通信与计算重叠（NCCL stream）关键。</p>
+<h3>成本</h3>
+<p>H100 云上约 $3/小时。16000 卡 × 两周 × $3 = 70B 预训练 $1600 万。自建/保留集群降 2-3×。高效切片不是奢侈——省 10% MFU = 省 $160 万。</p>
+<div class="callout openai"><h4>OpenAI 细节</h4><p>OpenAI 训练论文少，但 GPT-4 技术报告确认了"可预测扩展"——从小规模拟合损失曲线外推。隐含基础设施：Azure 上定制网络、TP/PP/DP 混合于约 2.5 万卡规模。RLHF 管线在独立奖励模型集群与策略训练器紧耦合。</p></div>
+<div class="callout anthropic"><h4>Anthropic 细节</h4><p>Anthropic 在 AWS Trainium + Nvidia 跨区域训练。安全优先意味着"准备度"评估在中间 checkpoint 上跑，不安全能力可能中断训练。Constitutional AI 微调是预训练后的又一阶段，RLAIF（AI 生成反馈）替代部分 RLHF。</p></div>
+<div class="callout warn"><h4>反模式</h4>
+<ul>
+  <li><strong>跨节点 TP</strong>。跨节点 IB 比 NVLink 慢 10×，吞吐挂。</li>
+  <li><strong>没梯度裁剪</strong>。一个坏 batch 让 loss 飙、优化器状态腐蚀。永远 clip（1.0 常见）。</li>
+  <li><strong>全同步 checkpoint</strong>。每次存阻塞训练数分钟。用异步 + 双缓冲。</li>
+  <li><strong>忽略慢机</strong>。一卡慢拖整个 step。监控每 rank 步时间。</li>
+  <li><strong>fp16 优化器</strong>。溢出和 NaN。保 fp32 主权重。</li>
+</ul></div>
+<p><strong>白板清单：</strong>模型规模 → 内存预算（权重+梯度+优化器+激活）→ 选并行（节点内 TP=8、按层数选 PP、DP 用 FSDP/ZeRO-3）→ 激活 checkpointing + 序列并行 → bf16/fp8 混合精度 → 异步分片 checkpoint → 健康检查+重排 → NCCL 通信计算重叠 → MFU 目标 40%+ → 成本估算。</p>
+
+        </div>
+      </article>
+
+      <section class="topic-footer-links">
+        <a href="../../arena/questions/o19-distributed-training.html"><span class="label"><span data-lang="en">Arena question</span><span data-lang="zh">真题</span></span><strong><span data-lang="en">O19 · Distributed Training</span><span data-lang="zh">O19 · 分布式训练</span></strong></a>
+        <a href="../../arena/questions/o14-gpu-credit-scheduling.html"><span class="label"><span data-lang="en">Arena question</span><span data-lang="zh">真题</span></span><strong><span data-lang="en">O14 · GPU Scheduling</span><span data-lang="zh">O14 · GPU 调度</span></strong></a>
+        <a href="llm-evaluation.html"><span class="label"><span data-lang="en">Previous</span><span data-lang="zh">上一主题</span></span><strong><span data-lang="en">LLM Evaluation</span><span data-lang="zh">LLM 评估</span></strong></a>
+        <a href="llm-serving.html"><span class="label"><span data-lang="en">Related</span><span data-lang="zh">相关</span></span><strong><span data-lang="en">LLM Serving</span><span data-lang="zh">LLM 推理</span></strong></a>
+      </section>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <p>
+        <span data-lang="en">© SD-Guide · Built for OpenAI &amp; Anthropic system design prep. Not affiliated with either company.</span>
+        <span data-lang="zh">© SD-Guide · 为 OpenAI 与 Anthropic 系统设计面试准备。与两家公司无关联。</span>
+      </p>
+    </div>
+  </footer>
+
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

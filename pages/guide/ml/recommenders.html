@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recommenders & Ranking — SD-Guide</title>
+  <meta name="description" content="The canonical three-stage funnel (candidate generation then ranking then re-ranking) walked through with the YouTube two-tower, Facebook/LinkedIn feed, Airbnb search, and wide-and-deep / DLRM ranking architectures. Plus how LLM-assisted ranking is reshaping the stack.">
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../../../pages/arena/index.html" data-match="/arena"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../../pages/guide/index.html" class="active" data-match="/guide"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../../pages/resources/index.html" data-match="/resources"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../../pages/about/index.html" data-match="/about"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+
+      <div class="breadcrumb">
+        <a href="../../../pages/guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a>
+        <span>›</span>
+        <span class="crumb-category">ML Systems<span data-lang="zh" style="display:none">ML 系统</span></span>
+      </div>
+
+      <header class="page-header">
+        <h1 class="page-title">
+          <span data-lang="en">Recommenders & Ranking</span>
+          <span data-lang="zh">推荐与排序</span>
+        </h1>
+        <div class="topic-meta">
+          <span class="tag" style="background:var(--openai-glow);border-color:var(--openai)">📚 Khang Pham Ch.2-4 · Khang Pham Ch.7 · Khang Pham Ch.8</span><span class="tag">Two-tower</span><span class="tag">Wide & deep</span><span class="tag">DLRM</span><span class="tag">Embeddings</span><span class="tag">LLM ranking</span>
+        </div>
+        <p class="page-subtitle">
+          <span data-lang="en">The canonical three-stage funnel (candidate generation then ranking then re-ranking) walked through with the YouTube two-tower, Facebook/LinkedIn feed, Airbnb search, and wide-and-deep / DLRM ranking architectures. Plus how LLM-assisted ranking is reshaping the stack.</span>
+          <span data-lang="zh">经典三段漏斗——候选生成 &rarr; 排序 &rarr; 重排——配合 YouTube 双塔、Facebook/LinkedIn feed、Airbnb 搜索与 wide&amp;deep / DLRM 排序架构讲清楚；外加 LLM 辅助排序如何改造这套栈。</span>
+        </p>
+      </header>
+
+      <article class="topic-prose">
+        <nav class="topic-toc">
+          <h4><span data-lang="en">On this page</span><span data-lang="zh">本页目录</span></h4>
+          <ol>
+            <li><a href="#s1"><span data-lang="en">The three-stage funnel</span><span data-lang="zh">三段漏斗</span></a></li>
+            <li><a href="#s2"><span data-lang="en">Candidate generation (retrieval)</span><span data-lang="zh">候选生成（召回）</span></a></li>
+            <li><a href="#s3"><span data-lang="en">Ranking models</span><span data-lang="zh">排序模型</span></a></li>
+            <li><a href="#s4"><span data-lang="en">Re-ranking & business rules</span><span data-lang="zh">重排与业务规则</span></a></li>
+            <li><a href="#s5"><span data-lang="en">Case patterns: YouTube, feed, Airbnb</span><span data-lang="zh">案例：YouTube、Feed、Airbnb</span></a></li>
+            <li><a href="#s6"><span data-lang="en">LLM-assisted ranking</span><span data-lang="zh">LLM 辅助排序</span></a></li>
+            <li><a href="#s7"><span data-lang="en">Numbers to remember</span><span data-lang="zh">要背下来的数字</span></a></li>
+          </ol>
+        </nav>
+
+        <div data-lang="en">
+
+        <div class="callout openai">
+          <h4>Source cross-reference</h4>
+          <p>Primary: Khang Pham <strong>Ch.2 (core ML / embeddings)</strong>, <strong>Ch.3 (YouTube video recs)</strong>, <strong>Ch.4 (feed ranking)</strong>, <strong>Ch.7 (Airbnb similar listings)</strong>, <strong>Ch.8 (LinkedIn personalized search)</strong>. Cross-reference with Chip Huyen Ch.6 for offline eval metrics (NDCG, MAP).</p>
+        </div>
+
+        <h2 id="s1">The three-stage funnel</h2>
+        <p>Every large-scale recommender at Google, Meta, LinkedIn, Pinterest, and Airbnb uses the same shape: <strong>billions of items -&gt; thousands -&gt; hundreds -&gt; tens</strong> across three stages. The funnel exists because no single model can be both cheap enough to score a billion items and smart enough to rank ten of them.</p>
+        <div class="mermaid-container"><pre class="mermaid">
+flowchart LR
+  corpus[(Corpus<br/>10^9 items)] --> cg[Candidate Generation<br/>many sources in parallel<br/>two-tower, collab filtering, popularity]
+  cg --> merge[Merge &amp; dedup<br/>~1,000 items]
+  merge --> rank[Ranking<br/>heavy model<br/>wide&amp;deep / DLRM / transformer]
+  rank --> rerank[Re-rank<br/>diversity, business rules<br/>LLM-assisted]
+  rerank --> ui[UI · top 10-50]
+        </pre></div>
+        <p>Per-stage latency budget for a 200 ms end-to-end feed: <strong>retrieval &le; 40 ms, ranking &le; 80 ms, re-rank &le; 20 ms, network+render &le; 60 ms</strong>. Every successful design you have seen in an interview fits this pattern.</p>
+
+        <h2 id="s2">Candidate generation (retrieval)</h2>
+        <p>Goal: from 10^9 items, return O(10^3) that are worth ranking. Three families:</p>
+        <ol>
+          <li><strong>Two-tower / dual encoder</strong>: one tower encodes the user (history, demographics), one encodes the item; train with sampled-softmax / in-batch negatives so that <code>&lt;user, item&gt; &asymp; score</code>. Serve by ANN search (ScaNN, HNSW, FAISS) on the item side. This is the YouTube recs backbone (Ch.3).</li>
+          <li><strong>Collaborative filtering / matrix factorisation</strong>: older but still strong for cold-start-free domains. Ch.2 covers the primer.</li>
+          <li><strong>Rule-based / heuristic</strong>: popular-in-your-country, recency, "friends' recent posts". Cheap safety net; LinkedIn's feed (Ch.4) ensembles 10+ such generators.</li>
+        </ol>
+        <p>Key design choices:</p>
+        <ul>
+          <li><strong>Negative sampling</strong>: random negatives are too easy; hard negatives (same session, almost clicked) dominate modern two-tower. In-batch negatives are free.</li>
+          <li><strong>Embedding dim</strong>: 64-256 is typical. Larger embeddings buy accuracy and latency/storage pain.</li>
+          <li><strong>ANN index</strong>: HNSW beats flat at 10^6+ items; quantised ScaNN beats HNSW at 10^8+ with 4x memory cut.</li>
+        </ul>
+
+        <h2 id="s3">Ranking models</h2>
+        <p>Ranking scores each of the ~1,000 candidates with a heavy model that can consume hundreds of features.</p>
+        <ul>
+          <li><strong>Wide &amp; Deep</strong> (Cheng 2016, Google Play): wide linear arm memorises sparse crosses, deep MLP generalises. Still the simplest respectable baseline. Ch.5 shows the ad-CTR version.</li>
+          <li><strong>DLRM</strong> (Meta, 2019): embedding tables for categoricals -&gt; feature-interaction layer (dot products) -&gt; MLP. Workhorse of Meta ranking; the open-source code is a great reference. Memory is dominated by embedding tables (often &gt;100 GB).</li>
+          <li><strong>DeepFM / DCN-V2</strong>: explicit cross-feature networks; replace the wide arm.</li>
+          <li><strong>Transformer rankers (SASRec, BST)</strong>: sequence-aware, handle long user history natively; Alibaba and Pinterest have public results.</li>
+          <li><strong>Multi-task heads</strong>: one tower predicts click, watch-time, share, report; combine with a learned or hand-tuned scalarisation. Ch.3's YouTube design uses this explicitly.</li>
+        </ul>
+        <div class="callout tip">
+          <h4>Loss functions in one line</h4>
+          <p><strong>Pointwise</strong> (log-loss) for CTR; <strong>pairwise</strong> (BPR / LambdaRank) when you have implicit comparisons; <strong>listwise</strong> (softmax-CE / LambdaMART) when NDCG is the target. Airbnb's Aerosolve (Ch.7) uses pairwise hinge loss.</p>
+        </div>
+
+        <h2 id="s4">Re-ranking &amp; business rules</h2>
+        <p>The last stage applies constraints the ranker cannot see inside its objective:</p>
+        <ul>
+          <li><strong>Diversity</strong>: MMR (maximal marginal relevance), DPP (determinantal point process), per-category caps (e.g. "no more than 3 videos from the same creator in top 10"). Facebook's feed explicitly enforces creator diversity.</li>
+          <li><strong>Freshness</strong>: time-decay boosts for new items; counteracts popularity bias.</li>
+          <li><strong>Business rules</strong>: policy filters (e.g. must be available in user's country), ad-slot blending, creator ecosystem rules.</li>
+          <li><strong>Calibration</strong>: rescale scores so they reflect probability, important when scores blend across systems (ads + organic).</li>
+        </ul>
+
+        <h2 id="s5">Case patterns: YouTube, feed, Airbnb</h2>
+        <p>Three canonical shapes you should be able to draw in 2 minutes:</p>
+        <ul>
+          <li><strong>YouTube (Ch.3)</strong>: two-tower retrieval from billions of videos with user watch-history + context; ranking is a multi-task model optimising click + watch-time + satisfaction survey; hard negatives are sampled from the same session. 20+ retrieval sources merged.</li>
+          <li><strong>Feed ranking &mdash; Facebook/LinkedIn (Ch.4, Ch.8)</strong>: candidates from "friends' posts", "pages you follow", "groups", "sponsored" streams; ranker is a DLRM-style multi-task model predicting click, dwell, like, share, hide. LinkedIn layers a second-pass ranking after re-rank to optimise recruiter value.</li>
+          <li><strong>Airbnb search (Ch.7)</strong>: user-location + query geohash + listing features; two-tower produces listing embeddings trained with "user viewed A then booked B" pairs; ranker is gradient-boosted trees until recently, now wide-and-deep. Seasonality and host-cancellation risk are explicit features.</li>
+        </ul>
+
+        <h2 id="s6">LLM-assisted ranking</h2>
+        <p>Interview-relevant since 2024:</p>
+        <ul>
+          <li><strong>LLM as a feature</strong>: precompute item descriptions via an LLM, embed with a sentence encoder; feed as extra features to the ranker. No inference-path LLM call -&gt; cheap and safe.</li>
+          <li><strong>LLM as a re-ranker</strong>: give a top-20 shortlist plus user context to an LLM, have it output a permutation or score. 200-500 ms extra latency; only justified for high-value surfaces (e.g. flagship recommendations home).</li>
+          <li><strong>LLM-generated candidates</strong>: "user is planning a trip to Kyoto, suggest experiences" -&gt; LLM proposes 10 concepts -&gt; resolved to real items via retrieval. Used by Airbnb and Spotify in 2024 launches.</li>
+        </ul>
+        <div class="callout warn">
+          <h4>Anti-pattern: put an LLM on every query</h4>
+          <p>An LLM call at 400 ms p50 / 2 s p99 on a 100 ms feed budget is infeasible at scale. Use LLMs only (a) offline to enrich items, (b) for very top slots, (c) behind a caching layer with aggressive TTL. Always have a non-LLM fallback path.</p>
+        </div>
+
+        <h2 id="s7">Numbers to remember</h2>
+        <div class="callout tip">
+          <h4>Cheat-sheet</h4>
+          <ul>
+            <li>Retrieval output: 500-2,000 candidates.</li>
+            <li>Ranking input: up to 1,000, output: top ~50.</li>
+            <li>Typical two-tower embedding: 64-256 dims; item index 10^8 items -&gt; ANN ~10 ms p99 with HNSW (M=32, efSearch=128).</li>
+            <li>Feed end-to-end latency budget: 100-200 ms; ranking model &le; 80 ms on CPU with INT8 quantisation, or ~20 ms on a T4.</li>
+            <li>Offline metrics: <strong>NDCG@10 &ge; 0.4</strong> is acceptable baseline on public datasets; production wins are often measured in 0.5-2% relative CTR lift per quarter.</li>
+            <li>A/B sample size: 1-2 weeks, &ge;1M users per arm, for a 0.5% MDE on CTR at alpha=0.05, power=0.8.</li>
+          </ul>
+        </div>
+        <div class="callout openai">
+          <h4>OpenAI lens</h4>
+          <p>OpenAI-style questions emphasise <em>latency budgets</em> and <em>cost per 1k requests</em>. Be ready to compute: "your ranker adds 30 ms and costs $0.01 per 1k requests &mdash; is that worth a 0.3% CTR lift?" Most candidates cannot answer without thinking; pre-bake a framework.</p>
+        </div>
+        <div class="callout anthropic">
+          <h4>Anthropic lens</h4>
+          <p>Anthropic wants recommenders that do not recommend harm. Expect probing on <em>negative</em> objectives (avoid showing self-harm, misinformation, PII leakage from retrieved docs), on slice-wise fairness audits, and on clear escape hatches for users to contest rankings. Treat safety as a first-class ranker objective, not an afterthought re-ranker filter.</p>
+        </div>
+
+        </div>
+        <div data-lang="zh">
+
+        <div class="callout openai">
+          <h4>来源对照</h4>
+          <p>主源：Khang Pham <strong>Ch.2（ML 与 embedding 入门）</strong>、<strong>Ch.3（YouTube 视频推荐）</strong>、<strong>Ch.4（feed 排序）</strong>、<strong>Ch.7（Airbnb 相似房源）</strong>、<strong>Ch.8（LinkedIn 个性化搜索）</strong>。离线评估指标（NDCG、MAP）见 Chip Huyen 第 6 章。</p>
+        </div>
+
+        <h2 id="s1">三段漏斗</h2>
+        <p>Google、Meta、LinkedIn、Pinterest、Airbnb 的大规模推荐系统全是同一个形状：<strong>十亿级 &rarr; 千级 &rarr; 百级 &rarr; 十级</strong>，三段漏斗。为什么要分段？因为没有一个模型既便宜到能给十亿个物品打分，又聪明到能把十个物品排好。</p>
+        <div class="mermaid-container"><pre class="mermaid">
+flowchart LR
+  corpus[(语料<br/>10^9 item)] --> cg[候选生成<br/>多路并行<br/>双塔 · 协同过滤 · 热门]
+  cg --> merge[合并去重<br/>~1000]
+  merge --> rank[排序<br/>重模型<br/>wide&amp;deep / DLRM / transformer]
+  rank --> rerank[重排<br/>多样性 · 业务规则<br/>LLM 辅助]
+  rerank --> ui[UI · Top 10-50]
+        </pre></div>
+        <p>200 ms 端到端预算下的各段延迟：<strong>召回 &le; 40 ms，排序 &le; 80 ms，重排 &le; 20 ms，网络+渲染 &le; 60 ms</strong>。你在面试里见过的所有成功设计都是这个形状。</p>
+
+        <h2 id="s2">候选生成（召回）</h2>
+        <p>目标：从 10^9 个物品里取 O(10^3) 值得排序的。三种套路：</p>
+        <ol>
+          <li><strong>双塔 / dual encoder</strong>：一个塔编码用户（历史、画像），一个塔编码物品；用 sampled-softmax / in-batch negatives 训练，使得 <code>&lt;user, item&gt; &asymp; score</code>；上线时在物品侧做 ANN（ScaNN、HNSW、FAISS）。这是 YouTube 推荐的骨干（Ch.3）。</li>
+          <li><strong>协同过滤 / 矩阵分解</strong>：传统但在非冷启场景仍强。Ch.2 入门足够。</li>
+          <li><strong>规则 / 启发式</strong>：所在国热门、最近、「朋友近期动态」。便宜的安全网；LinkedIn feed（Ch.4）同时集成 10+ 路。</li>
+        </ol>
+        <p>关键决策：</p>
+        <ul>
+          <li><strong>负样本采样</strong>：随机负太简单；hard negatives（同 session、差点就点）是现代双塔的主力。in-batch negatives 白嫖。</li>
+          <li><strong>embedding 维度</strong>：64-256 常见。维度越高越准，但延迟和存储也越贵。</li>
+          <li><strong>ANN 索引</strong>：10^6+ 时 HNSW 优于 flat；10^8+ 时量化 ScaNN 比 HNSW 再省 4x 内存。</li>
+        </ul>
+
+        <h2 id="s3">排序模型</h2>
+        <p>排序把 ~1000 个候选逐个用重模型打分，可吃数百个特征。</p>
+        <ul>
+          <li><strong>Wide &amp; Deep</strong>（Cheng 2016，Google Play）：宽线性臂记忆稀疏交叉，深 MLP 泛化。最简单靠谱的基线。Ch.5 讲广告 CTR 版本。</li>
+          <li><strong>DLRM</strong>（Meta，2019）：类别型走 embedding 表 &rarr; 特征交互层（点积）&rarr; MLP。Meta 排序主力，开源代码值得看。内存主要被 embedding 表占（常 &gt;100 GB）。</li>
+          <li><strong>DeepFM / DCN-V2</strong>：显式交叉网络，替代宽臂。</li>
+          <li><strong>Transformer 排序（SASRec、BST）</strong>：对长用户历史天然；阿里、Pinterest 已公开效果。</li>
+          <li><strong>多任务头</strong>：一座塔同时预测 click、watch-time、share、report，用学到或人工配的标量化融合。Ch.3 YouTube 明确这么做。</li>
+        </ul>
+        <div class="callout tip">
+          <h4>损失函数一句话</h4>
+          <p><strong>pointwise</strong>（log-loss）用于 CTR；<strong>pairwise</strong>（BPR / LambdaRank）有隐式比较；<strong>listwise</strong>（softmax-CE / LambdaMART）目标是 NDCG。Airbnb 的 Aerosolve（Ch.7）用 pairwise hinge。</p>
+        </div>
+
+        <h2 id="s4">重排与业务规则</h2>
+        <p>最后一段加上排序目标里不好表达的约束：</p>
+        <ul>
+          <li><strong>多样性</strong>：MMR、DPP、分类帽子（「Top 10 里同创作者最多 3 条」）。Facebook feed 明确强制创作者多样性。</li>
+          <li><strong>新鲜度</strong>：新物品时间衰减加权，抵消流行度偏差。</li>
+          <li><strong>业务规则</strong>：合规过滤（必须在用户所在国可用）、广告位混排、创作者生态规则。</li>
+          <li><strong>校准</strong>：让打分反映概率，跨系统混排时（广告 + 有机）尤其关键。</li>
+        </ul>
+
+        <h2 id="s5">案例：YouTube、Feed、Airbnb</h2>
+        <p>三个你应该能 2 分钟画出来的经典形状：</p>
+        <ul>
+          <li><strong>YouTube（Ch.3）</strong>：双塔从十亿视频召回，塔输入是用户历史 + 上下文；排序是多任务模型（click + watch-time + 满意度问卷）；hard negatives 同会话采样。20+ 路召回合并。</li>
+          <li><strong>Feed——Facebook/LinkedIn（Ch.4, Ch.8）</strong>：候选来自「朋友动态」「关注页面」「群组」「赞助」多流；排序是 DLRM 风格多任务（click、dwell、like、share、hide）。LinkedIn 在重排之后再加一层二次排序优化招聘价值。</li>
+          <li><strong>Airbnb 搜索（Ch.7）</strong>：用户位置 + 查询 geohash + 房源特征；双塔用「看过 A 然后订了 B」对训练房源 embedding；排序长期是 GBDT，近几年迁到 wide&amp;deep。季节性、房东取消风险是显式特征。</li>
+        </ul>
+
+        <h2 id="s6">LLM 辅助排序</h2>
+        <p>2024 年后面试必考：</p>
+        <ul>
+          <li><strong>LLM 当特征</strong>：离线用 LLM 给物品写描述，再用句向量 encode，作为额外特征给排序模型。推理链路没有 LLM 调用——便宜且稳。</li>
+          <li><strong>LLM 当重排</strong>：把 Top-20 + 用户上下文给 LLM，让它输出一个排列或分数。额外 200-500 ms 延迟；只适合高价值位置（例如首页旗舰推荐）。</li>
+          <li><strong>LLM 生成候选</strong>：「用户在计划京都旅行，建议体验项目」&rarr; LLM 提议 10 个概念 &rarr; 用检索解析到真实物品。Airbnb、Spotify 2024 都上过。</li>
+        </ul>
+        <div class="callout warn">
+          <h4>反模式：每条请求都套 LLM</h4>
+          <p>LLM 调用 p50 400 ms / p99 2 s，对 100 ms 预算的 feed 完全不可行。只在（a）离线给物品打标签，（b）最顶部位置，（c）带 TTL 缓存时使用；始终保留非 LLM 回退路径。</p>
+        </div>
+
+        <h2 id="s7">要背下来的数字</h2>
+        <div class="callout tip">
+          <h4>速查表</h4>
+          <ul>
+            <li>召回输出：500-2,000 个候选。</li>
+            <li>排序输入：至多 1,000，输出 Top ~50。</li>
+            <li>常见双塔 embedding：64-256 维；10^8 item 规模下 HNSW（M=32, efSearch=128）p99 &asymp; 10 ms。</li>
+            <li>Feed 端到端预算 100-200 ms；排序模型 CPU+INT8 &le; 80 ms，T4 &asymp; 20 ms。</li>
+            <li>离线指标：公开数据集 <strong>NDCG@10 &ge; 0.4</strong> 算合格基线；生产胜率常以每季度 0.5-2% 相对 CTR 提升衡量。</li>
+            <li>A/B 样本：每臂 &ge;100 万用户、1-2 周，可在 alpha=0.05、power=0.8 下检出 0.5% 的 MDE。</li>
+          </ul>
+        </div>
+        <div class="callout openai">
+          <h4>OpenAI 视角</h4>
+          <p>OpenAI 风格的题目看重<em>延迟预算</em>和<em>每千请求成本</em>。要能当场算：「这个 ranker 多加 30 ms、每千请求贵 0.01 美元——换 0.3% CTR 提升值不值？」多数候选人临场卡住；提前把框架练熟。</p>
+        </div>
+        <div class="callout anthropic">
+          <h4>Anthropic 视角</h4>
+          <p>Anthropic 要的是不推荐伤害的推荐器。会深挖<em>负向</em>目标（避免自伤、虚假信息、从检索文档里泄漏 PII）、分片公平性审计、以及让用户能申诉的透明通道。把安全当一等目标塞进 ranker，而不是在重排层打补丁。</p>
+        </div>
+
+        </div>
+      </article>
+
+      <section class="topic-footer-links">
+        <a href="./drift-monitoring.html"><span class="label"><span data-lang="en">Prev</span><span data-lang="zh">上一篇</span></span><strong><span data-lang="en">Drift Detection & Monitoring</span><span data-lang="zh">漂移检测与监控</span></strong></a>
+        <a href="../../arena/questions/o8-search-recommendation-llm.html"><span class="label"><span data-lang="en">Arena</span><span data-lang="zh">真题</span></span><strong><span data-lang="en">O8 · Search / recommendation + LLM</span><span data-lang="zh">O8 · 搜索/推荐 + LLM</span></strong></a>
+        <a href="../../arena/questions/a16-low-latency-inference-api.html"><span class="label"><span data-lang="en">Arena</span><span data-lang="zh">真题</span></span><strong><span data-lang="en">A16 · Low-latency ML inference API</span><span data-lang="zh">A16 · 低延迟 ML 推理 API</span></strong></a>
+        <a href="../llm/rag.html"><span class="label"><span data-lang="en">Related</span><span data-lang="zh">相关</span></span><strong><span data-lang="en">RAG Architecture</span><span data-lang="zh">RAG 架构</span></strong></a>
+        <a href="../safety/safety-engineering.html"><span class="label"><span data-lang="en">Related</span><span data-lang="zh">相关</span></span><strong><span data-lang="en">Safety Engineering</span><span data-lang="zh">安全工程</span></strong></a>
+      </section>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <p>
+        <span data-lang="en">© SD-Guide · Built for OpenAI &amp; Anthropic system design prep. Not affiliated with either company.</span>
+        <span data-lang="zh">© SD-Guide · 为 OpenAI 与 Anthropic 系统设计面试准备。与两家公司无关联。</span>
+      </p>
+    </div>
+  </footer>
+
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

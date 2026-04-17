@@ -1,0 +1,1068 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>真题 Arena — SD-Guide</title>
+  <meta name="description" content="Verified System Design interview questions for OpenAI and Anthropic. Filter by company, category, difficulty. Each question links to its original source.">
+  <link rel="stylesheet" href="../../assets/css/main.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../index.html">
+        <span class="nav-brand-logo">SD</span>
+        <span>SD-Guide</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="./index.html" class="active" data-match="/arena/"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../resources/index.html"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../about/index.html"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a>
+        <span class="sep">›</span>
+        <span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span>
+      </div>
+
+      <h1 class="section-title" style="font-size:2.2rem;letter-spacing:-1px;">
+        <span data-lang="en">真题 Arena</span>
+        <span data-lang="zh">真题竞技场</span>
+      </h1>
+      <p class="section-subtitle">
+        <span data-lang="en">35+ verified System Design questions from OpenAI and Anthropic interviews, collected from LeetCode, Blind, Exponent, PracHub, Glassdoor, Jointaro, and GitHub. Every question links to its primary source. <strong>Click any card to open the deep solution page</strong> with architecture diagrams, API, data model, trade-offs, and expected follow-ups.</span>
+        <span data-lang="zh">35+ 道经核实的 OpenAI / Anthropic 系统设计真题，来源包括 LeetCode、Blind、Exponent、PracHub、Glassdoor、Jointaro、GitHub 等。每题都附有出处链接。<strong>点击任意卡片</strong>进入详细解题页——包含架构图、API、数据模型、权衡分析、面试官追问清单。</span>
+      </p>
+
+      <!-- ===== Filter bar ===== -->
+      <div class="filter-bar">
+        <input type="search" id="arena-search" placeholder="Search questions, tags, sources..." aria-label="Search questions">
+        <div class="filter-group" id="filter-chips">
+          <button class="filter-chip active" data-group="company" data-value="all">All</button>
+          <button class="filter-chip" data-group="company" data-value="openai">OpenAI</button>
+          <button class="filter-chip" data-group="company" data-value="anthropic">Anthropic</button>
+        </div>
+        <div class="filter-group" id="filter-chips-cat" style="margin-left:auto;">
+          <!-- category chips appended below in second row -->
+        </div>
+      </div>
+
+      <div class="filter-bar" style="padding-top:0.6rem; padding-bottom:0.6rem;">
+        <div class="filter-group" style="flex: 1;">
+          <strong style="font-size:0.82rem; color: var(--text-subtle); margin-right:0.35rem; align-self:center;">
+            <span data-lang="en">Category:</span><span data-lang="zh">类别：</span>
+          </strong>
+          <button class="filter-chip active" data-group="category" data-value="all" onclick="Array.from(document.querySelectorAll('[data-group=category]')).forEach(c=>c.classList.remove('active'));this.classList.add('active');filterByCategory('all')">All</button>
+          <button class="filter-chip" data-group="category" data-value="llm-infra">LLM Infra</button>
+          <button class="filter-chip" data-group="category" data-value="ml-infra">ML Infra</button>
+          <button class="filter-chip" data-group="category" data-value="classical">Classical SD</button>
+          <button class="filter-chip" data-group="category" data-value="agent-rag">Agent &amp; RAG</button>
+          <button class="filter-chip" data-group="category" data-value="safety">Safety</button>
+          <button class="filter-chip" data-group="category" data-value="platform">Platform</button>
+        </div>
+        <div class="text-small text-muted">
+          <span data-lang="en">Showing </span><span data-lang="zh">共 </span>
+          <strong id="result-count" style="color:var(--accent);">36</strong>
+          <span data-lang="en"> questions</span><span data-lang="zh"> 题</span>
+        </div>
+      </div>
+
+      <!-- ===== Question list ===== -->
+      <div class="question-list" id="question-list">
+
+        <!-- ======================= OpenAI questions ======================= -->
+
+        <a class="question-card company-openai" href="./questions/o1-webhook-delivery-platform.html"
+           data-company="openai" data-categories="classical,platform"
+           data-search="webhook delivery retry billions requests leetcode">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">O1</span>
+              <span data-lang="en">Design a Webhook Delivery Platform</span>
+              <span data-lang="zh">设计 Webhook 投递平台</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-openai">OpenAI</span>
+              <span class="tag freq-3">★★★</span>
+              <span class="tag difficulty-hard">Hard</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Billions of events/day, 24h retry window, per-endpoint ordering, idempotency, DLQ, multi-tenant isolation, cost controls.</span>
+            <span data-lang="zh">日均十亿级事件、24h 重试窗口、每 endpoint 顺序、幂等、DLQ、多租户隔离、成本控制。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">Queue &amp; Retry</span><span class="tag">State Machine</span><span class="tag">Idempotency</span>
+            <span class="question-source">LeetCode 2026-02 · Screen</span>
+          </div>
+        </a>
+
+        <a class="question-card company-openai" href="./questions/o2-webhook-service.html"
+           data-company="openai" data-categories="classical,platform"
+           data-search="webhook service rest api cache db retry blind">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">O2</span>
+              <span data-lang="en">Design a Webhook Service (REST API)</span>
+              <span data-lang="zh">设计 Webhook 服务（REST API）</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-openai">OpenAI</span>
+              <span class="tag freq-3">★★★</span>
+              <span class="tag difficulty-hard">Hard</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">REST resource semantics, cache invalidation, DB schema, queue retry semantics. Cache-aside vs write-through trade-offs explicit.</span>
+            <span data-lang="zh">REST 资源语义、缓存失效、DB schema、队列重试语义。显式讨论 cache-aside 与 write-through 的权衡。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">REST</span><span class="tag">Caching</span><span class="tag">Message Queue</span>
+            <span class="question-source">Blind 2024-04 · Screen</span>
+          </div>
+        </a>
+
+        <a class="question-card company-openai" href="./questions/o3-webhook-platform-24h.html"
+           data-company="openai" data-categories="classical,platform"
+           data-search="webhook platform cxid servicing 24 hour retry leetcode">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">O3</span>
+              <span data-lang="en">Webhook Platform with External URL Lookup (24h)</span>
+              <span data-lang="zh">依赖外部服务的 Webhook 平台（24 小时重试）</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-openai">OpenAI</span>
+              <span class="tag freq-2">★★</span>
+              <span class="tag difficulty-hard">Hard</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">External dependency (ServiceB) for URL lookup + 24h retry forces you to design a robust state machine, TTL config cache, circuit breaker.</span>
+            <span data-lang="zh">URL 需从 ServiceB 查询 + 24 小时重试，把系统推向「状态机 + 外部一致性 + 可靠重试」。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">State Machine</span><span class="tag">Circuit Breaker</span><span class="tag">External Dep</span>
+            <span class="question-source">LeetCode 2024-10 · Screen</span>
+          </div>
+        </a>
+
+        <a class="question-card company-openai" href="./questions/o4-design-slack.html"
+           data-company="openai" data-categories="classical"
+           data-search="slack messaging realtime websocket fanout mvp">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">O4</span>
+              <span data-lang="en">Design Slack</span>
+              <span data-lang="zh">设计 Slack</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-openai">OpenAI</span>
+              <span class="tag freq-3">★★★</span>
+              <span class="tag difficulty-hard">Hard</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Real-time chat, channels, presence, offline delivery, fan-out. The "2-week MVP" framing is a scope-discipline trap.</span>
+            <span data-lang="zh">实时消息、频道、在线状态、离线投递、fanout 策略。「2 周 MVP」是范围控制的陷阱。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">WebSocket</span><span class="tag">Fan-out</span><span class="tag">Ordering</span>
+            <span class="question-source">LeetCode · Exponent · Glassdoor</span>
+          </div>
+        </a>
+
+        <a class="question-card company-openai" href="./questions/o5-cicd-github-actions.html"
+           data-company="openai" data-categories="classical,platform"
+           data-search="ci cd github actions workflow runner reliability">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">O5</span>
+              <span data-lang="en">Design a CI/CD System (GitHub Actions)</span>
+              <span data-lang="zh">设计 CI/CD 系统（类 GitHub Actions）</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-openai">OpenAI</span>
+              <span class="tag freq-3">★★★</span>
+              <span class="tag difficulty-hard">Hard</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Multi-tenant workflow engine, runner pool, log/artifact storage, lease-based scheduling, "reliability first" per interviewer.</span>
+            <span data-lang="zh">多租户工作流引擎、Runner 池、日志/制品存储、基于 lease 的调度，「可靠性优先」。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">Workflow Engine</span><span class="tag">Lease</span><span class="tag">Multi-tenant</span>
+            <span class="question-source">LeetCode 2026-02 · Jointaro 2025-07</span>
+          </div>
+        </a>
+
+        <a class="question-card company-openai" href="./questions/o6-github-actions-scratch.html"
+           data-company="openai" data-categories="classical,platform"
+           data-search="github actions webhook secret permission ci cd from scratch">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">O6</span>
+              <span data-lang="en">Design GitHub Actions from Scratch</span>
+              <span data-lang="zh">从零设计 GitHub Actions</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-openai">OpenAI</span>
+              <span class="tag freq-2">★★</span>
+              <span class="tag difficulty-hard">Hard</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Builds on O5 with productization: YAML config parsing/versioning, event integration, secret management, permission tokens, audit.</span>
+            <span data-lang="zh">在 O5 基础上加产品化能力：YAML 解析/版本化、事件集成、Secret 管理、权限 Token、审计。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">YAML</span><span class="tag">Secret Mgmt</span><span class="tag">RBAC</span>
+            <span class="question-source">Jointaro 2025-07</span>
+          </div>
+        </a>
+
+        <a class="question-card company-openai" href="./questions/o7-cicd-linear.html"
+           data-company="openai" data-categories="classical"
+           data-search="cicd linear pipeline step table cdc state machine">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">O7</span>
+              <span data-lang="en">CI/CD with Linear Multi-Step Pipeline</span>
+              <span data-lang="zh">线性多步 CI/CD 流水线</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-openai">OpenAI</span>
+              <span class="tag freq-2">★★</span>
+              <span class="tag difficulty-medium">Medium-Hard</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Minimum distributed-workflow subset: state-driven scheduling via CDC, step table, lease-based serialization.</span>
+            <span data-lang="zh">分布式工作流引擎最小子集：CDC 驱动调度、step 表、lease 化串行。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">CDC</span><span class="tag">State Machine</span><span class="tag">Change Stream</span>
+            <span class="question-source">LeetCode 2025-11</span>
+          </div>
+        </a>
+
+        <a class="question-card company-openai" href="./questions/o8-search-recommendation-llm.html"
+           data-company="openai" data-categories="ml-infra,agent-rag"
+           data-search="search recommendation ranking retrieval llm hybrid rag">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">O8</span>
+              <span data-lang="en">Search/Recommendation with LLMs</span>
+              <span data-lang="zh">融合 LLM 的搜索/推荐系统</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-openai">OpenAI</span>
+              <span class="tag freq-2">★★</span>
+              <span class="tag difficulty-hard">Hard</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Hybrid retrieval (BM25 + vector), reranker, where to insert the LLM (query rewrite vs summarize), offline/online eval.</span>
+            <span data-lang="zh">混合检索（BM25 + 向量）、重排序、LLM 插入位置（Query rewrite vs Summarize）、离线/在线评估。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">Hybrid Retrieval</span><span class="tag">Rerank</span><span class="tag">Eval</span>
+            <span class="question-source">Blind 2025-10 · Recruiter prompt</span>
+          </div>
+        </a>
+
+        <a class="question-card company-openai" href="./questions/o9-in-memory-database.html"
+           data-company="openai" data-categories="classical"
+           data-search="in memory database kv redis wal snapshot consistency">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">O9</span>
+              <span data-lang="en">Design an In-Memory Database</span>
+              <span data-lang="zh">设计内存数据库</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-openai">OpenAI</span>
+              <span class="tag freq-3">★★★</span>
+              <span class="tag difficulty-hard">Hard</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">SET/GET/DEL with TTL + range scans; evolve to WAL, snapshots, sharding, replication. Follow-ups add GROUP BY, ORDER BY.</span>
+            <span data-lang="zh">SET/GET/DEL + TTL + 范围扫描；演进到 WAL、快照、分片、复制。追问会加 GROUP BY、ORDER BY。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">KV Store</span><span class="tag">WAL</span><span class="tag">Sharding</span>
+            <span class="question-source">Glassdoor · StaffEngPrep · IGotAnOffer</span>
+          </div>
+        </a>
+
+        <a class="question-card company-openai" href="./questions/o10-polite-web-crawler.html"
+           data-company="openai" data-categories="classical,platform"
+           data-search="web crawler politeness robots dedup distributed queue">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">O10</span>
+              <span data-lang="en">Fault-Tolerant Polite Web Crawler @10M RPS</span>
+              <span data-lang="zh">容错礼貌型网页爬虫（10M RPS）</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-openai">OpenAI</span>
+              <span class="tag freq-2">★★</span>
+              <span class="tag difficulty-hard">Hard</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">URL frontier, politeness scheduler, robots.txt cache, Bloom-filter dedup, canonicalization, content-hash for idempotent writes.</span>
+            <span data-lang="zh">URL frontier、礼貌调度器、robots.txt 缓存、Bloom 去重、URL 规范化、基于内容 hash 的幂等写入。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">Frontier</span><span class="tag">Politeness</span><span class="tag">Bloom Filter</span>
+            <span class="question-source">IGotAnOffer · Jointaro · Interviewing.io</span>
+          </div>
+        </a>
+
+        <a class="question-card company-openai" href="./questions/o11-openai-playground.html"
+           data-company="openai" data-categories="platform,llm-infra"
+           data-search="openai playground thread message history chat ui api schema">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">O11</span>
+              <span data-lang="en">Design the OpenAI Playground</span>
+              <span data-lang="zh">设计 OpenAI Playground</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-openai">OpenAI</span>
+              <span class="tag freq-3">★★★</span>
+              <span class="tag difficulty-hard">Hard</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Frontend wireframe, API layer, thread/message history schema, prompt versioning, streaming output, multi-model selector.</span>
+            <span data-lang="zh">前端线框图、API 层、线程/消息历史 schema、prompt 版本化、流式输出、多模型选择器。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">Product Design</span><span class="tag">Streaming</span><span class="tag">Versioning</span>
+            <span class="question-source">Exponent · Candidate-verified</span>
+          </div>
+        </a>
+
+        <a class="question-card company-openai" href="./questions/o12-chatgpt-100m.html"
+           data-company="openai" data-categories="llm-infra,platform"
+           data-search="chatgpt 100m users scale gpu fleet conversation storage">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">O12</span>
+              <span data-lang="en">Design ChatGPT for 100M Users</span>
+              <span data-lang="zh">设计承载 1 亿用户的 ChatGPT</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-openai">OpenAI</span>
+              <span class="tag freq-2">★★</span>
+              <span class="tag difficulty-hard">Hard</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">End-to-end scaling: session persistence, GPU fleet management, regional routing, conversation storage, usage metering.</span>
+            <span data-lang="zh">端到端扩展：会话持久化、GPU 集群管理、区域路由、对话存储、用量计费。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">Scale</span><span class="tag">GPU Fleet</span><span class="tag">Metering</span>
+            <span class="question-source">Medium · 1Point3Acres</span>
+          </div>
+        </a>
+
+        <a class="question-card company-openai" href="./questions/o13-nsfw-detection.html"
+           data-company="openai" data-categories="safety,ml-infra"
+           data-search="nsfw safety content moderation feedback loop classifier">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">O13</span>
+              <span data-lang="en">NSFW / Safety Detection for ChatGPT Outputs</span>
+              <span data-lang="zh">ChatGPT 输出的 NSFW/安全检测</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-openai">OpenAI</span>
+              <span class="tag freq-2">★★</span>
+              <span class="tag difficulty-hard">Hard</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Data collection pipeline, model choice (rule vs classifier vs LLM-judge), latency budget, feedback loop, red-team flywheel.</span>
+            <span data-lang="zh">数据收集管道、模型选择（规则 vs 分类器 vs LLM 评判）、延迟预算、反馈循环、red-team 飞轮。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">Moderation</span><span class="tag">Classifier</span><span class="tag">Feedback</span>
+            <span class="question-source">Jobright · Glassdoor</span>
+          </div>
+        </a>
+
+        <a class="question-card company-openai" href="./questions/o14-gpu-credit-scheduling.html"
+           data-company="openai" data-categories="platform,llm-infra"
+           data-search="gpu scheduling credit expiration oldest first quota">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">O14</span>
+              <span data-lang="en">GPU Credit / Quota Scheduling System</span>
+              <span data-lang="zh">GPU 信用/配额调度系统</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-openai">OpenAI</span>
+              <span class="tag freq-2">★★</span>
+              <span class="tag difficulty-hard">Hard</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Credit calculator with expiration, FIFO-consume-oldest semantics, prevent double-spend, fair-queue per tenant.</span>
+            <span data-lang="zh">信用计算器带过期、先消费最旧额度、防止双重扣减、按租户公平排队。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">Credit System</span><span class="tag">Fairness</span><span class="tag">Accounting</span>
+            <span class="question-source">Glassdoor</span>
+          </div>
+        </a>
+
+        <a class="question-card company-openai" href="./questions/o15-streaming-token-response.html"
+           data-company="openai" data-categories="llm-infra"
+           data-search="streaming token sse websocket ttft moderation pipeline">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">O15</span>
+              <span data-lang="en">Streaming Token Response System</span>
+              <span data-lang="zh">Token 流式响应系统</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-openai">OpenAI</span>
+              <span class="tag freq-2">★★</span>
+              <span class="tag difficulty-hard">Hard</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">SSE/WebSocket, low TTFT, in-stream moderation pipeline, backpressure, reconnect with cursor, server-to-client event model.</span>
+            <span data-lang="zh">SSE/WebSocket、低 TTFT、流式 moderation、背压、带游标重连、服务端到客户端事件模型。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">SSE</span><span class="tag">Backpressure</span><span class="tag">TTFT</span>
+            <span class="question-source">SystemDesignHandbook</span>
+          </div>
+        </a>
+
+        <a class="question-card company-openai" href="./questions/o16-llm-enterprise-search.html"
+           data-company="openai" data-categories="agent-rag,ml-infra"
+           data-search="rag enterprise search embedding vector chunking citation hallucination">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">O16</span>
+              <span data-lang="en">LLM-powered Enterprise Search (RAG)</span>
+              <span data-lang="zh">面向企业的 LLM 语义搜索（RAG）</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-openai">OpenAI</span>
+              <span class="tag freq-2">★★</span>
+              <span class="tag difficulty-hard">Hard</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">RAG pipeline: ingestion → chunking → embedding → vector DB → hybrid retrieval → rerank → LLM w/ citation. Hallucination mitigation.</span>
+            <span data-lang="zh">RAG 管道：采集 → 分块 → embedding → 向量库 → 混合检索 → 重排 → 带引用的 LLM 生成。幻觉缓解。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">RAG</span><span class="tag">Vector DB</span><span class="tag">Hybrid Search</span>
+            <span class="question-source">Glassdoor</span>
+          </div>
+        </a>
+
+        <a class="question-card company-openai" href="./questions/o17-rate-limiter.html"
+           data-company="openai" data-categories="classical"
+           data-search="rate limiter token bucket sliding window api">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">O17</span>
+              <span data-lang="en">Design a Rate Limiter</span>
+              <span data-lang="zh">设计限流器</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-openai">OpenAI</span>
+              <span class="tag freq-2">★★</span>
+              <span class="tag difficulty-medium">Medium</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Token bucket vs leaky bucket vs sliding window. Token-based billing for LLM APIs. Distributed coordination via Redis.</span>
+            <span data-lang="zh">令牌桶 vs 漏桶 vs 滑动窗口。LLM API 的 token 级计费限流。基于 Redis 的分布式协调。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">Token Bucket</span><span class="tag">Redis</span><span class="tag">Distributed</span>
+            <span class="question-source">Jobright · IGotAnOffer</span>
+          </div>
+        </a>
+
+        <a class="question-card company-openai" href="./questions/o18-vector-database.html"
+           data-company="openai" data-categories="ml-infra,agent-rag"
+           data-search="vector database embedding similarity search ann hnsw ivf pq">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">O18</span>
+              <span data-lang="en">Design a Vector Database</span>
+              <span data-lang="zh">设计向量数据库</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-openai">OpenAI</span>
+              <span class="tag freq-2">★★</span>
+              <span class="tag difficulty-hard">Hard</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Store &amp; search billions of embeddings. ANN algorithms (HNSW, IVF-PQ), sharding, hybrid filter queries, ingestion pipeline.</span>
+            <span data-lang="zh">数十亿 embedding 的存储与搜索。ANN 算法（HNSW、IVF-PQ）、分片、混合过滤查询、采集管道。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">ANN</span><span class="tag">HNSW</span><span class="tag">Sharding</span>
+            <span class="question-source">Jobright</span>
+          </div>
+        </a>
+
+        <a class="question-card company-openai" href="./questions/o19-distributed-training.html"
+           data-company="openai" data-categories="llm-infra,ml-infra"
+           data-search="distributed training gpu cluster megatron ddp fsdp zero pipeline">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">O19</span>
+              <span data-lang="en">Distributed ML Training Platform</span>
+              <span data-lang="zh">分布式 ML 训练平台</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-openai">OpenAI</span>
+              <span class="tag freq-2">★★</span>
+              <span class="tag difficulty-hard">Staff-level</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Orchestrate training across thousands of GPUs: DP/TP/PP, ZeRO, checkpointing, fault-tolerance, job scheduler, bandwidth-aware routing.</span>
+            <span data-lang="zh">数千 GPU 的训练编排：DP/TP/PP、ZeRO、Checkpoint、容错、作业调度、带宽感知路由。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">3D Parallelism</span><span class="tag">ZeRO</span><span class="tag">Checkpoint</span>
+            <span class="question-source">Hello Interview</span>
+          </div>
+        </a>
+
+        <!-- ======================= Anthropic questions ======================= -->
+
+        <a class="question-card company-anthropic" href="./questions/a11-llm-inference-service.html"
+           data-company="anthropic" data-categories="llm-infra"
+           data-search="llm inference service prefill decode kv cache continuous batching streaming tail latency">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">A11</span>
+              <span data-lang="en">High-Concurrency LLM Inference Service</span>
+              <span data-lang="zh">高并发 LLM 推理服务</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-anthropic">Anthropic</span>
+              <span class="tag freq-4">★★★★</span>
+              <span class="tag difficulty-hard">Hard</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Streaming tokens, prefill vs decode split, KV cache, continuous batching, tail latency, GPU memory management. The canonical Anthropic Q.</span>
+            <span data-lang="zh">流式 token、prefill 与 decode 分相、KV cache、连续 batching、尾延迟控制、GPU 显存管理。Anthropic 经典题。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">LLM Serving</span><span class="tag">KV Cache</span><span class="tag">PagedAttention</span>
+            <span class="question-source">PracHub 2026-02 · Onsite</span>
+          </div>
+        </a>
+
+        <a class="question-card company-anthropic" href="./questions/a12-gpu-batching.html"
+           data-company="anthropic" data-categories="llm-infra"
+           data-search="gpu batching dynamic flush slo throughput latency admission">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">A12</span>
+              <span data-lang="en">GPU Inference Request Batching</span>
+              <span data-lang="zh">GPU 推理请求动态 batching</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-anthropic">Anthropic</span>
+              <span class="tag freq-3">★★★</span>
+              <span class="tag difficulty-hard">Hard</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Flush policies (size/age/length-spread), head-of-line blocking mitigation, admission control, observability, overload handling.</span>
+            <span data-lang="zh">Flush 策略（大小/时间/长度方差）、队头阻塞缓解、准入控制、可观测性、过载处理。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">Batching</span><span class="tag">SLO</span><span class="tag">Admission Control</span>
+            <span class="question-source">PracHub 2026-03 · Onsite</span>
+          </div>
+        </a>
+
+        <a class="question-card company-anthropic" href="./questions/a13-inference-routing.html"
+           data-company="anthropic" data-categories="llm-infra,platform"
+           data-search="routing scheduling layer priority queue fairness credit cache determinism">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">A13</span>
+              <span data-lang="en">Inference Routing &amp; Scheduling Layer</span>
+              <span data-lang="zh">推理路由与调度层</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-anthropic">Anthropic</span>
+              <span class="tag freq-3">★★★</span>
+              <span class="tag difficulty-hard">Hard</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Priority queues, credit-based fairness (WFQ/DRR), result cache for determinism (temp=0), heterogeneous hardware pools.</span>
+            <span data-lang="zh">优先级队列、基于 credit 的公平调度（WFQ/DRR）、temp=0 确定性结果缓存、异构硬件池。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">Scheduler</span><span class="tag">WFQ</span><span class="tag">Result Cache</span>
+            <span class="question-source">PracHub 2025-09 · Onsite</span>
+          </div>
+        </a>
+
+        <a class="question-card company-anthropic" href="./questions/a14-batch-inference-api.html"
+           data-company="anthropic" data-categories="llm-infra,platform"
+           data-search="batch inference api async job poll idempotency partial failure">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">A14</span>
+              <span data-lang="en">Batch Inference API</span>
+              <span data-lang="zh">批量推理 API</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-anthropic">Anthropic</span>
+              <span class="tag freq-3">★★★</span>
+              <span class="tag difficulty-hard">Hard</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">POST job + poll for results, idempotency, partial batch failures, result pagination, cost-optimized off-peak scheduling.</span>
+            <span data-lang="zh">提交作业 + 轮询结果、幂等、批内部分失败、结果分页、低峰期成本优化调度。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">Async Job</span><span class="tag">Idempotency</span><span class="tag">Partial Failure</span>
+            <span class="question-source">PracHub 2025-09 · Onsite</span>
+          </div>
+        </a>
+
+        <a class="question-card company-anthropic" href="./questions/a15-multi-model-inference-api.html"
+           data-company="anthropic" data-categories="llm-infra,platform"
+           data-search="gpu inference api multi model version ab routing autoscaling canary">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">A15</span>
+              <span data-lang="en">Multi-Model GPU Inference API</span>
+              <span data-lang="zh">多模型 GPU 推理 API</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-anthropic">Anthropic</span>
+              <span class="tag freq-3">★★★</span>
+              <span class="tag difficulty-hard">Hard</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Control plane + data plane split, model registry, canary + rollback, A/B routing, autoscaling, warm/cold tiers.</span>
+            <span data-lang="zh">控制面 + 数据面分离、模型注册表、灰度 + 回滚、A/B 路由、自动扩缩容、冷/热分层。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">Control Plane</span><span class="tag">Canary</span><span class="tag">Autoscale</span>
+            <span class="question-source">PracHub 2025-08 · Onsite</span>
+          </div>
+        </a>
+
+        <a class="question-card company-anthropic" href="./questions/a16-low-latency-inference-api.html"
+           data-company="anthropic" data-categories="ml-infra,llm-infra"
+           data-search="low latency ml inference api slo feature store drift detection">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">A16</span>
+              <span data-lang="en">Low-Latency ML Inference API</span>
+              <span data-lang="zh">低延迟 ML 推理 API</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-anthropic">Anthropic</span>
+              <span class="tag freq-3">★★★</span>
+              <span class="tag difficulty-hard">Hard</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">SLOs (p95, availability, QPS), online feature store, rollout/canary, drift detection, degradation strategies.</span>
+            <span data-lang="zh">SLO（p95、可用性、QPS）、在线 feature store、rollout/canary、漂移检测、降级策略。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">Feature Store</span><span class="tag">Drift</span><span class="tag">SLO</span>
+            <span class="question-source">PracHub 2025-09 · Onsite</span>
+          </div>
+        </a>
+
+        <a class="question-card company-anthropic" href="./questions/a17-design-review.html"
+           data-company="anthropic" data-categories="platform,llm-infra"
+           data-search="design review critique inference api scale circuit breaker canary">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">A17</span>
+              <span data-lang="en">Review an Inference API Design for Scale</span>
+              <span data-lang="zh">评审他人的推理 API 设计</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-anthropic">Anthropic</span>
+              <span class="tag freq-2">★★</span>
+              <span class="tag difficulty-hard">Hard</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Design-review rubric: fill missing SLOs, single points of failure, improvement priority (safety → efficiency → cost).</span>
+            <span data-lang="zh">评审清单：补全缺失的 SLO、找单点故障、改进优先级（保命 → 提效 → 降本）。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">Design Review</span><span class="tag">SRE</span><span class="tag">Failure Modes</span>
+            <span class="question-source">PracHub 2025-09 · Onsite</span>
+          </div>
+        </a>
+
+        <a class="question-card company-anthropic" href="./questions/a18-model-downloader.html"
+           data-company="anthropic" data-categories="platform,llm-infra"
+           data-search="model downloader artifact distribution integrity rollout rollback thundering herd">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">A18</span>
+              <span data-lang="en">Model Downloader &amp; Artifact Distribution</span>
+              <span data-lang="zh">模型分发器 / 制品分发系统</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-anthropic">Anthropic</span>
+              <span class="tag freq-2">★★</span>
+              <span class="tag difficulty-medium">Medium-Hard</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Manifest-driven releases, atomic symlink switch, rollback, thundering-herd avoidance, audit trail, integrity validation.</span>
+            <span data-lang="zh">Manifest 驱动发布、原子 symlink 切换、回滚、防止惊群、审计链路、完整性校验。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">Artifact</span><span class="tag">Rollout</span><span class="tag">Integrity</span>
+            <span class="question-source">PracHub 2026-02 · Onsite</span>
+          </div>
+        </a>
+
+        <a class="question-card company-anthropic" href="./questions/a19-prompt-playground.html"
+           data-company="anthropic" data-categories="platform,agent-rag"
+           data-search="prompt playground versioning experiment evaluation prompt caching collaboration">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">A19</span>
+              <span data-lang="en">Prompt Playground / Experiment Platform</span>
+              <span data-lang="zh">Prompt 实验平台</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-anthropic">Anthropic</span>
+              <span class="tag freq-2">★★</span>
+              <span class="tag difficulty-medium">Medium</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Prompt versioning, experiment mgmt, side-by-side eval, prompt caching, collaboration/ACL, huge-context strategy.</span>
+            <span data-lang="zh">Prompt 版本化、实验管理、并排对比、Prompt 缓存、协作/权限、超长上下文策略。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">Experimentation</span><span class="tag">Prompt Cache</span><span class="tag">ACL</span>
+            <span class="question-source">PracHub 2026-02 · Onsite</span>
+          </div>
+        </a>
+
+        <a class="question-card company-anthropic" href="./questions/a20-performance-takehome.html"
+           data-company="anthropic" data-categories="platform"
+           data-search="performance takehome optimization simulated cycles benchmark cheating">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">A20</span>
+              <span data-lang="en">Performance Take-Home (Optimization)</span>
+              <span data-lang="zh">性能 Take-Home（底层优化）</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-anthropic">Anthropic</span>
+              <span class="tag freq-2">★★</span>
+              <span class="tag difficulty-hard">Hard</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Optimize simulated machine cycles — benchmark-driven iteration. Includes explicit warning that LLMs can "cheat" by modifying tests.</span>
+            <span data-lang="zh">优化模拟机器周期——benchmark 驱动迭代。明确警告 LLM 可能修改测试「作弊」。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">Perf Engineering</span><span class="tag">Profiling</span><span class="tag">Correctness</span>
+            <span class="question-source">GitHub (open-source) · HN 2026-01</span>
+          </div>
+        </a>
+
+        <a class="question-card company-anthropic" href="./questions/a21-claude-chat-service.html"
+           data-company="anthropic" data-categories="llm-infra,platform"
+           data-search="claude chat service session streaming token billing log aggregation">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">A21</span>
+              <span data-lang="en">Design Claude Chat Service</span>
+              <span data-lang="zh">设计 Claude Chat 服务</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-anthropic">Anthropic</span>
+              <span class="tag freq-2">★★</span>
+              <span class="tag difficulty-hard">Hard</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Session management, streaming output, token-level billing, log aggregation, safety filter integration.</span>
+            <span data-lang="zh">会话管理、流式输出、Token 级计费、日志聚合、Safety 过滤器集成。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">Session</span><span class="tag">Streaming</span><span class="tag">Metering</span>
+            <span class="question-source">interviewing.io</span>
+          </div>
+        </a>
+
+        <a class="question-card company-anthropic" href="./questions/a22-p2p-file-distribution.html"
+           data-company="anthropic" data-categories="platform"
+           data-search="p2p file distribution bittorrent bandwidth model weights thousands hosts">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">A22</span>
+              <span data-lang="en">P2P File Distribution (BitTorrent-style)</span>
+              <span data-lang="zh">P2P 大文件分发（类 BitTorrent）</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-anthropic">Anthropic</span>
+              <span class="tag freq-2">★★</span>
+              <span class="tag difficulty-hard">Hard</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Bandwidth-constrained distribution of large files (model weights, datasets) to thousands of machines. Peer discovery, tit-for-tat, chunk selection.</span>
+            <span data-lang="zh">带宽受限下将大文件（模型权重、数据集）分发到数千台机器。Peer 发现、tit-for-tat、分块选择。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">P2P</span><span class="tag">Chunking</span><span class="tag">Bandwidth</span>
+            <span class="question-source">Exponent · Candidate-verified</span>
+          </div>
+        </a>
+
+        <a class="question-card company-anthropic" href="./questions/a23-100k-rps-llm.html"
+           data-company="anthropic" data-categories="llm-infra"
+           data-search="100k rps llm horizontal scale token generation sharding">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">A23</span>
+              <span data-lang="en">Handle 100K RPS for LLM Token Generation</span>
+              <span data-lang="zh">承载 100K RPS 的 LLM 吞吐</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-anthropic">Anthropic</span>
+              <span class="tag freq-2">★★</span>
+              <span class="tag difficulty-hard">Hard</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Horizontal scaling for throughput, request routing across replicas, GPU pool sizing, load-based autoscale.</span>
+            <span data-lang="zh">吞吐导向的水平扩展、副本间请求路由、GPU 池容量规划、基于负载的自动扩缩容。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">Scale</span><span class="tag">Load Balancing</span><span class="tag">Throughput</span>
+            <span class="question-source">Exponent</span>
+          </div>
+        </a>
+
+        <a class="question-card company-anthropic" href="./questions/a24-key-value-store.html"
+           data-company="anthropic" data-categories="classical"
+           data-search="key value store dynamo consistent hashing replication quorum vector clock">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">A24</span>
+              <span data-lang="en">Design a Key-Value Store (Dynamo-style)</span>
+              <span data-lang="zh">设计键值存储（Dynamo 风格）</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-anthropic">Anthropic</span>
+              <span class="tag freq-2">★★</span>
+              <span class="tag difficulty-hard">Hard</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Consistent hashing, quorum reads/writes, vector clocks for conflict resolution, Merkle trees for anti-entropy, gossip for membership.</span>
+            <span data-lang="zh">一致性哈希、读写 quorum、向量时钟冲突解决、Merkle 树反熵、gossip 成员协议。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">Consistent Hash</span><span class="tag">Quorum</span><span class="tag">Replication</span>
+            <span class="question-source">Exponent</span>
+          </div>
+        </a>
+
+        <a class="question-card company-anthropic" href="./questions/a25-agentic-system.html"
+           data-company="anthropic" data-categories="agent-rag"
+           data-search="agentic ai system tool use planning mcp multi agent memory">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">A25</span>
+              <span data-lang="en">Design an Agentic AI System</span>
+              <span data-lang="zh">设计自主 Agent 系统</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-anthropic">Anthropic</span>
+              <span class="tag freq-2">★★</span>
+              <span class="tag difficulty-hard">Hard</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Agent loop (reason → plan → act), tool use via MCP, short/long-term memory, multi-agent coordination, sandbox &amp; guardrails, infinite-loop prevention.</span>
+            <span data-lang="zh">Agent 主循环（推理 → 规划 → 执行）、基于 MCP 的工具使用、短/长期记忆、多 Agent 协作、沙箱与护栏、无限循环防护。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">Agent Loop</span><span class="tag">MCP</span><span class="tag">Guardrails</span>
+            <span class="question-source">Exponent (MLE role)</span>
+          </div>
+        </a>
+
+        <a class="question-card company-anthropic" href="./questions/a26-web-crawler.html"
+           data-company="anthropic" data-categories="classical"
+           data-search="web crawler dedup rate control politeness distributed async">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">A26</span>
+              <span data-lang="en">Design a Web Crawler</span>
+              <span data-lang="zh">设计网页爬虫</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-anthropic">Anthropic</span>
+              <span class="tag freq-2">★★</span>
+              <span class="tag difficulty-hard">Hard</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Distributed fetching, deduplication, multi-threaded / async, rate control. Interviewers will follow up on scaling and robots.txt handling.</span>
+            <span data-lang="zh">分布式抓取、去重、多线程/异步、速率控制。面试官会追问扩展性与 robots.txt 处理。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">Crawler</span><span class="tag">Dedup</span><span class="tag">Rate Control</span>
+            <span class="question-source">Exponent · programhelp.net</span>
+          </div>
+        </a>
+
+        <a class="question-card company-anthropic" href="./questions/a27-banking-app.html"
+           data-company="anthropic" data-categories="classical"
+           data-search="banking app transactional consistency atomicity durability audit">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">A27</span>
+              <span data-lang="en">Design a Banking App</span>
+              <span data-lang="zh">设计银行应用</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-anthropic">Anthropic</span>
+              <span class="tag freq-2">★★</span>
+              <span class="tag difficulty-medium">Medium-Hard</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Traditional: transactional consistency, double-entry ledger, idempotent transfers, fraud detection, audit log, regulatory compliance.</span>
+            <span data-lang="zh">传统考察：事务一致性、双重记账、幂等转账、反欺诈、审计日志、合规要求。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">ACID</span><span class="tag">Ledger</span><span class="tag">Audit</span>
+            <span class="question-source">interviewing.io</span>
+          </div>
+        </a>
+
+        <a class="question-card company-anthropic" href="./questions/a28-distributed-search-1b.html"
+           data-company="anthropic" data-categories="llm-infra,platform"
+           data-search="distributed search 1b documents 1m qps sharding hot spot cache llm">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">A28</span>
+              <span data-lang="en">Distributed Search for 1B Documents @1M QPS</span>
+              <span data-lang="zh">1B 文档 @1M QPS 的分布式搜索</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-anthropic">Anthropic</span>
+              <span class="tag freq-3">★★★</span>
+              <span class="tag difficulty-hard">Hard</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">1B documents, 1M QPS. Sharding strategies, hot-spot avoidance, multi-level cache, LLM inference scaling, GPU memory optimization.</span>
+            <span data-lang="zh">1B 文档、1M QPS。分片策略、热点规避、多级缓存、LLM 推理扩展、GPU 内存优化。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">Scale</span><span class="tag">Sharding</span><span class="tag">Cache Hierarchy</span>
+            <span class="question-source">Medium Anqi Silvia 2025 · linkjob.ai</span>
+          </div>
+        </a>
+
+        <a class="question-card company-anthropic" href="./questions/a29-model-serving-platform.html"
+           data-company="anthropic" data-categories="llm-infra,platform"
+           data-search="model serving platform llm open ended requirements architecture tradeoffs">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">A29</span>
+              <span data-lang="en">Model Serving Platform for LLMs</span>
+              <span data-lang="zh">LLM 模型服务平台</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-anthropic">Anthropic</span>
+              <span class="tag freq-3">★★★</span>
+              <span class="tag difficulty-hard">Hard</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Open-ended: clarify requirements → high-level architecture → safety/latency/reliability trade-offs. You must drive the conversation.</span>
+            <span data-lang="zh">开放式：澄清需求 → 高层架构 → 安全/延迟/可靠性权衡。你必须主导对话。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">Open-ended</span><span class="tag">Trade-offs</span><span class="tag">Scope</span>
+            <span class="question-source">linkjob.ai</span>
+          </div>
+        </a>
+
+      </div> <!-- /question-list -->
+
+      <footer class="footer">
+        <div class="footer-inner">
+          <div>
+            <span data-lang="en">All questions are linked to their primary source and marked by credibility.</span>
+            <span data-lang="zh">所有题目均附主来源链接并标注可信度。</span>
+          </div>
+          <div>
+            <a href="../about/index.html">
+              <span data-lang="en">Methodology →</span><span data-lang="zh">方法论 →</span>
+            </a>
+          </div>
+        </div>
+      </footer>
+    </div>
+  </main>
+
+  <script src="../../assets/js/app.js"></script>
+  <script>
+    // Initialize the filter logic
+    SDArena.init();
+
+    // Category filter group isn't in the same bar, make it work
+    function filterByCategory(value) {
+      const list = document.getElementById('question-list');
+      const cards = Array.from(list.querySelectorAll('.question-card'));
+      const countEl = document.getElementById('result-count');
+      let visible = 0;
+      cards.forEach((card) => {
+        const cats = (card.dataset.categories || '').split(',');
+        const companyActive = document.querySelector('[data-group="company"].active');
+        const companyVal = companyActive ? companyActive.dataset.value : 'all';
+        const searchVal = (document.getElementById('arena-search').value || '').toLowerCase();
+
+        const matchesCat = value === 'all' || cats.includes(value);
+        const matchesCompany = companyVal === 'all' || card.dataset.company === companyVal;
+        const matchesSearch = !searchVal ||
+          card.textContent.toLowerCase().includes(searchVal) ||
+          (card.dataset.search || '').toLowerCase().includes(searchVal);
+
+        const show = matchesCat && matchesCompany && matchesSearch;
+        card.style.display = show ? '' : 'none';
+        if (show) visible++;
+      });
+      countEl.textContent = visible;
+    }
+
+    // Wire category chips
+    document.querySelectorAll('[data-group="category"]').forEach(chip => {
+      chip.addEventListener('click', (e) => {
+        e.preventDefault();
+        document.querySelectorAll('[data-group="category"]').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        filterByCategory(chip.dataset.value);
+      });
+    });
+
+    // Handle ?company=... URL param (linked from home page)
+    const params = new URLSearchParams(location.search);
+    if (params.get('company')) {
+      const v = params.get('company');
+      const chip = document.querySelector(`[data-group="company"][data-value="${v}"]`);
+      if (chip) chip.click();
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>A23. Handle 100K RPS for LLM Token Generation — SD-Guide</title>
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../index.html" class="active"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../resources/index.html"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../about/index.html"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a>
+        <span class="sep">›</span>
+        <a href="../index.html"><span data-lang="en">Arena</span><span data-lang="zh">竞技场</span></a>
+        <span class="sep">›</span>
+        <span>A23</span>
+      </div>
+
+      <article class="prose wide">
+        <div class="question-meta" style="margin-bottom:1rem;">
+          <span class="tag company-anthropic">Anthropic</span>
+          <span class="tag freq-2">★★ Frequent</span>
+          <span class="tag difficulty-hard">Hard</span>
+          <span class="tag">Throughput</span><span class="tag">Scale</span>
+        </div>
+
+        <h1>
+          <span data-lang="en">A23 · Handle 100K RPS for LLM Token Generation</span>
+          <span data-lang="zh">A23 · 承载 100K RPS 的 LLM Token 生成</span>
+        </h1>
+
+        <div class="callout anthropic">
+          <h4><span data-lang="en">Verified source</span><span data-lang="zh">经核实出处</span></h4>
+          <p>Prompt: "Handle 100K RPS for LLM Token-Generation." — Exponent. Credibility <strong>B/C</strong>.</p>
+        </div>
+
+        <h2><span data-lang="en">Back-of-envelope</span><span data-lang="zh">估算</span></h2>
+<ul><li><span data-lang="en">100K RPS × avg ~1K output tokens ≈ 100M tokens/sec (peak).</span><span data-lang="zh">100K RPS × 平均 ~1K 输出 tokens ≈ 100M tokens/sec（峰值）。</span></li><li><span data-lang="en">Single H100 can do ~5-10K tokens/sec for a 70B model → need ~10–20K H100s. Clearly multi-datacenter.</span><span data-lang="zh">单 H100 对 70B 模型可做 ~5-10K tokens/sec → 需要 ~1-2 万张 H100。显然是多 DC 规模。</span></li></ul><h2><span data-lang="en">How to scale</span><span data-lang="zh">如何扩展</span></h2>
+<ul><li><span data-lang="en"><strong>Horizontal replica</strong> of the inference cluster with sticky session by conversation_id.</span><span data-lang="zh"><strong>水平副本</strong>，按 conversation_id 粘性路由。</span></li><li><span data-lang="en"><strong>Regional serving</strong>: route to nearest DC; only cross-region when capacity forces it.</span><span data-lang="zh"><strong>区域服务</strong>：路由到最近 DC；容量不足时才跨区。</span></li><li><span data-lang="en"><strong>Autoscale signal</strong>: token-queue depth per model (not CPU or GPU util).</span><span data-lang="zh"><strong>扩容信号</strong>：每模型的 token 队列深度（而非 CPU / GPU 利用率）。</span></li><li><span data-lang="en"><strong>Graceful degradation</strong>: under saturation, return 429 for free tier, slower model for paid tier, full model for Enterprise.</span><span data-lang="zh"><strong>优雅降级</strong>：饱和时免费返 429，付费转小模型，企业保原模型。</span></li></ul><p><span data-lang="en">For the micro-architecture of each inference cluster, see A11. This question is really about fleet-level orchestration.</span><span data-lang="zh">单个推理集群的微架构见 A11。本题本质是集群级编排。</span></p>
+
+        <h2><span data-lang="en">Related study-guide topics</span><span data-lang="zh">相关学习手册专题</span></h2>
+        <ul><li><a href="../../guide/llm/llm-serving.html"><span data-lang="en">LLM serving</span><span data-lang="zh">LLM 推理服务</span></a></li></ul>
+      </article>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

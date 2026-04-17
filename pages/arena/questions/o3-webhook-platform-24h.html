@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>O3. Webhook Platform with External URL Lookup (24h Retry) — SD-Guide</title>
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../index.html" class="active"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../resources/index.html"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../about/index.html"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a>
+        <span class="sep">›</span>
+        <a href="../index.html"><span data-lang="en">Arena</span><span data-lang="zh">竞技场</span></a>
+        <span class="sep">›</span>
+        <span>O3</span>
+      </div>
+
+      <article class="prose wide">
+        <div class="question-meta" style="margin-bottom:1rem;">
+          <span class="tag company-openai">OpenAI</span>
+          <span class="tag freq-2">★★ Frequent</span>
+          <span class="tag difficulty-hard">Hard</span>
+          <span class="tag">State Machine</span><span class="tag">Circuit Breaker</span>
+        </div>
+
+        <h1>
+          <span data-lang="en">O3 · Webhook Platform with External URL Lookup (24h Retry)</span>
+          <span data-lang="zh">O3 · 依赖外部服务的 Webhook 平台（24h 重试）</span>
+        </h1>
+
+        <div class="callout openai">
+          <h4><span data-lang="en">Verified source</span><span data-lang="zh">经核实出处</span></h4>
+          <p>Original prompt: "implement a webhook platform…create a webhook request. (cxid, json blob). url is queried from serviceB. retry for 24 hours." — <a href="https://leetcode.com/discuss" target="_blank" rel="noopener">LeetCode</a>, 2024-10-30, screening system design. Credibility <strong>C</strong>.</p>
+        </div>
+
+        <h2><span data-lang="en">What makes this different from O1/O2</span><span data-lang="zh">与 O1/O2 的不同点</span></h2>
+<p><span data-lang="en">The URL is <strong>not yours</strong> — it lives in ServiceB. Two risks: (1) which URL version you bind to an event, (2) ServiceB unavailability cascading into your ingest path.</span><span data-lang="zh">URL 不在你手上——它在 ServiceB。两大风险：(1) 事件绑定哪一版 URL，(2) ServiceB 不可用向 ingest 路径级联。</span></p><h2><span data-lang="en">Key design decisions</span><span data-lang="zh">关键设计决策</span></h2>
+<ul><li><span data-lang="en"><strong>Resolve URL at delivery time, not ingest time.</strong> Tracks ServiceB changes; cost is one extra dependency on the delivery path.</span><span data-lang="zh"><strong>在投递时查 URL，而不是 ingest 时固化。</strong>能跟随 ServiceB 变化；代价是投递路径多一次依赖。</span></li><li><span data-lang="en"><strong>Short-TTL config cache (1-5 min)</strong> to reduce ServiceB load and absorb jitter. Store <em>resolved_url</em> + <em>serviceb_version</em> in each attempt for traceability.</span><span data-lang="zh"><strong>短 TTL 配置缓存（1-5 分钟）</strong>降低 ServiceB 压力、吸收抖动。每次 attempt 记录 <em>resolved_url</em> 与 <em>serviceb_version</em> 以便追溯。</span></li><li><span data-lang="en"><strong>Circuit breaker on ServiceB</strong> — if degraded, delay retries, mark events <code>blocked_on_dependency</code>, alert.</span><span data-lang="zh"><strong>对 ServiceB 熔断</strong>——降级时延迟重试、将事件标记为 <code>blocked_on_dependency</code>、告警。</span></li></ul><h2><span data-lang="en">Architecture</span><span data-lang="zh">架构</span></h2>
+<div class="mermaid-container"><pre class="mermaid">
+flowchart LR
+  A[Create Webhook Request] --> B[Ingest API]
+  B --> Q[Queue]
+  Q --> W[Worker]
+  W --> S[ServiceB: Get URL]
+  W --> T[Deliver HTTP]
+  W --> R[Retry until 24h]
+  W --> DLQ[(DLQ)]
+</pre></div><h2><span data-lang="en">Data model (cxid-keyed)</span><span data-lang="zh">数据模型（以 cxid 为键）</span></h2>
+<pre><code>WebhookRequest(
+  cxid, request_id PK, payload_ref,
+  created_at, deadline_at=created_at+24h,
+  status, resolved_url, serviceb_version
+)
+Attempt(attempt_id, request_id, resolved_url, serviceb_version, http_status, ...)</code></pre><p><span data-lang="en"><code>deadline_at</code> is a strong constraint: every retry scheduler check must honor it so backlog doesn't cause infinite retries.</span><span data-lang="zh"><code>deadline_at</code> 是强约束：所有重试调度必须检查它，避免积压导致无限重试。</span></p><h2><span data-lang="en">24-hour retry policy</span><span data-lang="zh">24 小时重试策略</span></h2>
+<ul><li><span data-lang="en">Exponential backoff + jitter; within 24h, you must cover enough attempts: e.g. 1s, 2s, 4s... capped at 10–30 min.</span><span data-lang="zh">指数退避 + 抖动；24h 内必须覆盖足够次数：1s, 2s, 4s... 到 10–30 分钟封顶。</span></li><li><span data-lang="en">Error classification: DNS/timeout/5xx retry; 4xx (except 429) don&apos;t retry; 429 obey <code>Retry-After</code>.</span><span data-lang="zh">错误分类：DNS/超时/5xx 可重试；4xx（除 429）不重试；429 遵守 <code>Retry-After</code>。</span></li><li><span data-lang="en">After deadline: DLQ + tenant notification + manual replay button.</span><span data-lang="zh">超过 deadline：DLQ + 通知租户 + 手动回放。</span></li></ul><h2><span data-lang="en">Follow-ups</span><span data-lang="zh">高频追问</span></h2>
+<ol><li><span data-lang="en"><strong>What if ServiceB is down?</strong> Worker uses cache + circuit breaker; re-queue with backoff; events marked blocked_on_dependency for capacity protection.</span><span data-lang="zh"><strong>ServiceB 挂了怎么办？</strong>Worker 使用缓存 + 熔断；带退避重入队；事件标记为 blocked_on_dependency 以保护容量。</span></li><li><span data-lang="en"><strong>Idempotency across cxid?</strong> Unique key is <code>(cxid, request_id)</code>; attempts are append-only.</span><span data-lang="zh"><strong>cxid 幂等如何做？</strong>唯一键 <code>(cxid, request_id)</code>；attempts 追加写。</span></li></ol>
+
+        <h2><span data-lang="en">Related study-guide topics</span><span data-lang="zh">相关学习手册专题</span></h2>
+        <ul><li><a href="../../guide/distributed/replication-consistency.html"><span data-lang="en">Failure modes</span><span data-lang="zh">故障模式</span></a></li><li><a href="../../guide/classical/rate-limiter.html"><span data-lang="en">Rate limiter</span><span data-lang="zh">限流器</span></a></li></ul>
+      </article>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

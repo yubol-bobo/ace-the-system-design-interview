@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>O8. Search/Recommendation System with LLMs — SD-Guide</title>
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../index.html" class="active"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../resources/index.html"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../about/index.html"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a>
+        <span class="sep">›</span>
+        <a href="../index.html"><span data-lang="en">Arena</span><span data-lang="zh">竞技场</span></a>
+        <span class="sep">›</span>
+        <span>O8</span>
+      </div>
+
+      <article class="prose wide">
+        <div class="question-meta" style="margin-bottom:1rem;">
+          <span class="tag company-openai">OpenAI</span>
+          <span class="tag freq-2">★★ Frequent</span>
+          <span class="tag difficulty-hard">Hard</span>
+          <span class="tag">RAG</span><span class="tag">Hybrid Retrieval</span><span class="tag">Rerank</span>
+        </div>
+
+        <h1>
+          <span data-lang="en">O8 · Search/Recommendation System with LLMs</span>
+          <span data-lang="zh">O8 · 融合 LLM 的搜索/推荐系统</span>
+        </h1>
+
+        <div class="callout openai">
+          <h4><span data-lang="en">Verified source</span><span data-lang="zh">经核实出处</span></h4>
+          <p>Recruiter prompt: "We'll explore your experience with search, ranking, retrieval, and how to adapt LLMs to interact with such systems." — <a href="https://www.teamblind.com" target="_blank" rel="noopener">TeamBlind</a>, 2025-10-22. Credibility <strong>C</strong>.</p>
+        </div>
+
+        <h2><span data-lang="en">Split into two chains</span><span data-lang="zh">拆成两条主链路</span></h2>
+<ol><li><span data-lang="en"><strong>Online retrieval + ranking</strong>: Query → recall (keyword + vector) → rerank → result page.</span><span data-lang="zh"><strong>在线检索与排序</strong>：Query → 召回（keyword + 向量）→ rerank → 结果页。</span></li><li><span data-lang="en"><strong>LLM insertion points</strong>: query understanding/rewrite, result summary/conversational explanation, tool-use to trigger secondary retrieval.</span><span data-lang="zh"><strong>LLM 插入点</strong>：Query 理解/改写、结果摘要/对话式解释、工具调用触发二次检索。</span></li></ol><h2><span data-lang="en">Reference architecture</span><span data-lang="zh">参考架构</span></h2>
+<div class="mermaid-container"><pre class="mermaid">
+flowchart LR
+  U[User] --> QP[Query Parser]
+  QP --> KR[Keyword Search (BM25)]
+  QP --> VR[Vector Search (ANN)]
+  KR --> M[Merge]
+  VR --> M
+  M --> RR[Reranker (Cross-Encoder)]
+  RR --> LLM[LLM Layer]
+  LLM --> U
+</pre></div><h2><span data-lang="en">Key trade-offs</span><span data-lang="zh">核心权衡</span></h2>
+<ul><li><span data-lang="en"><strong>LLM in recall (query rewrite)</strong>: cheaper downstream; risk of recall bias.</span><span data-lang="zh"><strong>LLM 参与召回（Query 改写）</strong>：后续成本低；但有召回偏差风险。</span></li><li><span data-lang="en"><strong>LLM in rerank / summarize</strong>: safer but more expensive per-query.</span><span data-lang="zh"><strong>LLM 参与 rerank / 摘要</strong>：更稳但每次成本更高。</span></li><li><span data-lang="en"><strong>Index update</strong>: real-time writes sacrifice throughput; batch sacrifices freshness.</span><span data-lang="zh"><strong>索引更新</strong>：实时写牺牲吞吐；批处理牺牲新鲜度。</span></li></ul><h2><span data-lang="en">Evaluation (dual)</span><span data-lang="zh">评估（双轨）</span></h2>
+<ul><li><span data-lang="en">IR metrics: Recall@K, NDCG@10, MRR.</span><span data-lang="zh">IR 指标：Recall@K、NDCG@10、MRR。</span></li><li><span data-lang="en">Generation quality: faithfulness, helpfulness, LLM-as-judge + human pairwise.</span><span data-lang="zh">生成质量：faithfulness、helpfulness、LLM-as-judge + 人类 pairwise。</span></li><li><span data-lang="en">Online: A/B with click, dwell time, satisfaction proxy.</span><span data-lang="zh">在线：A/B 测试点击、停留时间、满意度代理指标。</span></li></ul><div class="callout openai"><h4><span data-lang="en">Safety lens</span><span data-lang="zh">Safety 视角</span></h4><p><span data-lang="en">If safety comes up, reference Anthropic's Constitutional AI as a structured way to layer policy into the LLM step. A moderation pipeline on both the query and the answer is standard.</span><span data-lang="zh">若被问到安全，可引用 Anthropic 的 Constitutional AI 作为「把策略注入 LLM 步骤」的结构化方法。对 Query 与 Answer 都做 moderation 是标配。</span></p></div>
+
+        <h2><span data-lang="en">Related study-guide topics</span><span data-lang="zh">相关学习手册专题</span></h2>
+        <ul><li><a href="../../guide/llm/rag.html">RAG deep dive</a></li><li><a href="../../guide/llm/llm-evaluation.html"><span data-lang="en">LLM evaluation</span><span data-lang="zh">LLM 评估</span></a></li></ul>
+      </article>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

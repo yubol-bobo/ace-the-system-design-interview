@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>A13. Inference Routing &amp; Scheduling Layer — SD-Guide</title>
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../index.html" class="active"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../resources/index.html"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../about/index.html"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a>
+        <span class="sep">›</span>
+        <a href="../index.html"><span data-lang="en">Arena</span><span data-lang="zh">竞技场</span></a>
+        <span class="sep">›</span>
+        <span>A13</span>
+      </div>
+
+      <article class="prose wide">
+        <div class="question-meta" style="margin-bottom:1rem;">
+          <span class="tag company-anthropic">Anthropic</span>
+          <span class="tag freq-3">★★★ Frequent</span>
+          <span class="tag difficulty-hard">Hard</span>
+          <span class="tag">WFQ</span><span class="tag">Result Cache</span>
+        </div>
+
+        <h1>
+          <span data-lang="en">A13 · Inference Routing &amp; Scheduling Layer</span>
+          <span data-lang="zh">A13 · 推理路由与调度层</span>
+        </h1>
+
+        <div class="callout anthropic">
+          <h4><span data-lang="en">Verified source</span><span data-lang="zh">经核实出处</span></h4>
+          <p>Prompt: "routing layer…prioritization…dynamic batching…query result cache…credit-based fairness" — PracHub, Onsite. Credibility <strong>B</strong>.</p>
+        </div>
+
+        <h2><span data-lang="en">Three things to nail</span><span data-lang="zh">讲清这三件事就赢一半</span></h2>
+<ol><li><span data-lang="en">Multi-tenant priority: different tenants / request classes have different SLOs &amp; quotas.</span><span data-lang="zh">多租户优先级：不同租户 / 请求类有不同 SLO 与配额。</span></li><li><span data-lang="en">Heterogeneous routing: GPU / CPU / different model versions / hardware pools.</span><span data-lang="zh">异构路由：GPU / CPU / 不同模型版本 / 硬件池。</span></li><li><span data-lang="en">Determinism &amp; caching: at temperature=0, cache results (only for reproducible inputs).</span><span data-lang="zh">确定性与缓存：temperature=0 时可缓存结果（仅限可复现输入）。</span></li></ol><h2><span data-lang="en">Architecture</span><span data-lang="zh">架构</span></h2>
+<div class="mermaid-container"><pre class="mermaid">
+flowchart LR
+  API[Front API] --> RT[Router]
+  RT --> PQ[Priority Queues]
+  PQ --> BT[Batcher]
+  BT --> GPU[GPU Pool]
+  RT --> CPU[CPU Pool]
+  RT --> Cache[(Result Cache)]
+</pre></div><h2><span data-lang="en">Credit-based fairness (standard answer)</span><span data-lang="zh">基于 credit 的公平调度</span></h2>
+<ul><li><span data-lang="en">Weighted Fair Queueing / Deficit Round Robin: prevent a large tenant from monopolizing GPUs.</span><span data-lang="zh">WFQ / DRR：防止大客户独占 GPU。</span></li><li><span data-lang="en">Credits burn by token-cost estimate, not request count (LLM cost scales with tokens).</span><span data-lang="zh">Credit 消耗按预估 token 成本，而非请求数（LLM 成本与 token 强相关）。</span></li></ul><h2><span data-lang="en">Cache admission &amp; eviction</span><span data-lang="zh">缓存准入与淘汰</span></h2>
+<ul><li><span data-lang="en">Cache only reproducible requests: temperature=0, fixed model version, fixed system prompt.</span><span data-lang="zh">只缓存可复现请求：temperature=0 + 固定模型版本 + 固定 system prompt。</span></li><li><span data-lang="en">Key: <code>hash(model_version, prompt_prefix, user_input, tool_state)</code>.</span><span data-lang="zh">Key：<code>hash(model_version, prompt_prefix, user_input, tool_state)</code>。</span></li><li><span data-lang="en">Eviction: LRU/LFU + cost-aware (a giant response may not be worth caching).</span><span data-lang="zh">淘汰：LRU/LFU + 成本感知（超长响应不一定划算缓存）。</span></li></ul>
+
+        <h2><span data-lang="en">Related study-guide topics</span><span data-lang="zh">相关学习手册专题</span></h2>
+        <ul><li><a href="../../guide/llm/llm-serving.html"><span data-lang="en">LLM serving</span><span data-lang="zh">LLM 推理服务</span></a></li></ul>
+      </article>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

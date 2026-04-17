@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>A28. Distributed Search for 1B Documents @ 1M QPS — SD-Guide</title>
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../index.html" class="active"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../resources/index.html"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../about/index.html"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a>
+        <span class="sep">›</span>
+        <a href="../index.html"><span data-lang="en">Arena</span><span data-lang="zh">竞技场</span></a>
+        <span class="sep">›</span>
+        <span>A28</span>
+      </div>
+
+      <article class="prose wide">
+        <div class="question-meta" style="margin-bottom:1rem;">
+          <span class="tag company-anthropic">Anthropic</span>
+          <span class="tag freq-3">★★★ Frequent</span>
+          <span class="tag difficulty-hard">Hard</span>
+          <span class="tag">Scale</span><span class="tag">Sharding</span>
+        </div>
+
+        <h1>
+          <span data-lang="en">A28 · Distributed Search for 1B Documents @ 1M QPS</span>
+          <span data-lang="zh">A28 · 1B 文档 @ 1M QPS 的分布式搜索</span>
+        </h1>
+
+        <div class="callout anthropic">
+          <h4><span data-lang="en">Verified source</span><span data-lang="zh">经核实出处</span></h4>
+          <p>Prompt: "Design a Distributed Search System for 1B documents, 1M QPS." — Medium Anqi Silvia 2025; linkjob.ai. Credibility <strong>C</strong>.</p>
+        </div>
+
+        <h2><span data-lang="en">Scale math first</span><span data-lang="zh">先讲规模</span></h2>
+<ul><li><span data-lang="en">1B docs × avg 10 KB = 10 TB index → ~100 shards at 100 GB each.</span><span data-lang="zh">1B 文档 × 平均 10 KB = 10 TB 索引 → 约 100 分片 × 100 GB。</span></li><li><span data-lang="en">1M QPS → with 100 shards, each shard serves ~10K QPS. Need multiple replicas per shard.</span><span data-lang="zh">1M QPS → 100 分片下每分片 ~10K QPS。每分片需多副本。</span></li><li><span data-lang="en">If LLM re-rank / generate involved, GPU cost dominates — rate-limit or skip for bulk queries.</span><span data-lang="zh">若涉及 LLM 重排/生成，GPU 成本主导——大批量 query 应限流或跳过。</span></li></ul><h2><span data-lang="en">Architecture</span><span data-lang="zh">架构</span></h2>
+<div class="mermaid-container"><pre class="mermaid">
+flowchart LR
+  Q[Query] --> GW[Gateway + Rate Limit]
+  GW --> CACHE[(L1 Cache / Edge)]
+  CACHE --> L2[(Semantic Cache)]
+  L2 --> FAN[Scatter-Gather]
+  FAN --> S1[Shard 1] & S2[Shard 2] & S3[Shard N]
+  S1 & S2 & S3 --> MER[Top-K Merge]
+  MER --> RE[Reranker / LLM (optional)]
+  RE --> Q
+</pre></div><h2><span data-lang="en">Hot-spot mitigation</span><span data-lang="zh">热点规避</span></h2>
+<ul><li><span data-lang="en">Cache top-5% queries in edge cache (cuts 40%+ load at large scale).</span><span data-lang="zh">边缘缓存热门 top-5% query（大规模下可削 40%+ 负载）。</span></li><li><span data-lang="en">Re-shard on hot keys; consistent hashing with virtual nodes.</span><span data-lang="zh">按热 key 重分片；一致性哈希 + 虚拟节点。</span></li><li><span data-lang="en">Semantic cache (embedding-proximity) catches near-duplicate queries.</span><span data-lang="zh">语义缓存（embedding 近似）捕捉近似 query。</span></li></ul><h2><span data-lang="en">GPU memory optimization</span><span data-lang="zh">GPU 显存优化</span></h2>
+<ul><li><span data-lang="en">PagedAttention for LLM rerank layer.</span><span data-lang="zh">LLM 重排层用 PagedAttention。</span></li><li><span data-lang="en">Prefix caching for a shared system prompt.</span><span data-lang="zh">共享 system prompt 的 prefix caching。</span></li><li><span data-lang="en">Quantization (FP8/INT8) for reranker.</span><span data-lang="zh">重排器量化（FP8/INT8）。</span></li></ul>
+
+        <h2><span data-lang="en">Related study-guide topics</span><span data-lang="zh">相关学习手册专题</span></h2>
+        <ul><li><a href="../../guide/llm/llm-serving.html"><span data-lang="en">LLM serving</span><span data-lang="zh">LLM 推理服务</span></a></li><li><a href="../../guide/llm/rag.html">RAG</a></li></ul>
+      </article>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

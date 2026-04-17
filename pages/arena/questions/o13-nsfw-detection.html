@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>O13. NSFW / Safety Detection for ChatGPT Outputs — SD-Guide</title>
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../index.html" class="active"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../resources/index.html"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../about/index.html"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a>
+        <span class="sep">›</span>
+        <a href="../index.html"><span data-lang="en">Arena</span><span data-lang="zh">竞技场</span></a>
+        <span class="sep">›</span>
+        <span>O13</span>
+      </div>
+
+      <article class="prose wide">
+        <div class="question-meta" style="margin-bottom:1rem;">
+          <span class="tag company-openai">OpenAI</span>
+          <span class="tag freq-2">★★ Frequent</span>
+          <span class="tag difficulty-hard">Hard</span>
+          <span class="tag">Moderation</span><span class="tag">Classifier</span>
+        </div>
+
+        <h1>
+          <span data-lang="en">O13 · NSFW / Safety Detection for ChatGPT Outputs</span>
+          <span data-lang="zh">O13 · ChatGPT 输出的 NSFW/安全检测</span>
+        </h1>
+
+        <div class="callout openai">
+          <h4><span data-lang="en">Verified source</span><span data-lang="zh">经核实出处</span></h4>
+          <p>Prompt: "Design a System to Detect NSFW Content in ChatGPT Outputs." — Jobright, Glassdoor. Credibility <strong>C/D</strong>.</p>
+        </div>
+
+        <h2><span data-lang="en">What you need to cover</span><span data-lang="zh">必须覆盖的要点</span></h2>
+<ol><li><span data-lang="en">Data collection: sample outputs, red-team prompts, public benchmarks, user reports.</span><span data-lang="zh">数据采集：模型输出采样、red-team 提示、公共基准、用户举报。</span></li><li><span data-lang="en">Model choice: rule filters (regex/keyword) → ML classifier (fast) → LLM-judge (high quality, expensive).</span><span data-lang="zh">模型选择：规则（正则/关键词）→ ML 分类器（快）→ LLM-judge（质量高但成本高）。</span></li><li><span data-lang="en">Latency budget: block inline <em>or</em> async-moderate. Inline adds to TTFT.</span><span data-lang="zh">延迟预算：同步拦截 <em>or</em> 异步审核。同步会增加 TTFT。</span></li><li><span data-lang="en">Feedback loop: label disagreement → retrain; policy updates → new classifier version.</span><span data-lang="zh">反馈循环：标签不一致 → 再训练；策略更新 → 分类器新版本。</span></li></ol><h2><span data-lang="en">Architecture</span><span data-lang="zh">架构</span></h2>
+<div class="mermaid-container"><pre class="mermaid">
+flowchart LR
+  LLM[LLM Output] --> RULES[Rule Filter]
+  RULES -->|pass| CLS[ML Classifier]
+  RULES -->|flag| ACTION
+  CLS -->|pass| RET[Return to user]
+  CLS -->|uncertain| LJ[LLM Judge]
+  LJ --> ACTION[Action: block / rewrite / warn]
+  ACTION --> AUDIT[(Audit Log)]
+  RET --> SAMPLE[Async Sampler]
+  SAMPLE --> TRAIN[Retraining Data]
+</pre></div><h2><span data-lang="en">Design trade-offs</span><span data-lang="zh">设计权衡</span></h2>
+<ul><li><span data-lang="en">Inline vs async: inline catches before egress (safer) but blocks streaming; async requires downstream correction (edit/delete).</span><span data-lang="zh">同步 vs 异步：同步在出口前拦截（更安全）但阻塞流式；异步需要下游修正（编辑/删除）。</span></li><li><span data-lang="en">Token-by-token moderation for streaming: chunk-level classifier every K tokens with rollback.</span><span data-lang="zh">流式的逐 token 审核：每 K tokens 做 chunk 级分类 + 回滚。</span></li></ul>
+
+        <h2><span data-lang="en">Related study-guide topics</span><span data-lang="zh">相关学习手册专题</span></h2>
+        <ul><li><a href="../../guide/safety/safety-engineering.html"><span data-lang="en">Safety engineering</span><span data-lang="zh">安全工程</span></a></li><li><a href="../../guide/llm/llm-evaluation.html"><span data-lang="en">LLM evaluation</span><span data-lang="zh">LLM 评估</span></a></li></ul>
+      </article>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

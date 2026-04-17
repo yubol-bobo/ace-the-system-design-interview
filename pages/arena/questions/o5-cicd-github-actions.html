@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>O5. Design a CI/CD System (like GitHub Actions) — SD-Guide</title>
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../index.html" class="active"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../resources/index.html"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../about/index.html"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a>
+        <span class="sep">›</span>
+        <a href="../index.html"><span data-lang="en">Arena</span><span data-lang="zh">竞技场</span></a>
+        <span class="sep">›</span>
+        <span>O5</span>
+      </div>
+
+      <article class="prose wide">
+        <div class="question-meta" style="margin-bottom:1rem;">
+          <span class="tag company-openai">OpenAI</span>
+          <span class="tag freq-3">★★★ Frequent</span>
+          <span class="tag difficulty-hard">Hard</span>
+          <span class="tag">Workflow Engine</span><span class="tag">Lease</span><span class="tag">Multi-tenant</span>
+        </div>
+
+        <h1>
+          <span data-lang="en">O5 · Design a CI/CD System (like GitHub Actions)</span>
+          <span data-lang="zh">O5 · 设计 CI/CD 系统（类 GitHub Actions）</span>
+        </h1>
+
+        <div class="callout openai">
+          <h4><span data-lang="en">Verified source</span><span data-lang="zh">经核实出处</span></h4>
+          <p>Original prompt: "design a CI/CD system, pretty similar to Github Actions…focus on high reliability first" — <a href="https://leetcode.com/discuss" target="_blank" rel="noopener">LeetCode</a>, 2026-02-12 and <a href="https://www.jointaro.com" target="_blank" rel="noopener">Jointaro</a>, 2025-07-31. Credibility <strong>C</strong>.</p>
+        </div>
+
+        <h2><span data-lang="en">Requirements clarification</span><span data-lang="zh">需求澄清</span></h2>
+<ul><li><span data-lang="en">Triggers: push / PR / cron / manual?</span><span data-lang="zh">触发方式：push / PR / cron / manual？</span></li><li><span data-lang="en">Job model: workflow → jobs → steps; DAG or linear? (Often expands from linear to DAG.)</span><span data-lang="zh">作业模型：workflow → jobs → steps；DAG 还是线性？（常常从线性扩到 DAG）</span></li><li><span data-lang="en">Runners: self-hosted or managed? Isolation (container/VM)?</span><span data-lang="zh">Runner：自托管还是托管？隔离要求（容器/VM）？</span></li><li><span data-lang="en">If control plane dies, do in-flight jobs continue?</span><span data-lang="zh">控制面挂了，运行中的 job 是否继续？</span></li><li><span data-lang="en">Outputs: logs, artifacts, status webhooks.</span><span data-lang="zh">输出：日志、artifact、状态回调 webhook。</span></li></ul><h2><span data-lang="en">Reliability-first design: persistent state machine</span><span data-lang="zh">可靠性优先：持久化状态机</span></h2>
+<p><span data-lang="en">The core is a <strong>persistent, auditable state machine</strong> for every job/step — so any failure can be replayed and recovered.</span><span data-lang="zh">核心是每个 job/step 的<strong>持久化、可审计的状态机</strong>——任何故障都能重放/恢复。</span></p><div class="mermaid-container"><pre class="mermaid">
+flowchart LR
+  U[User/Repo] --> API[CI API]
+  API --> DB[(State DB)]
+  API --> Q[Job Queue]
+  Q --> S[Scheduler]
+  S --> R[Runner Fleet]
+  R --> L[Log Store]
+  R --> A[Artifact Store]
+  R --> DB
+</pre></div><h2><span data-lang="en">API (give just four)</span><span data-lang="zh">API（只给 4 个）</span></h2>
+<pre><code>POST /repos/{repo}/workflows/{wf}/dispatch
+GET  /runs/{run_id}                  -- aggregate status
+GET  /runs/{run_id}/logs             -- paginated / streamed
+POST /runners/{runner_id}/heartbeat  -- runner capability + lease + health</code></pre><h2><span data-lang="en">Data model</span><span data-lang="zh">数据模型</span></h2>
+<pre><code>WorkflowRun(run_id, repo_id, trigger, status, created_at)
+Job(job_id, run_id, status, requirements, assigned_runner, attempt, lease_id)
+Step(step_id, job_id, status, started_at, ended_at, exit_code)</code></pre><h2><span data-lang="en">Scale &amp; isolation</span><span data-lang="zh">扩展与隔离</span></h2>
+<ul><li><span data-lang="en"><strong>Multi-tenant</strong>: org/repo quota; queue partition; separate runner pools.</span><span data-lang="zh"><strong>多租户</strong>：org/repo 配额；队列分区；Runner pool 分组。</span></li><li><span data-lang="en"><strong>Runner security</strong>: minimum-privilege token, short-lived creds, container/VM sandbox.</span><span data-lang="zh"><strong>Runner 安全</strong>：最小权限 token、短期凭证、容器/VM 沙箱。</span></li><li><span data-lang="en"><strong>Scheduling</strong>: priority queue (paid/urgent) + fair-share quota.</span><span data-lang="zh"><strong>调度</strong>：优先级队列（付费/紧急）+ 配额公平。</span></li></ul><div class="callout warn"><h4><span data-lang="en">Common follow-up</span><span data-lang="zh">典型追问</span></h4><p><span data-lang="en">“What if the scheduler dies?” — State is in DB; jobs use lease + idempotent claim; after failure, another scheduler reclaims. Two runners claiming the same job is prevented by compare-and-swap on lease_id.</span><span data-lang="zh">「调度器挂了怎么办？」——状态在 DB；jobs 用 lease + 幂等 claim；故障后重新 claim。两个 runner 争同一 job 用 lease_id 的 CAS 防止。</span></p></div><h2><span data-lang="en">Cost &amp; perf</span><span data-lang="zh">成本与性能</span></h2>
+<ul><li><span data-lang="en">Runner compute dominates cost. Optimize with idle reclamation, warm pool, spot-instance mix with checkpoint tolerance.</span><span data-lang="zh">Runner 资源占主成本。优化：空闲回收、预热池、spot 混用 + checkpoint 容忍。</span></li><li><span data-lang="en">Log explosion: segmented upload, compression, tiered cold storage after 30 days.</span><span data-lang="zh">日志爆炸：分段上传、压缩、30 天后冷存储分层。</span></li></ul>
+
+        <h2><span data-lang="en">Related study-guide topics</span><span data-lang="zh">相关学习手册专题</span></h2>
+        <ul><li><a href="../../guide/distributed/consensus.html"><span data-lang="en">Leases &amp; consensus</span><span data-lang="zh">Lease 与共识</span></a></li><li><a href="../../guide/distributed/partitioning.html"><span data-lang="en">Partitioning</span><span data-lang="zh">分区</span></a></li></ul>
+      </article>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

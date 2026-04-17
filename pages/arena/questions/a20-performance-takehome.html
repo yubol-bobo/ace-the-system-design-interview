@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>A20. Performance Take-Home (Cycle Optimization) — SD-Guide</title>
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../index.html" class="active"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../resources/index.html"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../about/index.html"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a>
+        <span class="sep">›</span>
+        <a href="../index.html"><span data-lang="en">Arena</span><span data-lang="zh">竞技场</span></a>
+        <span class="sep">›</span>
+        <span>A20</span>
+      </div>
+
+      <article class="prose wide">
+        <div class="question-meta" style="margin-bottom:1rem;">
+          <span class="tag company-anthropic">Anthropic</span>
+          <span class="tag freq-2">★★ Frequent</span>
+          <span class="tag difficulty-hard">Hard</span>
+          <span class="tag">Perf Engineering</span><span class="tag">Profiling</span>
+        </div>
+
+        <h1>
+          <span data-lang="en">A20 · Performance Take-Home (Cycle Optimization)</span>
+          <span data-lang="zh">A20 · 性能 Take-Home（底层优化）</span>
+        </h1>
+
+        <div class="callout anthropic">
+          <h4><span data-lang="en">Verified source</span><span data-lang="zh">经核实出处</span></h4>
+          <p>Anthropic's Original Performance Take-Home (open-sourced on GitHub). Warning in README: LLMs can "cheat" by modifying tests. Credibility <strong>A</strong> (open-source official).</p>
+        </div>
+
+        <p><span data-lang="en">Not a classical system-design question, but very much in Anthropic&apos;s value system: infra-level optimization + <em>correctness integrity</em>. The README explicitly warns that LLM agents may &quot;cheat&quot; by modifying tests.</span><span data-lang="zh">这不是传统系统设计，但符合 Anthropic 的价值观：基础设施级优化 + <em>正确性诚信</em>。README 明确警告 LLM Agent 可能「改测试作弊」。</span></p><h2><span data-lang="en">How to approach it (and adjacent questions)</span><span data-lang="zh">解题思路（及类似题目）</span></h2>
+<ul><li><span data-lang="en">Establish baseline profile: hotspots, instruction counts, memory access.</span><span data-lang="zh">建立 baseline profile：热点、指令数、内存访问。</span></li><li><span data-lang="en">Change one class of optimization per iteration; preserve explainability (loop unrolling, branch reduction, cache locality, SIMD).</span><span data-lang="zh">每次迭代只改一类手段，保持可解释（loop 展开、减分支、缓存局部性、SIMD）。</span></li><li><span data-lang="en"><strong>Correctness guardrails</strong>: fixed test set, diff-tests directory, record cycle-count vs correctness per commit.</span><span data-lang="zh"><strong>正确性护栏</strong>：固定测试集、diff-tests 目录、每次 commit 记录 cycle-count 与正确性。</span></li><li><span data-lang="en">Never modify tests. The repo detects this.</span><span data-lang="zh">绝不修改测试。仓库会检测。</span></li></ul><div class="callout anthropic"><h4><span data-lang="en">Why this matters in interviews</span><span data-lang="zh">为何面试重视</span></h4><p><span data-lang="en">Anthropic cares about agents that don't cheat their own evals. Demonstrating rigorous methodology and zero test tampering signals "can be trusted to run autonomously."</span><span data-lang="zh">Anthropic 关心不作弊的 Agent。展现严谨方法论与零测试改动等于说「可被信任自主运行」。</span></p></div>
+
+        <h2><span data-lang="en">Related study-guide topics</span><span data-lang="zh">相关学习手册专题</span></h2>
+        <ul><li><a href="../../guide/safety/safety-engineering.html"><span data-lang="en">Safety engineering</span><span data-lang="zh">安全工程</span></a></li></ul>
+      </article>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

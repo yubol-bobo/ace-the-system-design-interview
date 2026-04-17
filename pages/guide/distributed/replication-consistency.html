@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Replication & Consistency — SD-Guide</title>
+  <meta name="description" content="Single-leader, multi-leader, leaderless. CAP vs PACELC. Linearizability, read-your-writes, monotonic reads — how to pick the weakest model that still works.">
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../../../pages/arena/index.html" data-match="/arena"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../../pages/guide/index.html" class="active" data-match="/guide"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../../pages/resources/index.html" data-match="/resources"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../../pages/about/index.html" data-match="/about"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+
+      <div class="breadcrumb">
+        <a href="../../../pages/guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a>
+        <span>›</span>
+        <span class="crumb-category">Distributed Systems<span data-lang="zh" style="display:none">分布式系统</span></span>
+      </div>
+
+      <header class="page-header">
+        <h1 class="page-title">
+          <span data-lang="en">Replication & Consistency</span>
+          <span data-lang="zh">复制与一致性</span>
+        </h1>
+        <div class="topic-meta">
+          <span class="tag" style="background:var(--openai-glow);border-color:var(--openai)">📚 DDIA Ch.5 · DDIA Ch.9 · Acing SDI Ch.4</span><span class="tag">DDIA Ch.5</span><span class="tag">DDIA Ch.9</span><span class="tag">CAP vs PACELC</span>
+        </div>
+        <p class="page-subtitle">
+          <span data-lang="en">Single-leader, multi-leader, leaderless. CAP vs PACELC. Linearizability, read-your-writes, monotonic reads — how to pick the weakest model that still works.</span>
+          <span data-lang="zh">单主、多主、无主；CAP 与 PACELC；线性一致、读你所写、单调读——如何挑选仍然够用的最弱一致性模型。</span>
+        </p>
+      </header>
+
+      <article class="topic-prose">
+        <nav class="topic-toc">
+          <h4><span data-lang="en">On this page</span><span data-lang="zh">本页目录</span></h4>
+          <ol>
+            <li><a href="#s1"><span data-lang="en">Why replicate at all</span><span data-lang="zh">为什么要复制</span></a></li>
+            <li><a href="#s2"><span data-lang="en">Single-leader replication</span><span data-lang="zh">单主复制</span></a></li>
+            <li><a href="#s3"><span data-lang="en">Multi-leader and leaderless</span><span data-lang="zh">多主与无主</span></a></li>
+            <li><a href="#s4"><span data-lang="en">CAP, PACELC, and what they actually say</span><span data-lang="zh">CAP、PACELC 及其真正含义</span></a></li>
+            <li><a href="#s5"><span data-lang="en">Consistency models ladder</span><span data-lang="zh">一致性模型阶梯</span></a></li>
+            <li><a href="#s6"><span data-lang="en">Failure modes and real outages</span><span data-lang="zh">故障模式与真实事故</span></a></li>
+            <li><a href="#s7"><span data-lang="en">Interview decision tree</span><span data-lang="zh">面试决策树</span></a></li>
+          </ol>
+        </nav>
+
+        <div data-lang="en">
+
+<h2 id="s1">Why replicate at all</h2>
+<p>Three orthogonal reasons, in DDIA Ch.5's framing: <strong>latency</strong> (serve reads from a replica close to the user), <strong>availability</strong> (survive node failure), and <strong>throughput</strong> (scale reads horizontally). Durability is a bonus. If you need none of these, do not replicate — a single Postgres with good backups beats a mis-tuned 5-node cluster every time.</p>
+<p>The hard part is not copying bytes; it is deciding <em>what the reader sees</em> when writes and reads race. That is why Kleppmann spends Ch.5 on mechanics and Ch.9 on what the resulting guarantees are called.</p>
+<div class="callout tip"><h4>Source cross-reference</h4><p>DDIA Ch.5 covers leader/follower, multi-leader, leaderless with Dynamo-style quorums. DDIA Ch.9 defines linearizability, causal consistency, and consensus. Acing SDI Ch.4 gives the SQL-vs-NoSQL framing most interviewers expect.</p></div>
+
+<h2 id="s2">Single-leader replication</h2>
+<p>One node accepts writes; followers replay the log. Synchronous followers block the writer until ack (zero RPO, slow tail); asynchronous followers lag (fast, may lose recent writes on failover). Most real systems run <strong>one sync + many async</strong> — the "chain" that Postgres, MySQL Group Replication, and AWS Aurora all converge on.</p>
+<div class="mermaid-container"><pre class="mermaid">
+flowchart LR
+    C[Client] --&gt;|write| L[Leader]
+    L --&gt;|sync WAL| F1[Follower 1 sync]
+    L --&gt;|async| F2[Follower 2]
+    L --&gt;|async| F3[Follower 3]
+    R[Read client] --&gt; F2
+</pre></div>
+<ul>
+  <li><strong>Replication lag</strong>: typical 10–100 ms intra-region, seconds cross-region. Must-know for read-your-writes discussion.</li>
+  <li><strong>Failover</strong>: who promotes the new leader? A consensus service (etcd, ZooKeeper) holds the lease; see <a href="../../guide/distributed/consensus.html">consensus</a>.</li>
+  <li><strong>Throughput ceiling</strong>: single-leader Postgres caps at ~50 k writes/sec on a fat NVMe box. Beyond that, partition (see <a href="../../guide/distributed/partitioning.html">partitioning</a>) or move to leaderless.</li>
+</ul>
+<div class="callout warn"><h4>Anti-pattern</h4><p>Running "multi-master" Postgres via logical replication as a write-scaling strategy. Conflicts are not automatic; you own every last-writer-wins bug. Don't do it unless you have a conflict resolver (CRDT, per-row ownership).</p></div>
+
+<h2 id="s3">Multi-leader and leaderless</h2>
+<p><strong>Multi-leader</strong> (e.g., Postgres BDR, CouchDB, calendar apps with offline clients): each region accepts writes, replicates async to others. Concurrent writes to the same key create conflicts resolved by vector clocks, LWW timestamps, or CRDT merge. Best fit: geographically distributed with mostly-disjoint write sets (per-user data).</p>
+<p><strong>Leaderless / Dynamo-style</strong> (Cassandra, Riak, ScyllaDB): clients write to N replicas, consider it successful when W ack; reads query R replicas. If W+R &gt; N you get quorum overlap. Anti-entropy via Merkle trees + read-repair + hinted handoff patches divergence.</p>
+<table>
+  <thead><tr><th>Style</th><th>Writes scale</th><th>Conflict risk</th><th>Example</th></tr></thead>
+  <tbody>
+    <tr><td>Single-leader</td><td>1 node</td><td>None (serialized)</td><td>Postgres, MySQL</td></tr>
+    <tr><td>Multi-leader</td><td>N regions</td><td>High</td><td>CouchDB, BDR</td></tr>
+    <tr><td>Leaderless</td><td>N nodes</td><td>Medium (quorum)</td><td>Cassandra, Dynamo</td></tr>
+  </tbody>
+</table>
+
+<h2 id="s4">CAP, PACELC, and what they actually say</h2>
+<p>CAP (Brewer, 2000) says during a network <em>P</em>artition you must choose <em>C</em>onsistency or <em>A</em>vailability. It does <strong>not</strong> say "pick 2 of 3"; partitions are not optional. Useful but oversimplified.</p>
+<p>PACELC (Abadi, 2010) repairs the gap: <em>If P, choose A or C; Else choose Latency or Consistency.</em> This is the version staff engineers actually use. Spanner is a PC/EC system (consistent even when healthy, at a latency cost); Dynamo is PA/EL (available and fast, eventually consistent). State the letters explicitly in your answer.</p>
+<div class="callout openai"><h4>OpenAI-specific</h4><p>For conversation-history stores, OpenAI-style answers often choose PA/EC: available during partitions but strongly consistent when healthy (same-session read-your-writes must hold). Achieve this with a single-leader region + causal token the client returns on each request.</p></div>
+
+<h2 id="s5">Consistency models ladder</h2>
+<p>From strongest to weakest (DDIA Ch.9):</p>
+<ol>
+  <li><strong>Linearizable (atomic)</strong>: every operation appears to take effect at a single point in real time. Required for leader election, distributed locks, uniqueness constraints. Cost: at least one RTT to a consensus quorum.</li>
+  <li><strong>Sequential</strong>: all clients see the same order, but the order can lag real time.</li>
+  <li><strong>Causal</strong>: causally related operations are seen in order; concurrent ones may differ. Achievable with vector clocks without consensus.</li>
+  <li><strong>Read-your-writes</strong> (session guarantee): after you write, <em>you</em> see it. Cheap to implement with sticky sessions or client-tracked last-LSN.</li>
+  <li><strong>Monotonic reads</strong>: once you see a value, you never see an earlier one. Stick a user to one replica.</li>
+  <li><strong>Eventual</strong>: converges "eventually" (undefined duration). Most leaderless defaults. Fine for social-media like counts.</li>
+</ol>
+<p>Interview heuristic: name the weakest model the product can tolerate, then the mechanism that delivers it. "User profiles need read-your-writes after save; monotonic-read across refreshes is enough elsewhere; analytics dashboards can run on 10-minute stale replicas."</p>
+
+<h2 id="s6">Failure modes and real outages</h2>
+<ul>
+  <li><strong>Split-brain</strong>: network partition isolates the old leader; a new leader is elected; both accept writes. Mitigation: fencing tokens, STONITH, quorum-based leases. See <a href="../../guide/distributed/consensus.html">consensus</a>.</li>
+  <li><strong>Replication lag spikes</strong>: a slow follower falls minutes behind; reads served from it look stale. Monitor <code>seconds_behind_master</code> and evict from read pool beyond 1 s.</li>
+  <li><strong>2015 AWS DynamoDB metadata storm</strong>: a 4-hour us-east-1 outage where retry storms against a metadata service amplified under replica lag. Lesson: backpressure + jittered exponential backoff, not unbounded retries.</li>
+  <li><strong>2017 GitLab postgres deletion</strong>: followers were lagged by 4 GB of WAL when the primary was accidentally wiped; async followers had data the sync one didn't. Runbook the RPO you actually have, not the one on the slide.</li>
+</ul>
+<div class="callout anthropic"><h4>Anthropic-specific</h4><p>Anthropic interviewers push on <em>auditability</em>: after a failover, can you reconstruct which requests were served by which leader? Answer: write-ahead log with monotonic LSN + leader-epoch baked into every response header, plus a separate append-only audit store.</p></div>
+
+<h2 id="s7">Interview decision tree</h2>
+<ol>
+  <li>Do you need strong consistency on <em>writes</em>? → single-leader (Postgres/Spanner) or consensus-backed (etcd/CockroachDB).</li>
+  <li>Need globally-distributed writes with disjoint keys? → multi-leader with per-user home region.</li>
+  <li>Need extreme write throughput + tolerate LWW? → leaderless (Cassandra/Dynamo), R=W=quorum.</li>
+  <li>Only reads scale? → single-leader + async read replicas, with a causal token for read-your-writes.</li>
+</ol>
+<p>State the chosen model, then its PACELC letters, then the one anti-pattern you are explicitly avoiding. That three-sentence answer is what Kleppmann would write on a whiteboard.</p>
+
+        </div>
+        <div data-lang="zh">
+
+<h2 id="s1">为什么要复制</h2>
+<p>按 DDIA 第 5 章的分法，三个相互独立的理由：<strong>延迟</strong>（就近副本提供读）、<strong>可用性</strong>（节点故障仍可用）、<strong>吞吐</strong>（读横向扩展）。持久性是附带收益。若三者都不需要，就别复制——一台带好备份的 Postgres 永远强过一个没调好的 5 节点集群。</p>
+<p>难点不是搬数据，而是在读写竞争时决定<em>读者能看见什么</em>。所以 Kleppmann 第 5 章讲机制、第 9 章讲这些机制带来的保证叫什么名字。</p>
+<div class="callout tip"><h4>来源交叉引用</h4><p>DDIA 第 5 章：主从、多主、Dynamo 风格无主与 quorum；第 9 章：线性一致、因果一致、共识。Acing SDI 第 4 章补 SQL/NoSQL 视角。</p></div>
+
+<h2 id="s2">单主复制</h2>
+<p>一个节点接受写，follower 重放日志。同步 follower 让写阻塞到 ack（RPO=0，尾延迟高）；异步 follower 有延迟（快，但故障切换可能丢最近写）。真实系统大多跑<strong>1 同步 + 多异步</strong>——Postgres、MySQL Group Replication、AWS Aurora 都如此。</p>
+<div class="mermaid-container"><pre class="mermaid">
+flowchart LR
+    C[客户端] --&gt;|写| L[主]
+    L --&gt;|同步 WAL| F1[同步副本]
+    L --&gt;|异步| F2[副本 2]
+    L --&gt;|异步| F3[副本 3]
+    R[读客户端] --&gt; F2
+</pre></div>
+<ul>
+  <li><strong>复制延迟</strong>：同区域 10–100 ms，跨区域秒级。读你所写讨论必考。</li>
+  <li><strong>故障切换</strong>：谁提拔新主？共识服务（etcd、ZooKeeper）持有 lease，见 <a href="../../guide/distributed/consensus.html">共识</a>。</li>
+  <li><strong>吞吐上限</strong>：单主 Postgres 胖 NVMe 机器上限约 5 万写/秒。再高要分区（见 <a href="../../guide/distributed/partitioning.html">分区</a>）或换无主。</li>
+</ul>
+<div class="callout warn"><h4>反模式</h4><p>用 Postgres 逻辑复制搞「多主」做写扩展。冲突不会自动解决，你要自己写每一条 LWW bug。没有冲突解决器（CRDT、行级所有权）就别做。</p></div>
+
+<h2 id="s3">多主与无主</h2>
+<p><strong>多主</strong>（Postgres BDR、CouchDB、有离线客户端的日历）：每个区域接受写，异步复制到其他。并发写同 key 会冲突，由向量时钟、LWW 时间戳或 CRDT 合并解决。最适合地理分布且写集合基本互不相交（按用户分区）的数据。</p>
+<p><strong>无主 / Dynamo 风格</strong>（Cassandra、Riak、ScyllaDB）：客户端向 N 个副本写，W 个 ack 即成功；读查 R 个。W+R&gt;N 时 quorum 有交集。Merkle 树 anti-entropy + read-repair + hinted handoff 修复分歧。</p>
+<table>
+  <thead><tr><th>类型</th><th>写扩展</th><th>冲突风险</th><th>例子</th></tr></thead>
+  <tbody>
+    <tr><td>单主</td><td>1 节点</td><td>无（已串行）</td><td>Postgres、MySQL</td></tr>
+    <tr><td>多主</td><td>N 区域</td><td>高</td><td>CouchDB、BDR</td></tr>
+    <tr><td>无主</td><td>N 节点</td><td>中（quorum）</td><td>Cassandra、Dynamo</td></tr>
+  </tbody>
+</table>
+
+<h2 id="s4">CAP、PACELC 及其真正含义</h2>
+<p>CAP（Brewer 2000）：发生网络<em>分区</em>时必须在一致性和可用性中选一个。它<strong>不是</strong>「三选二」——分区不是可选项。有用但简化过头。</p>
+<p>PACELC（Abadi 2010）补齐：<em>分区时选 A 或 C；否则选 L 或 C。</em>staff engineer 实际用这个版本。Spanner 是 PC/EC（健康时也强一致，代价是延迟）；Dynamo 是 PA/EL（可用且快，最终一致）。答题时显式报字母。</p>
+<div class="callout openai"><h4>OpenAI 专属</h4><p>对话历史存储，OpenAI 风格答案多选 PA/EC：分区时可用，健康时强一致（同会话必须读你所写）。实现：单主区域 + 客户端每次回传因果 token。</p></div>
+
+<h2 id="s5">一致性模型阶梯</h2>
+<p>DDIA 第 9 章从强到弱：</p>
+<ol>
+  <li><strong>线性一致</strong>：每个操作在真实时间某个点原子生效。选主、分布式锁、唯一性约束必需。代价：至少一次到 quorum 的 RTT。</li>
+  <li><strong>顺序一致</strong>：所有客户端看到同一顺序，但顺序可以滞后真实时间。</li>
+  <li><strong>因果一致</strong>：因果相关的操作按序可见，并发的顺序可不同。向量时钟实现，无需共识。</li>
+  <li><strong>读你所写</strong>（会话保证）：自己写完自己一定读得到。sticky session 或客户端记录 last-LSN 即可。</li>
+  <li><strong>单调读</strong>：看过某值后不会再看到更早的。让用户粘在一个副本。</li>
+  <li><strong>最终一致</strong>：「最终」会收敛（时长未定义）。大多无主默认。社交 like 计数够用。</li>
+</ol>
+<p>面试启发：先说产品能容忍的最弱模型，再说实现机制。「用户资料保存后需读你所写；刷新间单调读足矣；分析看板跑在 10 分钟陈旧副本上。」</p>
+
+<h2 id="s6">故障模式与真实事故</h2>
+<ul>
+  <li><strong>脑裂</strong>：分区把旧主隔离，新主被选出，两者都接写。缓解：fencing token、STONITH、基于 quorum 的 lease，见 <a href="../../guide/distributed/consensus.html">共识</a>。</li>
+  <li><strong>复制延迟暴增</strong>：慢 follower 落后几分钟，从它读看到陈旧数据。监控 <code>seconds_behind_master</code>，超 1 秒从读池剔除。</li>
+  <li><strong>2015 AWS DynamoDB metadata 风暴</strong>：us-east-1 4 小时故障，元数据服务重试风暴在副本滞后下放大。教训：反压 + 抖动指数退避，禁无界重试。</li>
+  <li><strong>2017 GitLab Postgres 误删</strong>：误删主库时 follower 落后 4 GB WAL；异步 follower 有同步副本没有的数据。RPO 要按实际配置 runbook，不是 PPT 上的。</li>
+</ul>
+<div class="callout anthropic"><h4>Anthropic 专属</h4><p>Anthropic 面试官会追问<em>可审计性</em>：故障切换后能否重建每个请求由哪个主服务的？答：带单调 LSN 的 WAL + 响应头写入 leader-epoch + 独立 append-only 审计存储。</p></div>
+
+<h2 id="s7">面试决策树</h2>
+<ol>
+  <li>写也要强一致？→ 单主（Postgres/Spanner）或共识支持（etcd/CockroachDB）。</li>
+  <li>跨地域写、key 不相交？→ 每用户 home 区的多主。</li>
+  <li>极致写吞吐、能容忍 LWW？→ 无主（Cassandra/Dynamo），R=W=quorum。</li>
+  <li>只扩展读？→ 单主 + 异步读副本 + 因果 token 保读你所写。</li>
+</ol>
+<p>答：选定模型 → PACELC 字母 → 明确避开的一个反模式。这三句话就是 Kleppmann 在白板上会写的东西。</p>
+
+        </div>
+      </article>
+
+      <section class="topic-footer-links">
+        <a href="../../guide/distributed/partitioning.html"><span class="label"><span data-lang="en">Next topic</span><span data-lang="zh">下一主题</span></span><strong><span data-lang="en">Partitioning & sharding</span><span data-lang="zh">分区与分片</span></strong></a>
+        <a href="../../guide/distributed/consensus.html"><span class="label"><span data-lang="en">Deep dive</span><span data-lang="zh">深入</span></span><strong><span data-lang="en">Consensus (Paxos/Raft)</span><span data-lang="zh">共识 (Paxos/Raft)</span></strong></a>
+        <a href="../../arena/questions/a24-key-value-store.html"><span class="label"><span data-lang="en">Arena</span><span data-lang="zh">真题</span></span><strong><span data-lang="en">Design a key-value store</span><span data-lang="zh">设计键值存储</span></strong></a>
+        <a href="../../arena/questions/o9-in-memory-database.html"><span class="label"><span data-lang="en">Arena</span><span data-lang="zh">真题</span></span><strong><span data-lang="en">In-memory database</span><span data-lang="zh">内存数据库</span></strong></a>
+      </section>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <p>
+        <span data-lang="en">© SD-Guide · Built for OpenAI &amp; Anthropic system design prep. Not affiliated with either company.</span>
+        <span data-lang="zh">© SD-Guide · 为 OpenAI 与 Anthropic 系统设计面试准备。与两家公司无关联。</span>
+      </p>
+    </div>
+  </footer>
+
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

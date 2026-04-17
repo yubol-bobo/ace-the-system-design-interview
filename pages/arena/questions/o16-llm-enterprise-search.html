@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>O16. LLM-powered Enterprise Search (RAG) — SD-Guide</title>
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../index.html" class="active"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../resources/index.html"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../about/index.html"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a>
+        <span class="sep">›</span>
+        <a href="../index.html"><span data-lang="en">Arena</span><span data-lang="zh">竞技场</span></a>
+        <span class="sep">›</span>
+        <span>O16</span>
+      </div>
+
+      <article class="prose wide">
+        <div class="question-meta" style="margin-bottom:1rem;">
+          <span class="tag company-openai">OpenAI</span>
+          <span class="tag freq-2">★★ Frequent</span>
+          <span class="tag difficulty-hard">Hard</span>
+          <span class="tag">RAG</span><span class="tag">Vector DB</span>
+        </div>
+
+        <h1>
+          <span data-lang="en">O16 · LLM-powered Enterprise Search (RAG)</span>
+          <span data-lang="zh">O16 · 面向企业的 LLM 语义搜索（RAG）</span>
+        </h1>
+
+        <div class="callout openai">
+          <h4><span data-lang="en">Verified source</span><span data-lang="zh">经核实出处</span></h4>
+          <p>Prompt: "Design an LLM-powered Enterprise Search System." — Glassdoor. Credibility <strong>C</strong>.</p>
+        </div>
+
+        <h2><span data-lang="en">Two pipelines</span><span data-lang="zh">两条管道</span></h2>
+<ol><li><span data-lang="en"><strong>Indexing pipeline</strong>: data ingest → clean/chunk → embed → vector store (+ keyword index).</span><span data-lang="zh"><strong>索引管道</strong>：采集 → 清洗/分块 → embed → 向量库（+ 关键词索引）。</span></li><li><span data-lang="en"><strong>Query pipeline</strong>: query → rewrite (optional) → hybrid retrieval → rerank → context assemble → LLM generate with citations.</span><span data-lang="zh"><strong>查询管道</strong>：query → 改写（可选）→ 混合检索 → 重排 → 上下文组装 → LLM 生成（带引用）。</span></li></ol><h2><span data-lang="en">Architecture</span><span data-lang="zh">架构</span></h2>
+<div class="mermaid-container"><pre class="mermaid">
+flowchart LR
+  subgraph Indexing
+    A[Docs / Connectors] --> B[Cleaner]
+    B --> C[Chunker]
+    C --> D[Embedder]
+    D --> E[(Vector DB)]
+    C --> F[(Keyword Index)]
+  end
+  subgraph Query
+    Q[User Query] --> R[Query Rewrite]
+    R --> HV[Vector Search] --> M[Merge]
+    R --> HK[Keyword Search] --> M
+    M --> RR[Reranker] --> LLM
+    LLM --> ANS[Answer + Citations]
+  end
+  E --> HV
+  F --> HK
+</pre></div><h2><span data-lang="en">Key design decisions</span><span data-lang="zh">关键决策</span></h2>
+<ul><li><span data-lang="en"><strong>Chunk size</strong> is the single most important trade-off — too small loses context, too large injects noise. 200-500 tokens typical with 10-20% overlap.</span><span data-lang="zh"><strong>Chunk 大小</strong>是最关键的权衡——太小丢上下文，太大引入噪声。典型 200-500 tokens，10-20% 重叠。</span></li><li><span data-lang="en"><strong>Hybrid retrieval</strong>: BM25 (sparse) + dense embedding; merge via reciprocal rank fusion.</span><span data-lang="zh"><strong>混合检索</strong>：BM25（稀疏）+ 稠密 embedding；通过 RRF 合并。</span></li><li><span data-lang="en"><strong>Cross-encoder rerank</strong> of top-K (say K=50 → 10). Cost increases but answer quality jumps.</span><span data-lang="zh"><strong>Cross-encoder 重排</strong>对 top-K（K=50 → 10）。成本上升但答案质量显著提升。</span></li><li><span data-lang="en"><strong>HyDE</strong> (hypothetical document embeddings) for recall boost on rare queries.</span><span data-lang="zh"><strong>HyDE</strong>（假设文档 embedding）提升稀缺 query 召回。</span></li></ul><h2><span data-lang="en">Evaluation</span><span data-lang="zh">评估</span></h2>
+<ul><li><span data-lang="en">Retrieval: Recall@K, MRR, NDCG.</span><span data-lang="zh">检索：Recall@K、MRR、NDCG。</span></li><li><span data-lang="en">Generation: Faithfulness (grounded in context), answer relevancy, citation accuracy.</span><span data-lang="zh">生成：Faithfulness（是否基于上下文）、answer relevancy、引用准确性。</span></li></ul><h2><span data-lang="en">Follow-ups</span><span data-lang="zh">追问</span></h2>
+<ul><li><span data-lang="en"><strong>Knowledge-base updates</strong>: incremental embed + delete; use soft-delete with tombstones.</span><span data-lang="zh"><strong>知识库更新</strong>：增量 embed + 删除；软删除用 tombstone。</span></li><li><span data-lang="en"><strong>Hallucination mitigation</strong>: constrain to &quot;cite or say you don&apos;t know&quot;; evaluate with faithfulness metric.</span><span data-lang="zh"><strong>幻觉缓解</strong>：约束「引用或承认不知道」；用 faithfulness 评估。</span></li><li><span data-lang="en"><strong>Multi-modal docs</strong>: PDFs with tables/images → layout-aware parsers + separate embedding for tables.</span><span data-lang="zh"><strong>多模态文档</strong>：含表格/图片的 PDF → layout-aware 解析器 + 表格独立 embedding。</span></li></ul>
+
+        <h2><span data-lang="en">Related study-guide topics</span><span data-lang="zh">相关学习手册专题</span></h2>
+        <ul><li><a href="../../guide/llm/rag.html"><span data-lang="en">RAG deep dive</span><span data-lang="zh">RAG 深度剖析</span></a></li><li><a href="../../guide/llm/agentic-patterns.html"><span data-lang="en">Agent patterns</span><span data-lang="zh">Agent 模式</span></a></li></ul>
+      </article>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

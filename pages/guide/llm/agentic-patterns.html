@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agentic Patterns — SD-Guide</title>
+  <meta name="description" content="Tool use, ReAct, planner/executor, multi-agent orchestration, MCP, memory, reflection, guardrails — Gulli's canonical taxonomy, applied to OpenAI & Anthropic agents.">
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../../../pages/arena/index.html" data-match="/arena"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../../pages/guide/index.html" class="active" data-match="/guide"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../../pages/resources/index.html" data-match="/resources"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../../pages/about/index.html" data-match="/about"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+
+      <div class="breadcrumb">
+        <a href="../../../pages/guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a>
+        <span>›</span>
+        <span class="crumb-category">LLM Systems<span data-lang="zh" style="display:none">LLM 系统</span></span>
+      </div>
+
+      <header class="page-header">
+        <h1 class="page-title">
+          <span data-lang="en">Agentic Patterns</span>
+          <span data-lang="zh">Agentic 模式</span>
+        </h1>
+        <div class="topic-meta">
+          <span class="tag" style="background:var(--openai-glow);border-color:var(--openai)">📚 Gulli Ch.1-18 · Anthropic Building Effective Agents · Reflexion (Shinn 2023)</span><span class="tag">Tool use</span><span class="tag">ReAct</span><span class="tag">MCP</span><span class="tag">Multi-agent</span>
+        </div>
+        <p class="page-subtitle">
+          <span data-lang="en">Tool use, ReAct, planner/executor, multi-agent orchestration, MCP, memory, reflection, guardrails — Gulli's canonical taxonomy, applied to OpenAI & Anthropic agents.</span>
+          <span data-lang="zh">工具调用、ReAct、planner/executor、多 agent 编排、MCP、记忆、反思、guardrail——Gulli 标准分类应用于 OpenAI 与 Anthropic agent。</span>
+        </p>
+      </header>
+
+      <article class="topic-prose">
+        <nav class="topic-toc">
+          <h4><span data-lang="en">On this page</span><span data-lang="zh">本页目录</span></h4>
+          <ol>
+            <li><a href="#s1"><span data-lang="en">What counts as an agent</span><span data-lang="zh">什么算 agent</span></a></li>
+            <li><a href="#s2"><span data-lang="en">Tool use and ReAct</span><span data-lang="zh">工具使用与 ReAct</span></a></li>
+            <li><a href="#s3"><span data-lang="en">Planning, reflection, multi-agent</span><span data-lang="zh">规划、反思、多 agent</span></a></li>
+            <li><a href="#s4"><span data-lang="en">Memory: short, long, shared</span><span data-lang="zh">记忆：短、长、共享</span></a></li>
+            <li><a href="#s5"><span data-lang="en">MCP, A2A, and interop</span><span data-lang="zh">MCP、A2A、互操作</span></a></li>
+            <li><a href="#s6"><span data-lang="en">Guardrails, eval, interview checklist</span><span data-lang="zh">Guardrail、评估、面试清单</span></a></li>
+          </ol>
+        </nav>
+
+        <div data-lang="en">
+
+<h2 id="s1">What counts as an agent</h2>
+<p>Gulli's working definition: an <em>agent</em> is an LLM that can decide (1) which action to take next, (2) when to stop. Add tools + memory and you have the minimum: a loop of <code>observe → think → act</code>. Everything else — ReAct, planners, multi-agent — is a pattern on top of that loop.</p>
+<p>Three axes define every agentic system:</p>
+<ul>
+  <li><strong>Determinism</strong> — pure prompt chain (deterministic) vs LLM-chosen next step (non-deterministic). Anthropic's "Building Effective Agents" blog post is explicit: prefer workflows (deterministic chains) unless you genuinely need autonomy, because agents cost 4–10× more tokens and are harder to debug.</li>
+  <li><strong>Single vs multi-agent</strong> — one LLM with tools vs a team of specialized agents (planner, coder, critic). Multi-agent adds coordination cost; use it when roles are cleanly separable.</li>
+  <li><strong>Memory depth</strong> — stateless → short-term (in-context) → long-term (vector DB / summary store).</li>
+</ul>
+<p>Anchor numbers: a typical ReAct agent takes 4–12 tool calls per task; each call is 1 LLM round-trip (~2s) plus tool latency. Even a "fast" agent is 30–60s end-to-end. Budget accordingly.</p>
+<div class="callout tip"><h4>Source cross-reference</h4><p>Gulli's <em>Agentic Design Patterns</em> Ch.1–18 is the canonical taxonomy: prompt chaining, routing, parallelization, reflection, tool use, planning, multi-agent, memory, MCP, monitoring, exception handling, human-in-loop, RAG, A2A, resource optimization, reasoning, guardrails, evaluation. Memorize the chapter names.</p></div>
+
+<h2 id="s2">Tool use and ReAct</h2>
+<h3>Tool calling</h3>
+<p>Both Anthropic's <code>tool_use</code> blocks and OpenAI's <code>tools</code> parameter let the model emit a structured JSON call. The server executes the tool, appends the result as <code>tool_result</code>, and loops. The key technical details:</p>
+<ul>
+  <li><strong>JSON schema on tool inputs</strong>: the narrower the schema, the fewer invalid calls. Always include enum constraints and required fields.</li>
+  <li><strong>Tool descriptions matter more than names</strong>: the model chooses by description text. Write them like man pages, with examples.</li>
+  <li><strong>Parallel tool calls</strong>: both APIs support multiple tool calls per turn. Enables fan-out and is a huge latency win (e.g., 5 web searches at once = 5× faster than serial).</li>
+</ul>
+<h3>ReAct</h3>
+<p>ReAct (Yao 2022) interleaves Reasoning traces with Actions: <em>Thought → Action → Observation → Thought → ...</em>. The "thought" token is where the LLM explains why it's calling a tool. Empirically improves tool choice quality but burns tokens. Claude and GPT-4 both do this natively; you don't need a special prompt.</p>
+
+<h2 id="s3">Planning, reflection, multi-agent</h2>
+<h3>Planner/executor</h3>
+<p>For tasks with &gt;5 steps, a single-LLM ReAct loop often loses the plot. Separate the planner (expensive model, creates ordered todo) from executors (cheap models, do each task). Pattern from Plan-and-Execute (Wang 2023) and the Devin-style coding agents.</p>
+<h3>Reflection / self-critique</h3>
+<p>After the agent produces output, a "critic" LLM call reviews it against criteria and proposes fixes. Reflexion (Shinn 2023) shows 20–30% accuracy improvement on coding and reasoning benchmarks at ~2× cost. Cheap version: ask the same model to "review your answer and fix mistakes".</p>
+<h3>Multi-agent</h3>
+<p>Patterns: Supervisor-worker (one planner dispatches to specialists), Debate (two agents argue, judge decides), Society-of-Mind. <em>Interview warning</em>: multi-agent is overhyped. Many production systems called "multi-agent" are just a supervisor + tools under the hood. Don't recommend multi-agent unless there are genuine specialization boundaries (e.g., a coder-reviewer-tester triad, each with distinct system prompts and tools).</p>
+<div class="mermaid-container"><pre class="mermaid">
+flowchart TB
+  U[User query] --&gt; P[Planner LLM<br/>Claude-3-Opus]
+  P --&gt; T1[Task 1]
+  P --&gt; T2[Task 2]
+  P --&gt; T3[Task 3]
+  T1 --&gt; E1[Executor<br/>Claude-3-Haiku + tools]
+  T2 --&gt; E1
+  T3 --&gt; E1
+  E1 --&gt; M[Memory: scratchpad + vector]
+  E1 --&gt; C[Critic LLM]
+  C --&gt;|revise| E1
+  C --&gt;|ok| A[Aggregator]
+  A --&gt; R[Final response]
+</pre></div>
+
+<h2 id="s4">Memory: short, long, and shared</h2>
+<h3>Short-term (in-context)</h3>
+<p>The turn buffer. Growing costs fast: Claude-3-Opus at 200k context is $15/M input tokens → $3/request for a full context. Mitigation: compress by summarization after every N turns, keep only last-K raw.</p>
+<h3>Long-term (vector + structured)</h3>
+<ul>
+  <li><strong>Episodic</strong>: past interactions indexed by embedding; retrieved by semantic query. Use vector DB (Pinecone, Milvus, pgvector).</li>
+  <li><strong>Semantic</strong>: distilled facts ("user prefers markdown"). Store as key-value with confidence scores.</li>
+  <li><strong>Procedural</strong>: learned tool sequences cached as skills.</li>
+</ul>
+<p>Writing to long-term memory is the hard part. Agents typically write too much (every turn → noise) or too little (nothing persists). Solutions: reflection-gated writes (LLM decides "worth remembering?"), TTL on low-confidence memories, periodic consolidation.</p>
+<h3>Shared memory</h3>
+<p>For multi-agent systems, a shared scratchpad (Google Doc-like) or event log lets agents coordinate. Durable store (Postgres row per thread) beats in-process maps for reliability across retries.</p>
+
+<h2 id="s5">MCP, A2A, and interop</h2>
+<h3>Model Context Protocol (MCP)</h3>
+<p>Anthropic open-sourced MCP in late 2024 as a standard for connecting LLMs to tools and data sources. Architecture: MCP servers (local or remote) expose tools, resources, and prompts; MCP clients (Claude Desktop, IDEs, agents) consume them over JSON-RPC stdio or HTTP+SSE. Wins: tool reuse across models, local filesystem access, structured resource URIs.</p>
+<p>Interview hook: MCP separates <em>capability providers</em> from <em>model runners</em>. A company wiring Claude to Jira, Slack, and S3 uses three MCP servers rather than three bespoke tool implementations inside the agent.</p>
+<div class="callout anthropic"><h4>Anthropic-specific</h4><p>MCP is an Anthropic invention. Claude Desktop and Claude Code both use MCP servers natively. Interview-level answer: MCP, combined with computer-use (screen + keyboard/mouse tools released 2024), lets Claude operate arbitrary GUI apps without per-app integrations. This is the core of Claude's "general agent" strategy.</p></div>
+<h3>A2A (Agent-to-Agent)</h3>
+<p>Gulli Ch.15 — standardizing agent-to-agent messaging so a planner can call a specialist across orgs. Less mature than MCP but promising for multi-company agent workflows.</p>
+<div class="callout openai"><h4>OpenAI-specific</h4><p>OpenAI's Assistants API provides a hosted agent runtime with threads, tools, and file search. Contrast with Anthropic's approach: OpenAI hides the loop inside their infra; Anthropic exposes tool-use blocks and expects you to run the loop. OpenAI's recent Responses API and Agents SDK narrow the gap.</p></div>
+
+<h2 id="s6">Guardrails, eval, and interview checklist</h2>
+<h3>Guardrails (Gulli Ch.18)</h3>
+<p>Two layers: <strong>input guardrails</strong> (reject prompts that violate policy, e.g., prompt injection from retrieved documents) and <strong>output guardrails</strong> (reject tool calls targeting dangerous actions, e.g., <code>rm -rf /</code>). Pattern: run a separate lightweight classifier (Llama-Guard, Anthropic's constitutional classifier) in parallel with the main agent. For high-stakes tools (DB writes, money transfer), require human-in-the-loop (Gulli Ch.13).</p>
+<h3>Evaluation (preview — see evaluation page)</h3>
+<p>Agent eval needs: (1) end-task success rate on a labeled suite; (2) trajectory analysis — did it take reasonable steps? (3) cost/latency; (4) failure mode taxonomy (wrong tool, loop, hallucinated citation).</p>
+<div class="callout warn"><h4>Anti-patterns</h4>
+<ul>
+  <li><strong>No max-iteration cap.</strong> Agents loop forever on ambiguous tasks. Cap to 20 steps.</li>
+  <li><strong>Unbounded tool output to context.</strong> A 2MB file read bloats context instantly. Truncate and summarize.</li>
+  <li><strong>Multi-agent by default.</strong> Start with one agent + tools; add roles only when specialization is real.</li>
+  <li><strong>No prompt-injection guard for RAG tools.</strong> A retrieved doc containing "ignore previous instructions" can hijack the agent.</li>
+  <li><strong>Stateless retries on tool failure.</strong> If Slack API returns 429, backoff and resume — don't replay the whole thread.</li>
+</ul></div>
+<p><strong>Whiteboard checklist:</strong> clarify autonomy vs workflow; pick loop shape (ReAct / plan-execute / multi-agent); define tools with JSON schema; short + long memory design; MCP for external capability surface; input/output guardrails; max-iteration cap; human-in-loop for high-stakes tools; eval harness with trajectory logging.</p>
+
+        </div>
+        <div data-lang="zh">
+
+<h2 id="s1">什么算 agent</h2>
+<p>Gulli 工作定义：agent 是一个能自行决定 (1) 下一步动作、(2) 何时停止的 LLM。加上工具和记忆即得最小循环：<code>observe → think → act</code>。ReAct、planner、multi-agent 都是这之上的模式。</p>
+<p>三个轴定义每个 agentic 系统：</p>
+<ul>
+  <li><strong>确定性</strong>——纯 prompt chain（确定）vs LLM 选下一步（非确定）。Anthropic "Building Effective Agents" 博文明确：除非真需要自主性，优先用 workflow（确定链），因为 agent 多花 4-10 倍 token 且更难调试。</li>
+  <li><strong>单 vs 多 agent</strong>——单 LLM + 工具 vs 专家团队（planner、coder、critic）。multi-agent 加协调成本；角色真正可分时才用。</li>
+  <li><strong>记忆深度</strong>——无状态 → 短期（上下文内）→ 长期（向量 DB / 摘要存储）。</li>
+</ul>
+<p>数字锚点：典型 ReAct agent 每任务 4-12 次工具调用；每次 1 个 LLM 往返（~2s）+ 工具延迟。"快"的 agent 也要 30-60s 端到端。按此预算。</p>
+<div class="callout tip"><h4>参考来源</h4><p>Gulli《Agentic Design Patterns》Ch.1-18 是标准分类：prompt chaining、routing、parallelization、reflection、tool use、planning、multi-agent、memory、MCP、monitoring、exception handling、human-in-loop、RAG、A2A、resource optimization、reasoning、guardrails、evaluation。背熟章节名。</p></div>
+
+<h2 id="s2">工具使用与 ReAct</h2>
+<h3>工具调用</h3>
+<p>Anthropic 的 <code>tool_use</code> 块与 OpenAI 的 <code>tools</code> 参数都让模型发结构化 JSON 调用。服务端执行工具、把结果作为 <code>tool_result</code> 追加、循环。关键技术点：</p>
+<ul>
+  <li><strong>工具输入的 JSON schema</strong>：schema 越窄无效调用越少。加 enum 约束和必填字段。</li>
+  <li><strong>工具描述比名字重要</strong>：模型按描述文字选工具。像 man page 一样写，带示例。</li>
+  <li><strong>并行工具调用</strong>：两家 API 都支持一个 turn 多调用。启用 fan-out，延迟大赢（5 次并行搜索比串行快 5 倍）。</li>
+</ul>
+<h3>ReAct</h3>
+<p>ReAct（Yao 2022）交织推理与动作：<em>Thought → Action → Observation → Thought → ...</em>。"thought" token 是 LLM 解释为何调此工具的地方。实测提升工具选择质量但耗 token。Claude 和 GPT-4 原生都这样，不用特殊 prompt。</p>
+
+<h2 id="s3">规划、反思、多 agent</h2>
+<h3>Planner/executor</h3>
+<p>&gt;5 步任务单 LLM ReAct 常跑偏。分开 planner（贵模型、列有序 todo）与 executor（便宜模型、逐项执行）。Plan-and-Execute（Wang 2023）和 Devin 风代码 agent 的模式。</p>
+<h3>反思 / 自我批评</h3>
+<p>agent 输出后，"critic" LLM 按标准审查并提出修正。Reflexion（Shinn 2023）在代码与推理 benchmark 上 +20-30% 准确率、代价 ~2×。便宜版：让同一模型"审查并修正"。</p>
+<h3>多 agent</h3>
+<p>模式：supervisor-worker（一 planner 分派专家）、debate（两 agent 争辩、judge 决定）、Society-of-Mind。<em>面试警告</em>：multi-agent 被过度吹捧。许多号称"多 agent"的生产系统本质是 supervisor + 工具。除非真有专业化边界（例如 coder-reviewer-tester 三人各有 system prompt 和工具），否则别推。</p>
+<div class="mermaid-container"><pre class="mermaid">
+flowchart TB
+  U[用户查询] --&gt; P[Planner LLM<br/>Claude-3-Opus]
+  P --&gt; T1[任务 1]
+  P --&gt; T2[任务 2]
+  P --&gt; T3[任务 3]
+  T1 --&gt; E1[Executor<br/>Claude-3-Haiku + 工具]
+  T2 --&gt; E1
+  T3 --&gt; E1
+  E1 --&gt; M[记忆: scratchpad + 向量]
+  E1 --&gt; C[Critic LLM]
+  C --&gt;|修改| E1
+  C --&gt;|OK| A[聚合]
+  A --&gt; R[最终响应]
+</pre></div>
+
+<h2 id="s4">记忆：短、长、共享</h2>
+<h3>短期（上下文内）</h3>
+<p>turn buffer。增长极快：Claude-3-Opus 20 万上下文 $15/M 输入 token → 每请求 $3。缓解：每 N 轮摘要压缩，只保留最后 K 轮原文。</p>
+<h3>长期（向量 + 结构化）</h3>
+<ul>
+  <li><strong>情节</strong>：过去互动按 embedding 索引，语义查询召回。用向量 DB（Pinecone、Milvus、pgvector）。</li>
+  <li><strong>语义</strong>：蒸馏事实（"用户偏好 markdown"）。带置信度 KV 存储。</li>
+  <li><strong>程序性</strong>：学到的工具序列作为 skill 缓存。</li>
+</ul>
+<p>写长期是难点。Agent 要么写太多（每轮都写 → 噪声）、要么太少（啥也留不下）。方案：反思门控（LLM 判断"值得记吗？"）、低置信度加 TTL、定期合并。</p>
+<h3>共享记忆</h3>
+<p>多 agent 系统，共享 scratchpad（像 Google Doc）或事件日志让各方协调。持久化（Postgres 按 thread 一行）比内存 map 在重试时更稳。</p>
+
+<h2 id="s5">MCP、A2A、互操作</h2>
+<h3>Model Context Protocol (MCP)</h3>
+<p>Anthropic 2024 末开源 MCP 作为 LLM 与工具、数据源互联标准。架构：MCP 服务器（本地或远程）暴露 tools/resources/prompts；MCP 客户端（Claude Desktop、IDE、agent）通过 JSON-RPC stdio 或 HTTP+SSE 消费。好处：跨模型工具复用、本地文件访问、结构化资源 URI。</p>
+<p>面试点：MCP 分离<em>能力提供方</em>与<em>模型运行方</em>。把 Claude 接到 Jira、Slack、S3 的公司用三个 MCP 服务器而非在 agent 里写三份工具。</p>
+<div class="callout anthropic"><h4>Anthropic 细节</h4><p>MCP 是 Anthropic 发明。Claude Desktop 和 Claude Code 原生用 MCP。面试级答案：MCP + 计算机使用（2024 发布的屏幕 + 键鼠工具）让 Claude 无须单独集成就能操作任意 GUI 应用，是 Claude "通用 agent" 策略核心。</p></div>
+<h3>A2A (Agent-to-Agent)</h3>
+<p>Gulli 第 15 章——agent 间消息标准化，让 planner 能跨组织调专家。比 MCP 不成熟但对跨公司工作流有潜力。</p>
+<div class="callout openai"><h4>OpenAI 细节</h4><p>OpenAI Assistants API 提供托管 agent runtime（thread、tool、file search）。对比 Anthropic：OpenAI 把循环藏在基础设施里；Anthropic 暴露 tool_use 块、期望你跑循环。OpenAI 新 Responses API 与 Agents SDK 在缩小差距。</p></div>
+
+<h2 id="s6">Guardrail、评估、面试清单</h2>
+<h3>Guardrail（Gulli 第 18 章）</h3>
+<p>两层：<strong>输入 guardrail</strong>（拒策略违规 prompt，例如从检索文档来的 prompt injection）和<strong>输出 guardrail</strong>（拒危险工具调用，例如 <code>rm -rf /</code>）。模式：用独立轻分类器（Llama-Guard、Anthropic 宪法分类器）与主 agent 并行跑。高风险工具（数据库写、转账）要 human-in-the-loop（Gulli 第 13 章）。</p>
+<h3>评估（见评估页）</h3>
+<p>Agent 评估要：(1) 标注套件的端任务成功率；(2) 轨迹分析——步骤是否合理？(3) 成本/延迟；(4) 失败模式分类（错工具、循环、幻觉引用）。</p>
+<div class="callout warn"><h4>反模式</h4>
+<ul>
+  <li><strong>不设 max-iteration 上限</strong>。Agent 在模糊任务上无限循环。封 20 步。</li>
+  <li><strong>无界工具输出进上下文</strong>。读 2MB 文件瞬间涨上下文。要截断+摘要。</li>
+  <li><strong>默认 multi-agent</strong>。先单 agent+工具，只在真有专业化时加角色。</li>
+  <li><strong>RAG 工具无 prompt injection 防护</strong>。检索到的文档含"忽略先前指令"能劫持 agent。</li>
+  <li><strong>工具失败无状态重试</strong>。Slack API 429 应退避续跑，别重放整个 thread。</li>
+</ul></div>
+<p><strong>白板清单：</strong>确定性 vs workflow；循环形态（ReAct / plan-execute / multi-agent）；JSON schema 定义工具；短+长记忆设计；MCP 外部能力面；输入/输出 guardrail；max-iteration 上限；高风险工具 human-in-loop；带轨迹日志的评估框架。</p>
+
+        </div>
+      </article>
+
+      <section class="topic-footer-links">
+        <a href="../../arena/questions/a25-agentic-system.html"><span class="label"><span data-lang="en">Arena question</span><span data-lang="zh">真题</span></span><strong><span data-lang="en">A25 · Agentic System</span><span data-lang="zh">A25 · Agentic 系统</span></strong></a>
+        <a href="../../arena/questions/o11-openai-playground.html"><span class="label"><span data-lang="en">Arena question</span><span data-lang="zh">真题</span></span><strong><span data-lang="en">O11 · OpenAI Playground</span><span data-lang="zh">O11 · OpenAI Playground</span></strong></a>
+        <a href="rag.html"><span class="label"><span data-lang="en">Previous</span><span data-lang="zh">上一主题</span></span><strong><span data-lang="en">RAG</span><span data-lang="zh">RAG</span></strong></a>
+        <a href="llm-evaluation.html"><span class="label"><span data-lang="en">Next topic</span><span data-lang="zh">下一主题</span></span><strong><span data-lang="en">LLM Evaluation</span><span data-lang="zh">LLM 评估</span></strong></a>
+      </section>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <p>
+        <span data-lang="en">© SD-Guide · Built for OpenAI &amp; Anthropic system design prep. Not affiliated with either company.</span>
+        <span data-lang="zh">© SD-Guide · 为 OpenAI 与 Anthropic 系统设计面试准备。与两家公司无关联。</span>
+      </p>
+    </div>
+  </footer>
+
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Interview Framework — SD-Guide</title>
+  <meta name="description" content="A 45-minute blueprint: Requirements → Scale → API → Data Model → Architecture → Deep Dive, tuned for OpenAI and Anthropic interview panels.">
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../../../pages/arena/index.html" data-match="/arena"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../../pages/guide/index.html" class="active" data-match="/guide"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../../pages/resources/index.html" data-match="/resources"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../../pages/about/index.html" data-match="/about"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+
+      <div class="breadcrumb">
+        <a href="../../../pages/guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a>
+        <span>›</span>
+        <span class="crumb-category">Foundations<span data-lang="zh" style="display:none">基础功</span></span>
+      </div>
+
+      <header class="page-header">
+        <h1 class="page-title">
+          <span data-lang="en">The Interview Framework</span>
+          <span data-lang="zh">系统设计面试通用框架</span>
+        </h1>
+        <div class="topic-meta">
+          <span class="tag" style="background:var(--openai-glow);border-color:var(--openai)">📚 Alex Xu V1 Ch.3 · Acing SDI Ch.2 · Chip Huyen DMLS Ch.2</span><span class="tag">45-min blueprint</span><span class="tag">Acing SDI Ch.2</span><span class="tag">OpenAI/Anthropic tweaks</span>
+        </div>
+        <p class="page-subtitle">
+          <span data-lang="en">A 45-minute blueprint: Requirements → Scale → API → Data Model → Architecture → Deep Dive, tuned for OpenAI and Anthropic interview panels.</span>
+          <span data-lang="zh">45 分钟蓝图：需求 → 规模 → API → 数据模型 → 架构 → 深挖，针对 OpenAI 与 Anthropic 面试场景定制。</span>
+        </p>
+      </header>
+
+      <article class="topic-prose">
+        <nav class="topic-toc">
+          <h4><span data-lang="en">On this page</span><span data-lang="zh">本页目录</span></h4>
+          <ol>
+            <li><a href="#s1"><span data-lang="en">Why a framework at all</span><span data-lang="zh">为什么需要框架</span></a></li>
+            <li><a href="#s2"><span data-lang="en">Phase 1 — Requirements & scoping (5 min)</span><span data-lang="zh">阶段一 — 需求澄清（5 分钟）</span></a></li>
+            <li><a href="#s3"><span data-lang="en">Phase 2 — Back-of-envelope scale (5 min)</span><span data-lang="zh">阶段二 — 规模估算（5 分钟）</span></a></li>
+            <li><a href="#s4"><span data-lang="en">Phase 3 — API surface (5 min)</span><span data-lang="zh">阶段三 — API 设计（5 分钟）</span></a></li>
+            <li><a href="#s5"><span data-lang="en">Phase 4 — Data model & storage (5 min)</span><span data-lang="zh">阶段四 — 数据模型与存储（5 分钟）</span></a></li>
+            <li><a href="#s6"><span data-lang="en">Phase 5 — High-level architecture (10 min)</span><span data-lang="zh">阶段五 — 高层架构（10 分钟）</span></a></li>
+            <li><a href="#s7"><span data-lang="en">Phase 6 — Deep dive + wrap (15 min)</span><span data-lang="zh">阶段六 — 深挖与收尾（15 分钟）</span></a></li>
+            <li><a href="#s8"><span data-lang="en">OpenAI vs Anthropic-specific tweaks</span><span data-lang="zh">OpenAI 与 Anthropic 特定调整</span></a></li>
+          </ol>
+        </nav>
+
+        <div data-lang="en">
+
+<h2 id="s1">Why a framework at all</h2>
+<p>A system design interview is not an oral exam on distributed systems trivia; it is a structured conversation under time pressure where the interviewer scores your <em>engineering judgment</em>. Alex Xu's 4-step template (<code>scope → high-level → deep-dive → wrap</code>) and Zhiyong Tan's longer checklist in <em>Acing the System Design Interview</em> Chapter 2 both converge on the same idea: spend the first 10 minutes nailing the problem, the next 15 sketching a reasonable baseline, and the last 20 demonstrating depth on one or two components the interviewer cares about.</p>
+<p>The framework below is the tightest version that still survives a 45-minute slot. It prevents the two most common failure modes: <strong>premature architecture</strong> (drawing boxes before you know the QPS) and <strong>shallow breadth</strong> (describing seven services at the same level of detail, none of them deeply).</p>
+<div class="callout tip"><h4>Source cross-reference</h4><p>Alex Xu V1 Ch.3 gives the 4-step skeleton; Acing SDI Ch.2 adds the requirement-discussion taxonomy (functional, non-functional, constraints); Chip Huyen DMLS Ch.2 supplies the ML-specific framing (objective → data → model → deployment) you'll need for any LLM/ML question.</p></div>
+
+<h2 id="s2">Phase 1 — Requirements &amp; scoping (5 min)</h2>
+<p>Before touching the whiteboard, extract three lists:</p>
+<ul>
+  <li><strong>Functional requirements</strong>: the two or three core user journeys. "Upload video, watch video, search video" is enough for YouTube; do <em>not</em> list 15 features.</li>
+  <li><strong>Non-functional requirements</strong> (NFRs): availability target (three-nines = ~8.76 h downtime/year, four-nines = ~52 min), p99 latency budget, durability, consistency model, regulatory (GDPR, HIPAA, SOC2).</li>
+  <li><strong>Explicit out-of-scope</strong>: "We will not design the mobile client, the billing system, or the CDN provider." This buys you back 5 minutes later when the interviewer asks.</li>
+</ul>
+<p>Write NFRs as numbers, never adjectives. "Low latency" is a junior answer. "p99 read &lt; 100 ms in-region, p99 write &lt; 300 ms, 99.95% availability, RPO &lt; 1 min, RTO &lt; 5 min" is a staff answer.</p>
+<div class="callout warn"><h4>Anti-pattern</h4><p>Do not start listing databases (<em>"I'll use Postgres and Redis and Kafka..."</em>) before requirements are nailed. Interviewers silently flag this as pattern-matching without thought. Stay on requirements until you can state the problem back in one sentence.</p></div>
+
+<h2 id="s3">Phase 2 — Back-of-envelope scale (5 min)</h2>
+<p>Convert product assumptions into numeric targets. For a chat app: 500 M DAU × 40 messages/day = 20 B messages/day ≈ 230 k writes/sec average, ~5× for peak = 1.15 M writes/sec. Storage at 200 bytes/message × 20 B/day = 4 TB/day ≈ 1.5 PB/year.</p>
+<p>You will refer back to these numbers in every later phase. A 1 M QPS system needs horizontal sharding from day one; a 5 k QPS system can live on a single Postgres primary with read replicas. Getting the order of magnitude right is 80% of the value; precision past one significant figure is wasted breath.</p>
+<p>See the companion page on <a href="../../guide/foundations/estimation.html">estimation</a> for the constants (Jeff Dean numbers, latency cheat-sheet, LLM-token economics).</p>
+
+<h2 id="s4">Phase 3 — API surface (5 min)</h2>
+<p>Define 3–6 endpoints, typed. Example for a URL shortener:</p>
+<pre><code>POST /v1/links          { long_url, custom_alias? } -&gt; { short_url, expires_at }
+GET  /v1/{alias}        302 -&gt; long_url
+GET  /v1/links/{alias}  -&gt; { clicks, created_at, owner }
+DELETE /v1/links/{alias}</code></pre>
+<p>State explicitly: auth model (JWT, mTLS, API key), idempotency keys on <code>POST</code>, pagination style (cursor vs offset), and rate-limit bucket. For LLM-flavored questions, always mention <strong>streaming</strong> responses (<code>text/event-stream</code> or gRPC server-streaming) and <strong>tool-call schemas</strong>.</p>
+<div class="callout openai"><h4>OpenAI-specific</h4><p>OpenAI interviews love <code>/v1/chat/completions</code>-shaped APIs. Be ready to discuss SSE framing, <code>stream_options</code>, function-calling JSON schemas, and how you would backpressure a slow client without dropping the generation.</p></div>
+
+<h2 id="s5">Phase 4 — Data model &amp; storage (5 min)</h2>
+<p>Pick a primary store and state the schema in 3–5 lines. Justify the choice with one sentence referencing access pattern, not brand loyalty.</p>
+<ul>
+  <li><strong>OLTP key-value with predictable partition</strong> (user-scoped inbox, session store): DynamoDB, Cassandra, FoundationDB.</li>
+  <li><strong>Relational with joins &amp; strong consistency</strong>: Postgres (single-region up to ~50 k writes/sec), Spanner / CockroachDB for global.</li>
+  <li><strong>Append-only event log</strong>: Kafka + tiered storage, or a purpose-built log like Pulsar.</li>
+  <li><strong>Blob</strong>: S3 / GCS, 11 nines durability, ~5 ms first-byte from same region.</li>
+  <li><strong>Vector</strong>: pgvector (&lt;10 M), Milvus / Pinecone / Turbopuffer (100 M+). See the <a href="../../arena/questions/o18-vector-database.html">vector DB arena question</a>.</li>
+</ul>
+
+<h2 id="s6">Phase 5 — High-level architecture (10 min)</h2>
+<p>Draw 5–8 boxes. Client → load balancer → stateless service tier → cache + primary store + async queue + downstream workers. Label every arrow with the protocol (HTTP/2, gRPC, Kafka topic) and the direction of data flow.</p>
+<div class="mermaid-container"><pre class="mermaid">
+flowchart LR
+    C[Client] --&gt;|HTTPS| LB[Global LB / Anycast]
+    LB --&gt; API[Stateless API tier]
+    API --&gt;|read-through| CACHE[(Redis cluster)]
+    API --&gt;|writes| DB[(Primary store)]
+    API --&gt;|events| Q[[Kafka]]
+    Q --&gt; W[Workers]
+    W --&gt; DB
+    W --&gt;|cold| OBJ[(S3)]
+</pre></div>
+<p>Call out at least one <strong>concrete number</strong> per box: "Redis cluster sized for 100 k ops/sec/node, 6 shards, 3 replicas = 1.8 M ops/sec cluster throughput." Numbers separate candidates who have run systems from those who have only read about them.</p>
+
+<h2 id="s7">Phase 6 — Deep dive + wrap (15 min)</h2>
+<p>The interviewer will nominate one or two components for deep-dive. Common targets:</p>
+<ul>
+  <li><em>How do you keep the cache consistent with the primary?</em> → write-through vs cache-aside, invalidation lag, the 2013 Facebook memcached paper's "leases" trick.</li>
+  <li><em>What if the leader DB fails?</em> → failover playbook: consensus on new leader (etcd/Raft), fencing tokens (<a href="../../guide/distributed/consensus.html">see consensus</a>), RPO window, split-brain avoidance.</li>
+  <li><em>How do you rate-limit?</em> → token bucket at the edge, sliding-window log at user scope (see <a href="../../arena/questions/o17-rate-limiter.html">rate-limiter arena</a>).</li>
+</ul>
+<p>Reserve 2 minutes at the end for an explicit <strong>trade-off summary</strong>: "If we needed global strong consistency I would swap Postgres for Spanner and accept 2× write latency; if read volume doubled, add regional read replicas with bounded staleness." This is the single highest-signal minute of the interview.</p>
+
+<h2 id="s8">OpenAI vs Anthropic-specific tweaks</h2>
+<p>The framework is the same; the emphasis shifts.</p>
+<table>
+  <thead><tr><th>Dimension</th><th>OpenAI style</th><th>Anthropic style</th></tr></thead>
+  <tbody>
+    <tr><td>Opening question</td><td>Product-flavored ("Design ChatGPT memory")</td><td>Safety/eval-flavored ("Design a red-team harness")</td></tr>
+    <tr><td>Depth target</td><td>GPU scheduling, KV-cache sharing, streaming protocol</td><td>Policy pipeline, audit logs, rollback, sandboxing</td></tr>
+    <tr><td>Preferred stack cues</td><td>Python + Rust services, Triton, vLLM, Kubernetes</td><td>Python + Rust, custom inference stack, strong typing, extensive evals</td></tr>
+    <tr><td>Must-mention</td><td>Throughput/$ and p50 vs p99 under batching</td><td>Constitutional AI feedback loop, refusal metrics, provenance</td></tr>
+  </tbody>
+</table>
+<div class="callout anthropic"><h4>Anthropic-specific</h4><p>Anthropic interviewers routinely pivot to safety: "What happens if a prompt tries to exfiltrate another user's context?" Have a canned answer involving tenant isolation at the process level, scrubbed logs, and a circuit breaker that kills generations on policy hits. Reference Constitutional AI and the <a href="../../guide/safety/safety-engineering.html">threat modeling page</a> if they push.</p></div>
+<div class="callout warn"><h4>Final anti-pattern</h4><p>Running out of time on Phase 5 and never reaching deep-dive is the single most common reason strong candidates fail. Set a mental timer: if you are still drawing boxes at minute 25, stop, pick one component, and go deep.</p></div>
+
+        </div>
+        <div data-lang="zh">
+
+<h2 id="s1">为什么需要框架</h2>
+<p>系统设计面试不是分布式系统知识的口试，而是在时间压力下的结构化对话，面试官评估的是你的<em>工程判断力</em>。Alex Xu 的 4 步模板（<code>范围 → 高层 → 深挖 → 收尾</code>）与 Zhiyong Tan 在《Acing the System Design Interview》第 2 章的更长清单，核心思想一致：前 10 分钟锁定问题，中间 15 分钟画出合理基线，最后 20 分钟在一到两个组件上展示深度。</p>
+<p>下面这套框架是仍能在 45 分钟内走完的最紧凑版本。它避免了两种常见失败：<strong>过早架构</strong>（还没算 QPS 就开始画框）和<strong>浅层广度</strong>（七个服务全部停在同一个粒度，没有任何一个讲透）。</p>
+<div class="callout tip"><h4>来源交叉引用</h4><p>Alex Xu V1 第 3 章给出 4 步骨架；Acing SDI 第 2 章补充需求讨论分类（功能性、非功能性、约束）；Chip Huyen DMLS 第 2 章提供 ML 特有的问题框架（目标 → 数据 → 模型 → 部署），回答 LLM/ML 题必备。</p></div>
+
+<h2 id="s2">阶段一 — 需求澄清（5 分钟）</h2>
+<p>在动笔之前，先提炼三份清单：</p>
+<ul>
+  <li><strong>功能需求</strong>：两到三条核心用户旅程。YouTube 题目说「上传视频、观看视频、搜索视频」就够了，不要列 15 个功能。</li>
+  <li><strong>非功能需求</strong>（NFR）：可用性目标（三个九 ≈ 每年 8.76 小时停机，四个九 ≈ 52 分钟）、p99 延迟预算、持久性、一致性模型、合规要求（GDPR、HIPAA、SOC2）。</li>
+  <li><strong>明确的范围外</strong>：「我们不设计移动端、计费系统、CDN 提供商。」这在后面能帮你省回 5 分钟。</li>
+</ul>
+<p>NFR 要写成数字，不要写形容词。「低延迟」是初级答案；「同区域 p99 读 &lt; 100 ms，p99 写 &lt; 300 ms，可用性 99.95%，RPO &lt; 1 分钟，RTO &lt; 5 分钟」是 staff 答案。</p>
+<div class="callout warn"><h4>反模式</h4><p>需求还没锁定就开始罗列数据库（「我用 Postgres 加 Redis 加 Kafka……」）。面试官会默默扣分：这是无思考的模式匹配。坚持到你能用一句话把问题复述出来。</p></div>
+
+<h2 id="s3">阶段二 — 规模估算（5 分钟）</h2>
+<p>把产品假设换成数字。聊天应用：5 亿日活 × 每天 40 条消息 = 200 亿条/天 ≈ 23 万写入/秒的平均值，峰值按 5× 算 = 115 万写入/秒。存储按 200 字节/条 × 200 亿/天 = 4 TB/天 ≈ 1.5 PB/年。</p>
+<p>后续每个阶段都会引用这些数字。100 万 QPS 的系统从第一天就要水平分片；5000 QPS 的系统单主 Postgres 加读副本完全能扛。数量级正确是 80% 的价值，精度到一位有效数字之外都是浪费时间。</p>
+<p>常数见配套页面 <a href="../../guide/foundations/estimation.html">估算</a>（Jeff Dean 数字、延迟速查表、LLM token 经济学）。</p>
+
+<h2 id="s4">阶段三 — API 设计（5 分钟）</h2>
+<p>定义 3–6 个带类型的端点。短链接服务示例：</p>
+<pre><code>POST /v1/links          { long_url, custom_alias? } -&gt; { short_url, expires_at }
+GET  /v1/{alias}        302 -&gt; long_url
+GET  /v1/links/{alias}  -&gt; { clicks, created_at, owner }
+DELETE /v1/links/{alias}</code></pre>
+<p>明确说明：鉴权方式（JWT、mTLS、API key）、<code>POST</code> 的幂等 key、分页方式（cursor vs offset）、限流桶。LLM 类题目一定要提<strong>流式响应</strong>（<code>text/event-stream</code> 或 gRPC 服务端流）与<strong>工具调用 schema</strong>。</p>
+<div class="callout openai"><h4>OpenAI 专属</h4><p>OpenAI 面试偏爱 <code>/v1/chat/completions</code> 形状的 API。准备好 SSE 帧格式、<code>stream_options</code>、function calling 的 JSON schema，以及如何在不中断生成的前提下对慢客户端施加反压。</p></div>
+
+<h2 id="s5">阶段四 — 数据模型与存储（5 分钟）</h2>
+<p>选一个主存储，写 3–5 行 schema。用一句话根据访问模式（不是品牌偏好）证明选择合理。</p>
+<ul>
+  <li><strong>OLTP 键值，分区可预测</strong>（用户收件箱、会话）：DynamoDB、Cassandra、FoundationDB。</li>
+  <li><strong>关系型，需 join 与强一致</strong>：Postgres（单区域到 ~5 万写/秒）；全球场景用 Spanner / CockroachDB。</li>
+  <li><strong>仅追加事件日志</strong>：Kafka + 分层存储，或 Pulsar。</li>
+  <li><strong>对象存储</strong>：S3 / GCS，11 个九的持久性，同区域首字节 ~5 ms。</li>
+  <li><strong>向量库</strong>：pgvector（&lt;1000 万）、Milvus / Pinecone / Turbopuffer（1 亿+）。见 <a href="../../arena/questions/o18-vector-database.html">向量数据库真题</a>。</li>
+</ul>
+
+<h2 id="s6">阶段五 — 高层架构（10 分钟）</h2>
+<p>画 5–8 个框：客户端 → 负载均衡 → 无状态服务层 → 缓存 + 主存储 + 异步队列 + 下游 worker。每条箭头标明协议（HTTP/2、gRPC、Kafka topic）和数据流方向。</p>
+<div class="mermaid-container"><pre class="mermaid">
+flowchart LR
+    C[客户端] --&gt;|HTTPS| LB[全局 LB / Anycast]
+    LB --&gt; API[无状态 API 层]
+    API --&gt;|read-through| CACHE[(Redis 集群)]
+    API --&gt;|writes| DB[(主存储)]
+    API --&gt;|events| Q[[Kafka]]
+    Q --&gt; W[Workers]
+    W --&gt; DB
+    W --&gt;|冷数据| OBJ[(S3)]
+</pre></div>
+<p>每个框至少报出一个<strong>具体数字</strong>：「Redis 集群按单节点 10 万 ops/秒规划，6 分片 × 3 副本 = 集群 180 万 ops/秒。」数字能区分真正跑过系统的人和只读过书的人。</p>
+
+<h2 id="s7">阶段六 — 深挖与收尾（15 分钟）</h2>
+<p>面试官会点一到两个组件深挖。常见目标：</p>
+<ul>
+  <li><em>缓存如何与主存储保持一致？</em> → write-through vs cache-aside，失效延迟，2013 年 Facebook memcached 论文里的「lease」技巧。</li>
+  <li><em>主库挂了怎么办？</em> → 故障切换：用 etcd/Raft 选主、fencing token（见 <a href="../../guide/distributed/consensus.html">共识页面</a>）、RPO 窗口、脑裂防范。</li>
+  <li><em>如何限流？</em> → 边缘 token bucket + 用户维度滑动窗口日志（见 <a href="../../arena/questions/o17-rate-limiter.html">限流真题</a>）。</li>
+</ul>
+<p>最后 2 分钟留给明确的<strong>权衡总结</strong>：「如果需要全球强一致，我会把 Postgres 换成 Spanner 并接受 2× 写延迟；如果读量翻倍，增加有界陈旧的区域读副本。」这是整场面试信号最强的一分钟。</p>
+
+<h2 id="s8">OpenAI 与 Anthropic 特定调整</h2>
+<p>框架一样，重心不同。</p>
+<table>
+  <thead><tr><th>维度</th><th>OpenAI 风格</th><th>Anthropic 风格</th></tr></thead>
+  <tbody>
+    <tr><td>开场题</td><td>产品风（「设计 ChatGPT 记忆」）</td><td>安全/评测风（「设计红队 harness」）</td></tr>
+    <tr><td>深挖方向</td><td>GPU 调度、KV-cache 共享、流式协议</td><td>策略流水线、审计日志、回滚、沙箱</td></tr>
+    <tr><td>偏好栈</td><td>Python + Rust、Triton、vLLM、K8s</td><td>Python + Rust、自研推理栈、强类型、大量 eval</td></tr>
+    <tr><td>必须提</td><td>吞吐/$ 与 batching 下的 p50/p99</td><td>Constitutional AI 反馈闭环、拒答率指标、溯源</td></tr>
+  </tbody>
+</table>
+<div class="callout anthropic"><h4>Anthropic 专属</h4><p>Anthropic 面试官经常转向安全：「如果一个 prompt 试图窃取另一用户的上下文怎么办？」请准备好答案：进程级租户隔离、日志脱敏、策略命中时熔断生成。若被追问，引用 Constitutional AI 和 <a href="../../guide/safety/safety-engineering.html">威胁建模页面</a>。</p></div>
+<div class="callout warn"><h4>最终反模式</h4><p>在阶段五卡住、从未进入深挖，是强候选人失败的头号原因。心里设个闹钟：第 25 分钟还在画框，立刻停、挑一个组件、深入下去。</p></div>
+
+        </div>
+      </article>
+
+      <section class="topic-footer-links">
+        <a href="../../guide/foundations/estimation.html"><span class="label"><span data-lang="en">Next topic</span><span data-lang="zh">下一主题</span></span><strong><span data-lang="en">Back-of-envelope estimation</span><span data-lang="zh">规模估算</span></strong></a>
+        <a href="../../guide/distributed/replication-consistency.html"><span class="label"><span data-lang="en">Deep dive</span><span data-lang="zh">深入</span></span><strong><span data-lang="en">Replication & consistency</span><span data-lang="zh">复制与一致性</span></strong></a>
+        <a href="../../arena/questions/a25-agentic-system.html"><span class="label"><span data-lang="en">Arena</span><span data-lang="zh">真题</span></span><strong><span data-lang="en">Design an agentic system</span><span data-lang="zh">设计一个 Agent 系统</span></strong></a>
+        <a href="../../arena/questions/o17-rate-limiter.html"><span class="label"><span data-lang="en">Arena</span><span data-lang="zh">真题</span></span><strong><span data-lang="en">Rate-limiter walkthrough</span><span data-lang="zh">限流器演练</span></strong></a>
+        <a href="../../guide/llm/llm-serving.html"><span class="label"><span data-lang="en">Related</span><span data-lang="zh">相关</span></span><strong><span data-lang="en">LLM serving stack</span><span data-lang="zh">LLM 服务栈</span></strong></a>
+      </section>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <p>
+        <span data-lang="en">© SD-Guide · Built for OpenAI &amp; Anthropic system design prep. Not affiliated with either company.</span>
+        <span data-lang="zh">© SD-Guide · 为 OpenAI 与 Anthropic 系统设计面试准备。与两家公司无关联。</span>
+      </p>
+    </div>
+  </footer>
+
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

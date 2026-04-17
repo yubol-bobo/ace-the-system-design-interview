@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>A29. Model Serving Platform for LLMs — SD-Guide</title>
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../index.html" class="active"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../resources/index.html"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../about/index.html"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a>
+        <span class="sep">›</span>
+        <a href="../index.html"><span data-lang="en">Arena</span><span data-lang="zh">竞技场</span></a>
+        <span class="sep">›</span>
+        <span>A29</span>
+      </div>
+
+      <article class="prose wide">
+        <div class="question-meta" style="margin-bottom:1rem;">
+          <span class="tag company-anthropic">Anthropic</span>
+          <span class="tag freq-3">★★★ Frequent</span>
+          <span class="tag difficulty-hard">Hard</span>
+          <span class="tag">Open-ended</span><span class="tag">Platform</span>
+        </div>
+
+        <h1>
+          <span data-lang="en">A29 · Model Serving Platform for LLMs</span>
+          <span data-lang="zh">A29 · LLM 模型服务平台</span>
+        </h1>
+
+        <div class="callout anthropic">
+          <h4><span data-lang="en">Verified source</span><span data-lang="zh">经核实出处</span></h4>
+          <p>Prompt: "Design a Model Serving Platform for LLMs." — linkjob.ai. Open-ended; you must drive scope. Credibility <strong>C</strong>.</p>
+        </div>
+
+        <h2><span data-lang="en">Open-ended — drive the conversation</span><span data-lang="zh">开放式——主导对话</span></h2>
+<p><span data-lang="en">Anthropic explicitly evaluates "driving the conversation." Your first move is <strong>to state what in-scope and out-of-scope</strong> means. Example: "I&apos;ll focus on multi-tenant inference serving for an internal fleet of models. I&apos;m out of scope on training and fine-tuning. Does that work?"</span><span data-lang="zh">Anthropic 明确评估「主导对话」。你第一步要<strong>声明在 / 不在范围内</strong>。例：「我关注多租户内部模型的推理服务；不覆盖训练与微调。这样可以吗？」</span></p><h2><span data-lang="en">Skeleton to follow</span><span data-lang="zh">推荐骨架</span></h2>
+<ol><li><span data-lang="en">Clarify requirements: which models, QPS, SLOs, tenants.</span><span data-lang="zh">澄清需求：哪些模型、QPS、SLO、租户。</span></li><li><span data-lang="en">High-level architecture: control plane / data plane, refer to A15.</span><span data-lang="zh">高层架构：控制面 / 数据面，参考 A15。</span></li><li><span data-lang="en">Safety / latency / reliability trade-offs explicitly.</span><span data-lang="zh">显式讨论 safety / 延迟 / 可靠性权衡。</span></li><li><span data-lang="en">Pick one component (batcher) and go deep (see A11, A12).</span><span data-lang="zh">挑一个组件（batcher）深入（见 A11、A12）。</span></li><li><span data-lang="en">Close with capacity / cost math.</span><span data-lang="zh">以容量 / 成本估算收尾。</span></li></ol><div class="callout anthropic"><h4><span data-lang="en">Signal vs noise</span><span data-lang="zh">信号 vs 噪声</span></h4><p><span data-lang="en">Asking "what should I focus on?" is a disqualifier. State a plan, then ask "does this match what you want to explore?" — that reads as senior.</span><span data-lang="zh">问「我该关注什么？」是一票否决。先给方案，再问「这是否符合你想探讨的方向？」——听起来就是高级工程师。</span></p></div>
+
+        <h2><span data-lang="en">Related study-guide topics</span><span data-lang="zh">相关学习手册专题</span></h2>
+        <ul><li><a href="../../guide/llm/llm-serving.html"><span data-lang="en">LLM serving</span><span data-lang="zh">LLM 推理服务</span></a></li></ul>
+      </article>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

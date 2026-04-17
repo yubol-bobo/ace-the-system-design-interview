@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>O17. Design a Rate Limiter — SD-Guide</title>
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../index.html" class="active"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../resources/index.html"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../about/index.html"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a>
+        <span class="sep">›</span>
+        <a href="../index.html"><span data-lang="en">Arena</span><span data-lang="zh">竞技场</span></a>
+        <span class="sep">›</span>
+        <span>O17</span>
+      </div>
+
+      <article class="prose wide">
+        <div class="question-meta" style="margin-bottom:1rem;">
+          <span class="tag company-openai">OpenAI</span>
+          <span class="tag freq-2">★★ Frequent</span>
+          <span class="tag difficulty-medium">Medium</span>
+          <span class="tag">Token Bucket</span><span class="tag">Distributed</span>
+        </div>
+
+        <h1>
+          <span data-lang="en">O17 · Design a Rate Limiter</span>
+          <span data-lang="zh">O17 · 设计限流器</span>
+        </h1>
+
+        <div class="callout openai">
+          <h4><span data-lang="en">Verified source</span><span data-lang="zh">经核实出处</span></h4>
+          <p>Prompt: "Design a Rate Limiter." — Jobright, IGotAnOffer. Classic with AI twist (per-token billing). Credibility <strong>C/D</strong>.</p>
+        </div>
+
+        <h2><span data-lang="en">Algorithms compared</span><span data-lang="zh">算法对比</span></h2>
+<table><thead><tr><th>Algorithm</th><th>Properties</th><th>Use-case</th></tr></thead><tbody><tr><td><strong>Token bucket</strong></td><td><span data-lang="en">Burst allowed up to bucket size, steady refill.</span><span data-lang="zh">允许突发到桶大小，稳定续 token。</span></td><td><span data-lang="en">Most APIs — OpenAI-style.</span><span data-lang="zh">多数 API，OpenAI 风格。</span></td></tr><tr><td><strong>Leaky bucket</strong></td><td><span data-lang="en">Strict smoothing; queue with fixed drain.</span><span data-lang="zh">严格平滑；定速流出队列。</span></td><td><span data-lang="en">Traffic shaping; streaming.</span><span data-lang="zh">流量整形；流式场景。</span></td></tr><tr><td><strong>Fixed window</strong></td><td><span data-lang="en">Simple; burst at window boundary.</span><span data-lang="zh">简单；窗口边界有突发。</span></td><td><span data-lang="en">Coarse quotas, daily limits.</span><span data-lang="zh">粗粒度配额、日限。</span></td></tr><tr><td><strong>Sliding window log</strong></td><td><span data-lang="en">Exact but memory-heavy.</span><span data-lang="zh">精确但内存开销大。</span></td><td><span data-lang="en">Small scale, accuracy-critical.</span><span data-lang="zh">小规模，精度关键。</span></td></tr><tr><td><strong>Sliding window counter</strong></td><td><span data-lang="en">Approximate; O(1) memory.</span><span data-lang="zh">近似；O(1) 内存。</span></td><td><span data-lang="en">Most APIs.</span><span data-lang="zh">多数 API。</span></td></tr></tbody></table><h2><span data-lang="en">Distributed coordination</span><span data-lang="zh">分布式协调</span></h2>
+<ul><li><span data-lang="en"><strong>Redis + Lua</strong> for atomic token-bucket operations (check-and-decrement).</span><span data-lang="zh"><strong>Redis + Lua</strong>原子化令牌桶（先查后扣一步完成）。</span></li><li><span data-lang="en"><strong>Sticky hashing</strong> of key (user/API key) to specific shard → locality + consistency.</span><span data-lang="zh"><strong>按 key 黏附哈希</strong>（用户/API key）到特定 shard → 局部性 + 一致性。</span></li><li><span data-lang="en"><strong>Client-side check with server reconciliation</strong>: gateway pre-filters, Redis authoritatively decides.</span><span data-lang="zh"><strong>客户端预检 + 服务端权威</strong>：网关预过滤，Redis 最终拍板。</span></li></ul><h2><span data-lang="en">AI-specific twist</span><span data-lang="zh">AI 专属扩展</span></h2>
+<p><span data-lang="en">For LLM APIs, limit on <strong>tokens</strong> (input+output) not just requests. Requires predicting output tokens or reserving max then refunding unused.</span><span data-lang="zh">LLM API 的限流应基于 <strong>token</strong>（输入+输出）而非请求数。需预估输出 token 或先 reserve 最大再返还未用部分。</span></p>
+
+        <h2><span data-lang="en">Related study-guide topics</span><span data-lang="zh">相关学习手册专题</span></h2>
+        <ul><li><a href="../../guide/classical/rate-limiter.html"><span data-lang="en">Rate limiter deep dive</span><span data-lang="zh">限流器深度</span></a></li><li><a href="../../guide/llm/llm-serving.html"><span data-lang="en">LLM serving</span><span data-lang="zh">LLM 推理服务</span></a></li></ul>
+      </article>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

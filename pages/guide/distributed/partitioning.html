@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Partitioning & Sharding — SD-Guide</title>
+  <meta name="description" content="Range vs hash, consistent hashing with virtual nodes, hot partitions, secondary indexes, and the rebalancing problem.">
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../../../pages/arena/index.html" data-match="/arena"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../../pages/guide/index.html" class="active" data-match="/guide"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../../pages/resources/index.html" data-match="/resources"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../../pages/about/index.html" data-match="/about"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+
+      <div class="breadcrumb">
+        <a href="../../../pages/guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a>
+        <span>›</span>
+        <span class="crumb-category">Distributed Systems<span data-lang="zh" style="display:none">分布式系统</span></span>
+      </div>
+
+      <header class="page-header">
+        <h1 class="page-title">
+          <span data-lang="en">Partitioning & Sharding</span>
+          <span data-lang="zh">分区与分片</span>
+        </h1>
+        <div class="topic-meta">
+          <span class="tag" style="background:var(--openai-glow);border-color:var(--openai)">📚 DDIA Ch.6 · Alex Xu V1 Ch.5 · Acing SDI Ch.4</span><span class="tag">DDIA Ch.6</span><span class="tag">Alex Xu V1 Ch.5</span><span class="tag">consistent hashing</span>
+        </div>
+        <p class="page-subtitle">
+          <span data-lang="en">Range vs hash, consistent hashing with virtual nodes, hot partitions, secondary indexes, and the rebalancing problem.</span>
+          <span data-lang="zh">范围 vs 哈希、带虚节点的一致性哈希、热点分区、二级索引、再平衡问题。</span>
+        </p>
+      </header>
+
+      <article class="topic-prose">
+        <nav class="topic-toc">
+          <h4><span data-lang="en">On this page</span><span data-lang="zh">本页目录</span></h4>
+          <ol>
+            <li><a href="#s1"><span data-lang="en">Why partition</span><span data-lang="zh">为什么分区</span></a></li>
+            <li><a href="#s2"><span data-lang="en">Range vs hash partitioning</span><span data-lang="zh">范围分区 vs 哈希分区</span></a></li>
+            <li><a href="#s3"><span data-lang="en">Consistent hashing & virtual nodes</span><span data-lang="zh">一致性哈希与虚节点</span></a></li>
+            <li><a href="#s4"><span data-lang="en">Hot partitions</span><span data-lang="zh">热点分区</span></a></li>
+            <li><a href="#s5"><span data-lang="en">Secondary indexes: local vs global</span><span data-lang="zh">二级索引：本地 vs 全局</span></a></li>
+            <li><a href="#s6"><span data-lang="en">Rebalancing strategies</span><span data-lang="zh">再平衡策略</span></a></li>
+            <li><a href="#s7"><span data-lang="en">Request routing</span><span data-lang="zh">请求路由</span></a></li>
+          </ol>
+        </nav>
+
+        <div data-lang="en">
+
+<h2 id="s1">Why partition</h2>
+<p>Replication solves reads and availability; <strong>partitioning</strong> solves writes and storage. Once your data exceeds a single node's disk (~30 TB NVMe today) or your write rate exceeds a single leader (~50 k writes/sec for Postgres on a fat box), you must split. DDIA Ch.6 defines a partition as a subset of rows assigned to a node; in Cassandra it's a "ring segment", in DynamoDB it's a "partition", in MongoDB it's a "chunk". Same concept, different branding.</p>
+<div class="callout tip"><h4>Source cross-reference</h4><p>DDIA Ch.6 is the gold standard. Alex Xu V1 Ch.5 on consistent hashing is the interview-template version (virtual nodes, add/remove math). Acing SDI Ch.4 frames sharding as a scaling lever.</p></div>
+
+<h2 id="s2">Range vs hash partitioning</h2>
+<p><strong>Range</strong>: partition by key order, e.g. usernames A–E, F–J, .... Pro: range scans are cheap (<code>SELECT ... WHERE user BETWEEN 'a' AND 'd'</code>). Con: skew — sequential keys like timestamps hammer one partition. Used by HBase, BigTable, Spanner.</p>
+<p><strong>Hash</strong>: <code>partition = hash(key) % N</code>. Pro: uniform distribution. Con: range scans require scatter-gather. Used by Cassandra, DynamoDB, Redis Cluster.</p>
+<p>Most real systems are <strong>hash-of-prefix, range-within</strong>: the partition key is hashed (to spread load), but the sort key within a partition is ordered (for efficient scans). DynamoDB's (PK, SK) design, Cassandra's (partition key, clustering key) — same idea.</p>
+<pre><code>DynamoDB item: PK = user#42, SK = ts#2026-04-16T10:00:00Z
+  → partition chosen by hash(user#42)
+  → within partition, items sorted by ts</code></pre>
+
+<h2 id="s3">Consistent hashing &amp; virtual nodes</h2>
+<p>Naïve <code>hash(key) % N</code> breaks when N changes — all keys remap. Karger et al. 1997 consistent hashing places nodes on a hash ring; each key is assigned to the next node clockwise. Adding a node only takes 1/N of the keys from its neighbor.</p>
+<div class="mermaid-container"><pre class="mermaid">
+flowchart LR
+    subgraph Ring
+      N1((Node A)) --&gt; N2((Node B))
+      N2 --&gt; N3((Node C))
+      N3 --&gt; N4((Node D))
+      N4 --&gt; N1
+    end
+    K1[Key k1] -.-&gt; N2
+    K2[Key k2] -.-&gt; N3
+</pre></div>
+<p>Problem: with N=5 nodes, variance in key distribution is ±O(1/√N) which is ~45% — ugly. Solution: <strong>virtual nodes</strong> (vnodes). Each physical node claims 100–256 positions on the ring; variance drops to ±5%. Cassandra defaults to 256 vnodes/node; DynamoDB hides it entirely.</p>
+<p>Add-node math: with 256 vnodes × 10 nodes = 2560 tokens on the ring. Adding an 11th node steals 256 tokens (~10%) evenly from the other 10. Network traffic during rebalance: 10% of total dataset moved. For a 100 TB cluster that is 10 TB → at 1 GB/s sustained, ~3 hours. <strong>Throttle the rebalance</strong> or you will stomp foreground traffic.</p>
+<div class="callout warn"><h4>Anti-pattern</h4><p>Using <code>hash(key) % N</code> with N baked into client code. Scaling out requires rewriting every client. The 2010 reddit incident: migrating from mod-hashing to consistent hashing took months. Start with consistent hashing on day one.</p></div>
+
+<h2 id="s4">Hot partitions</h2>
+<p>A celebrity Twitter user with 100 M followers, a viral URL in a short-link service, Black Friday top-SKU in e-commerce — any skewed workload concentrates on one partition. Symptoms: one node at 95% CPU, the rest idle; p99 latency explodes while p50 stays fine.</p>
+<p>Mitigations, in order of cost:</p>
+<ul>
+  <li><strong>Cache the hot keys</strong>: Redis in front of the partition, TTL 1–60 s. Cheapest.</li>
+  <li><strong>Write sharding</strong>: append a 2-digit random suffix to the partition key (<code>celeb#42-07</code>). Aggregate at read time. DynamoDB's recommended hot-partition pattern.</li>
+  <li><strong>Split the partition</strong>: double-hash or adaptive splitting (DynamoDB auto-splits partitions past 3000 RCU/1000 WCU since 2018).</li>
+  <li><strong>Dedicated shard</strong>: Twitter's "celebrity cluster" moves top-N accounts to a special pool with fan-out optimized for them.</li>
+</ul>
+<div class="callout openai"><h4>OpenAI-specific</h4><p>For prompt-caching or chat-history by user, the "power-user" tail is long: 1% of users drive 30% of tokens. Don't partition by <code>user_id</code> alone; prepend a <code>bucket</code> dimension (<code>(user_id, day_bucket)</code>) to spread the heaviest users across partitions.</p></div>
+
+<h2 id="s5">Secondary indexes: local vs global</h2>
+<p>Primary partitioning is chosen by access pattern; secondary access (by a different column) needs an index. Two strategies (DDIA Ch.6):</p>
+<ul>
+  <li><strong>Local (document-partitioned)</strong>: every partition has its own index on its rows. Writes are cheap (local). Reads by secondary key must <em>scatter-gather</em> every partition. Used by Elasticsearch shards, MongoDB local indexes.</li>
+  <li><strong>Global (term-partitioned)</strong>: one index keyed by the secondary column, partitioned by that column's hash. Reads are single-partition. Writes to the base table now also hit a different partition (2PC or async). DynamoDB GSI is eventually consistent precisely because sync'ing is expensive.</li>
+</ul>
+<p>Trade-off slogan: <em>"Local indexes make writes cheap and reads expensive; global indexes do the opposite."</em></p>
+
+<h2 id="s6">Rebalancing strategies</h2>
+<ul>
+  <li><strong>Fixed partitions</strong>: create 1000 partitions on day one across 10 nodes (100 each). Adding node 11 → move 1/11 of partitions to it. Elasticsearch, Riak. Must guess the high-water mark upfront.</li>
+  <li><strong>Dynamic partitioning</strong>: start with 1 partition; split when it exceeds threshold (default 10 GB in HBase). Shrinks when undersize. Works well for unbounded growth.</li>
+  <li><strong>Proportional to nodes</strong>: Cassandra's token-per-node (256 vnodes). Adding a node reshuffles 1/N of tokens.</li>
+</ul>
+<p><strong>Automatic vs manual</strong> rebalancing: automatic is tempting but can stampede during a network blip. Production-grade systems require <em>operator confirmation</em> for moves above a threshold. CockroachDB and Spanner both gate large rebalances.</p>
+
+<h2 id="s7">Request routing</h2>
+<p>Who knows which partition holds <code>user#42</code>?</p>
+<ol>
+  <li><strong>Smart client</strong>: client library embeds the partition map. Fast, but requires pushing updates to all clients. Cassandra drivers do this.</li>
+  <li><strong>Coordinator / routing tier</strong>: a stateless proxy reads the map from ZK/etcd, forwards requests. Extra hop (+0.5 ms), easier ops. Used by Kafka, Vitess.</li>
+  <li><strong>Partition-aware DNS / anycast</strong>: rare; only for coarse-grained routing.</li>
+</ol>
+<p>Either way, there is a metadata store (ZK/etcd) that holds the authoritative partition map. This is exactly why the <strong>2015 DynamoDB metadata storm</strong> was catastrophic — losing the map means losing the ability to route <em>anything</em>. Cache the map on every node with a 5–30 s TTL and graceful staleness.</p>
+<div class="callout anthropic"><h4>Anthropic-specific</h4><p>For tenant-isolated inference (Claude for Enterprise), partition by <code>tenant_id</code> at the top level so data never shares a physical node across tenants. This simplifies audit and SOC2: one partition = one tenant = one bucket of logs.</p></div>
+
+        </div>
+        <div data-lang="zh">
+
+<h2 id="s1">为什么分区</h2>
+<p>复制解决读与可用性；<strong>分区</strong>解决写与存储。数据超过单机磁盘（今天 NVMe 约 30 TB）或写超过单主（胖机器 Postgres 约 5 万写/秒）就必须切。DDIA 第 6 章把分区定义为分配给某节点的一组行：Cassandra 叫「ring segment」，DynamoDB 叫「partition」，MongoDB 叫「chunk」，同概念不同名字。</p>
+<div class="callout tip"><h4>来源交叉引用</h4><p>DDIA 第 6 章是金标；Alex Xu V1 第 5 章一致性哈希是面试模板版；Acing SDI 第 4 章把分片当扩展杠杆。</p></div>
+
+<h2 id="s2">范围分区 vs 哈希分区</h2>
+<p><strong>范围</strong>：按 key 有序切，比如用户名 A–E、F–J。优点：范围扫描便宜。缺点：倾斜——时间戳这种顺序 key 砸同一分区。HBase、BigTable、Spanner 用这种。</p>
+<p><strong>哈希</strong>：<code>partition = hash(key) % N</code>。优点：均匀。缺点：范围查询要 scatter-gather。Cassandra、DynamoDB、Redis Cluster 用这种。</p>
+<p>真实系统多是<strong>前缀哈希 + 分区内有序</strong>：分区 key 哈希散开，分区内 sort key 排序。DynamoDB (PK, SK)、Cassandra (partition key, clustering key)，同思想。</p>
+<pre><code>DynamoDB 条目：PK = user#42, SK = ts#2026-04-16T10:00:00Z
+  → 由 hash(user#42) 决定分区
+  → 分区内按 ts 排序</code></pre>
+
+<h2 id="s3">一致性哈希与虚节点</h2>
+<p>朴素 <code>hash(key) % N</code> 在 N 变时所有 key 重映射。Karger 等 1997 的一致性哈希把节点放在哈希环上，每个 key 顺时针归属下个节点。加一节点只从邻居拿 1/N。</p>
+<div class="mermaid-container"><pre class="mermaid">
+flowchart LR
+    subgraph Ring
+      N1((节点 A)) --&gt; N2((节点 B))
+      N2 --&gt; N3((节点 C))
+      N3 --&gt; N4((节点 D))
+      N4 --&gt; N1
+    end
+    K1[key k1] -.-&gt; N2
+    K2[key k2] -.-&gt; N3
+</pre></div>
+<p>问题：5 节点时分布方差 ±O(1/√N) ≈ 45%，丑。方案：<strong>虚节点</strong>（vnode）。每个物理节点占 100–256 个位置，方差降到 ±5%。Cassandra 默认 256/节点，DynamoDB 完全隐藏。</p>
+<p>加节点算术：256 × 10 = 2560 tokens；加第 11 节点偷 256 个（~10%）平均分自其他 10 节点。重平衡网络流量 = 总数据的 10%。100 TB 集群 = 10 TB，1 GB/s 约 3 小时。<strong>限速重平衡</strong>，否则会把前台流量踩死。</p>
+<div class="callout warn"><h4>反模式</h4><p>客户端代码写死 <code>hash(key) % N</code>。扩容要改每个客户端。2010 年 reddit 案例：从 mod 哈希迁到一致性哈希用了几个月。第一天就上一致性哈希。</p></div>
+
+<h2 id="s4">热点分区</h2>
+<p>1 亿粉丝的大 V、爆款短链、黑五头部 SKU——任何倾斜负载都会集中到一个分区。表现：一节点 CPU 95%，其余空闲；p99 爆炸但 p50 正常。</p>
+<p>按成本从低到高：</p>
+<ul>
+  <li><strong>缓存热 key</strong>：Redis 挡在分区前，TTL 1–60 秒。最便宜。</li>
+  <li><strong>写分片</strong>：分区 key 后缀 2 位随机（<code>celeb#42-07</code>），读时聚合。DynamoDB 官方热点模式。</li>
+  <li><strong>拆分区</strong>：双哈希或自适应拆（DynamoDB 自 2018 起超 3000 RCU/1000 WCU 自动拆）。</li>
+  <li><strong>专用分片</strong>：Twitter 的「名人集群」，把头部账号挪到专池，扇出专门优化。</li>
+</ul>
+<div class="callout openai"><h4>OpenAI 专属</h4><p>按用户缓存 prompt 或聊天历史时尾部很长：1% 用户贡献 30% token。不要只按 <code>user_id</code> 分区，加一个 <code>bucket</code> 维度（<code>(user_id, day_bucket)</code>）把重度用户散开。</p></div>
+
+<h2 id="s5">二级索引：本地 vs 全局</h2>
+<p>主分区按访问模式挑，但按其他列查需要索引。DDIA 第 6 章两种策略：</p>
+<ul>
+  <li><strong>本地（按文档分区）</strong>：每分区自带索引。写便宜（本地）。按二级 key 读要<em>scatter-gather</em>全部分区。Elasticsearch shard、MongoDB 本地索引。</li>
+  <li><strong>全局（按 term 分区）</strong>：以二级列做 key，其哈希决定分区。读单分区。写主表同时要写到不同分区（2PC 或异步）。DynamoDB GSI 就是因为同步太贵所以默认最终一致。</li>
+</ul>
+<p>口诀：<em>本地索引写便宜读贵，全局索引反之。</em></p>
+
+<h2 id="s6">再平衡策略</h2>
+<ul>
+  <li><strong>固定分区数</strong>：第一天建 1000 分区跨 10 节点（每节点 100）。加第 11 节点 → 挪 1/11 分区。Elasticsearch、Riak。要预估高水位。</li>
+  <li><strong>动态分区</strong>：从 1 分区开始，超阈值（HBase 默认 10 GB）就拆，太小合并。无界增长适用。</li>
+  <li><strong>按节点比例</strong>：Cassandra 每节点 token（256 vnodes）。加节点洗 1/N。</li>
+</ul>
+<p><strong>自动 vs 手动</strong>重平衡：自动诱人但网络抖动时容易踩踏。生产级系统对超阈值移动要求<em>运维确认</em>。CockroachDB、Spanner 都有此门控。</p>
+
+<h2 id="s7">请求路由</h2>
+<p>谁知道 <code>user#42</code> 在哪个分区？</p>
+<ol>
+  <li><strong>智能客户端</strong>：客户端库内嵌分区图。快，但要推送更新。Cassandra 驱动这样做。</li>
+  <li><strong>协调器 / 路由层</strong>：无状态代理从 ZK/etcd 读图再转发。多一跳（+0.5 ms），运维容易。Kafka、Vitess 这样。</li>
+  <li><strong>分区感知 DNS / anycast</strong>：少见，只做粗粒度。</li>
+</ol>
+<p>不管哪种都要一个元数据存储（ZK/etcd）保存权威分区图。<strong>2015 DynamoDB metadata 风暴</strong>之所以灾难：丢了图就路不了<em>任何</em>请求。每节点缓存图，TTL 5–30 秒，允许优雅陈旧。</p>
+<div class="callout anthropic"><h4>Anthropic 专属</h4><p>租户隔离推理（Claude for Enterprise）时，顶层按 <code>tenant_id</code> 分区，跨租户不共享物理节点。审计和 SOC2 更简单：一分区 = 一租户 = 一桶日志。</p></div>
+
+        </div>
+      </article>
+
+      <section class="topic-footer-links">
+        <a href="../../guide/distributed/replication-consistency.html"><span class="label"><span data-lang="en">Previous</span><span data-lang="zh">上一</span></span><strong><span data-lang="en">Replication & consistency</span><span data-lang="zh">复制与一致性</span></strong></a>
+        <a href="../../guide/distributed/consensus.html"><span class="label"><span data-lang="en">Next topic</span><span data-lang="zh">下一主题</span></span><strong><span data-lang="en">Consensus (Paxos/Raft)</span><span data-lang="zh">共识 (Paxos/Raft)</span></strong></a>
+        <a href="../../arena/questions/a24-key-value-store.html"><span class="label"><span data-lang="en">Arena</span><span data-lang="zh">真题</span></span><strong><span data-lang="en">Key-value store</span><span data-lang="zh">键值存储</span></strong></a>
+        <a href="../../arena/questions/a28-distributed-search-1b.html"><span class="label"><span data-lang="en">Arena</span><span data-lang="zh">真题</span></span><strong><span data-lang="en">Distributed search (1B docs)</span><span data-lang="zh">分布式搜索 1B 文档</span></strong></a>
+      </section>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <p>
+        <span data-lang="en">© SD-Guide · Built for OpenAI &amp; Anthropic system design prep. Not affiliated with either company.</span>
+        <span data-lang="zh">© SD-Guide · 为 OpenAI 与 Anthropic 系统设计面试准备。与两家公司无关联。</span>
+      </p>
+    </div>
+  </footer>
+
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

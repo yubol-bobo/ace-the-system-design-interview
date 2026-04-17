@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>O10. Fault-Tolerant Polite Web Crawler @ 10M RPS — SD-Guide</title>
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../index.html" class="active"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../resources/index.html"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../about/index.html"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a>
+        <span class="sep">›</span>
+        <a href="../index.html"><span data-lang="en">Arena</span><span data-lang="zh">竞技场</span></a>
+        <span class="sep">›</span>
+        <span>O10</span>
+      </div>
+
+      <article class="prose wide">
+        <div class="question-meta" style="margin-bottom:1rem;">
+          <span class="tag company-openai">OpenAI</span>
+          <span class="tag freq-2">★★ Frequent</span>
+          <span class="tag difficulty-hard">Hard</span>
+          <span class="tag">Frontier</span><span class="tag">Politeness</span><span class="tag">Bloom Filter</span>
+        </div>
+
+        <h1>
+          <span data-lang="en">O10 · Fault-Tolerant Polite Web Crawler @ 10M RPS</span>
+          <span data-lang="zh">O10 · 容错礼貌型网页爬虫（10M RPS）</span>
+        </h1>
+
+        <div class="callout openai">
+          <h4><span data-lang="en">Verified source</span><span data-lang="zh">经核实出处</span></h4>
+          <p>Prompt: "Design a fault-tolerant, polite web crawling service that can scale to 10M requests per second." — <a href="https://igotanoffer.com/" target="_blank" rel="noopener">IGotAnOffer</a>, 2026-04-13. Credibility <strong>D</strong>.</p>
+        </div>
+
+        <h2><span data-lang="en">Core architecture</span><span data-lang="zh">核心架构</span></h2>
+<div class="mermaid-container"><pre class="mermaid">
+flowchart LR
+  S[Seed URLs] --> F[URL Frontier]
+  F --> P[Politeness Scheduler]
+  P --> Q[Fetch Queue]
+  Q --> W[Crawler Workers]
+  W --> D[Parser + Dedup]
+  D --> F
+  W --> ST[(Content Store)]
+</pre></div><h2><span data-lang="en">Politeness mechanics</span><span data-lang="zh">礼貌机制</span></h2>
+<ul><li><span data-lang="en">Per-host/per-domain token-bucket rate limit.</span><span data-lang="zh">per-host/per-domain 令牌桶限流。</span></li><li><span data-lang="en">robots.txt parse &amp; cache (24h TTL).</span><span data-lang="zh">robots.txt 解析并缓存（24h TTL）。</span></li><li><span data-lang="en">Cap concurrent connections per host (≤ N).</span><span data-lang="zh">每 host 并发连接上限（≤ N）。</span></li></ul><h2><span data-lang="en">Dedup at 10M RPS (the hard part)</span><span data-lang="zh">10M RPS 下去重（最难点）</span></h2>
+<ul><li><span data-lang="en">URL canonicalization: normalize scheme/host, sort query params, strip tracking.</span><span data-lang="zh">URL 规范化：归一化 scheme/host、排序 query、去追踪参数。</span></li><li><span data-lang="en">Bloom filter (approximate) + exact set for hot domains.</span><span data-lang="zh">Bloom filter（近似）+ 热域精确集。</span></li><li><span data-lang="en">Content dedup via simhash/minhash for near-duplicates (bonus).</span><span data-lang="zh">内容去重用 simhash/minhash 检测近似重复（加分）。</span></li></ul><h2><span data-lang="en">Fault tolerance</span><span data-lang="zh">容错</span></h2>
+<ul><li><span data-lang="en">Stateless workers; the queue + scheduler own retry/backoff.</span><span data-lang="zh">Worker 无状态；重试/退避由队列与调度器管。</span></li><li><span data-lang="en">Idempotent writes keyed on content_hash or canonical_url.</span><span data-lang="zh">按 content_hash 或 canonical_url 的幂等写入。</span></li></ul>
+
+        <h2><span data-lang="en">Related study-guide topics</span><span data-lang="zh">相关学习手册专题</span></h2>
+        <ul><li><a href="../../guide/classical/rate-limiter.html"><span data-lang="en">Rate limiter</span><span data-lang="zh">限流器</span></a></li><li><a href="../../guide/distributed/partitioning.html"><span data-lang="en">Partitioning</span><span data-lang="zh">分区</span></a></li></ul>
+      </article>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

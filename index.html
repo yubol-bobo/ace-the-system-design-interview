@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SD-Guide — System Design Interview Prep for OpenAI &amp; Anthropic</title>
+  <meta name="description" content="An interactive, bilingual (English / 中文) study hub for cracking System Design interviews at OpenAI, Anthropic, and other frontier AI labs. Real-question arena + deeply researched study guide.">
+  <link rel="stylesheet" href="./assets/css/main.css">
+</head>
+<body>
+
+  <!-- ===== Nav ===== -->
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="./index.html">
+        <span class="nav-brand-logo">SD</span>
+        <span>SD-Guide</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="./index.html" data-match="/index.html">
+          <span data-lang="en">Home</span><span data-lang="zh">首页</span>
+        </a></li>
+        <li><a href="./pages/arena/index.html" data-match="/arena/">
+          <span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span>
+        </a></li>
+        <li><a href="./pages/guide/index.html" data-match="/guide/">
+          <span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span>
+        </a></li>
+        <li><a href="./pages/resources/index.html" data-match="/resources/">
+          <span data-lang="en">Resources</span><span data-lang="zh">资源</span>
+        </a></li>
+        <li><a href="./pages/about/index.html" data-match="/about/">
+          <span data-lang="en">About</span><span data-lang="zh">关于</span>
+        </a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle" title="Switch language">中文</button>
+        <button class="icon-btn" id="theme-toggle" title="Switch theme">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ===== Hero ===== -->
+  <main class="page-body">
+    <div class="container">
+      <section class="hero">
+        <div class="hero-badge">
+          <span class="dot"></span>
+          <span data-lang="en">Updated April 2026 · Based on 2023–2026 verified interview reports</span>
+          <span data-lang="zh">2026 年 4 月更新 · 基于 2023–2026 年真实面经交叉验证</span>
+        </div>
+        <h1>
+          <span data-lang="en">Ace System Design at OpenAI &amp; Anthropic</span>
+          <span data-lang="zh">攻克 OpenAI 与 Anthropic 系统设计面试</span>
+        </h1>
+        <p>
+          <span data-lang="en">A curated, deeply-researched, fully bilingual study hub. Browse a <strong>verified 真题 arena</strong> of real interview questions with sources, then dive into a <strong>comprehensive study guide</strong> synthesized from seven canonical books on distributed systems, ML infrastructure, and agentic AI.</span>
+          <span data-lang="zh">一个精心策划、深度研究、完全双语的备考平台。浏览<strong>经核实的真题竞技场</strong>（含出处），然后深入学习由七本核心书籍（分布式系统、ML 基础设施、智能体 AI）综合而成的<strong>全面学习手册</strong>。</span>
+        </p>
+        <div class="hero-ctas">
+          <a class="btn btn-primary" href="./pages/arena/index.html">
+            <span data-lang="en">Enter the Arena →</span>
+            <span data-lang="zh">进入真题竞技场 →</span>
+          </a>
+          <a class="btn btn-secondary" href="./pages/guide/index.html">
+            <span data-lang="en">Open the Study Guide</span>
+            <span data-lang="zh">打开学习手册</span>
+          </a>
+        </div>
+      </section>
+
+      <!-- ===== Stats ===== -->
+      <section class="stats">
+        <div class="stat">
+          <div class="stat-value openai">16+</div>
+          <div class="stat-label" data-lang="en">OpenAI questions</div>
+          <div class="stat-label" data-lang="zh">OpenAI 真题</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value anthropic">20+</div>
+          <div class="stat-label" data-lang="en">Anthropic questions</div>
+          <div class="stat-label" data-lang="zh">Anthropic 真题</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value accent">18</div>
+          <div class="stat-label" data-lang="en">Deep topic notes</div>
+          <div class="stat-label" data-lang="zh">深度专题笔记</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value">7</div>
+          <div class="stat-label" data-lang="en">Canonical books</div>
+          <div class="stat-label" data-lang="zh">权威教材</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value">EN / 中文</div>
+          <div class="stat-label" data-lang="en">Bilingual content</div>
+          <div class="stat-label" data-lang="zh">双语内容</div>
+        </div>
+      </section>
+
+      <!-- ===== Two-column: company focus ===== -->
+      <section class="section">
+        <h2 class="section-title">
+          <span data-lang="en">Know your target</span>
+          <span data-lang="zh">精准定位面试风格</span>
+        </h2>
+        <p class="section-subtitle">
+          <span data-lang="en">OpenAI and Anthropic share the frontier but interview very differently. Pick your track.</span>
+          <span data-lang="zh">OpenAI 和 Anthropic 同在前沿，但面试哲学截然不同。先看清差异。</span>
+        </p>
+        <div class="grid-3" style="grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));">
+          <a class="feature-card openai" href="./pages/arena/index.html?company=openai">
+            <span class="feature-icon">△</span>
+            <h3>OpenAI</h3>
+            <p data-lang="en">
+              <strong>Engineering-first research org.</strong> Expect brutally hard coding, traditional distributed-systems questions (Webhooks, CI/CD, Slack, rate limiters) plus ChatGPT-scale AI product design. Interviewers will drill into every component's implementation details.
+            </p>
+            <p data-lang="zh">
+              <strong>以工程为先的研究机构。</strong>编码题极难，考察传统分布式系统（Webhook、CI/CD、Slack、限流器）与 ChatGPT 级别 AI 产品设计。面试官会对每个组件追问到实现细节。
+            </p>
+            <div class="question-meta">
+              <span class="tag company-openai">Webhook Delivery</span>
+              <span class="tag company-openai">GitHub Actions</span>
+              <span class="tag company-openai">OpenAI Playground</span>
+            </div>
+            <span class="arrow">
+              <span data-lang="en">Browse OpenAI questions →</span>
+              <span data-lang="zh">查看 OpenAI 真题 →</span>
+            </span>
+          </a>
+
+          <a class="feature-card anthropic" href="./pages/arena/index.html?company=anthropic">
+            <span class="feature-icon">★</span>
+            <h3>Anthropic</h3>
+            <p data-lang="en">
+              <strong>Mission-driven, safety-first lab.</strong> Interviews center on LLM infrastructure — inference batching, GPU scheduling, model downloaders, prompt playgrounds — with <strong>AI Safety as a per-round gate</strong>. Expect pressure on failure modes, abstraction, and conversation-driving.
+            </p>
+            <p data-lang="zh">
+              <strong>使命驱动、安全优先的实验室。</strong>围绕 LLM 基础设施考察——推理批处理、GPU 调度、模型分发、Prompt 平台——<strong>AI Safety 每轮都是门槛</strong>。面试官关注故障模式、抽象能力、驱动对话。
+            </p>
+            <div class="question-meta">
+              <span class="tag company-anthropic">Inference Batching</span>
+              <span class="tag company-anthropic">KV Cache</span>
+              <span class="tag company-anthropic">Model Downloader</span>
+            </div>
+            <span class="arrow">
+              <span data-lang="en">Browse Anthropic questions →</span>
+              <span data-lang="zh">查看 Anthropic 真题 →</span>
+            </span>
+          </a>
+        </div>
+      </section>
+
+      <!-- ===== What's inside ===== -->
+      <section class="section">
+        <h2 class="section-title">
+          <span data-lang="en">What's inside</span>
+          <span data-lang="zh">内容概览</span>
+        </h2>
+        <p class="section-subtitle">
+          <span data-lang="en">Four interlocking modules — use them linearly if you're new, or jump around by topic.</span>
+          <span data-lang="zh">四个互补模块——按顺序学习或按需跳转，皆可。</span>
+        </p>
+        <div class="grid-3">
+          <a class="feature-card" href="./pages/arena/index.html">
+            <span class="feature-icon">⚔</span>
+            <h3 data-lang="en">真题 Arena</h3>
+            <h3 data-lang="zh">真题竞技场</h3>
+            <p data-lang="en">
+              36+ real interview questions filterable by company, category, difficulty, and frequency. Each question links to its source (LeetCode, Blind, PracHub, Glassdoor, GitHub) and opens a deep solution page with architecture diagrams, APIs, data models, trade-offs, and expected follow-ups.
+            </p>
+            <p data-lang="zh">
+              36+ 道真题，可按公司、类别、难度、频率过滤。每题附有出处链接（LeetCode、Blind、PracHub、Glassdoor、GitHub），点开是详细解题页：架构图、API、数据模型、权衡、追问清单。
+            </p>
+            <span class="arrow">→</span>
+          </a>
+
+          <a class="feature-card" href="./pages/guide/index.html">
+            <span class="feature-icon">📚</span>
+            <h3 data-lang="en">Study Guide</h3>
+            <h3 data-lang="zh">学习手册</h3>
+            <p data-lang="en">
+              18 deeply-synthesized topic notes organized into 5 tracks — Foundations, Distributed Systems, Classical Designs, LLM Systems, and ML Systems. Each note cross-references the 7 canonical books by chapter.
+            </p>
+            <p data-lang="zh">
+              18 篇深度综合的专题笔记，分为 5 个方向：基础、分布式系统、经典题、LLM 系统、ML 系统。每篇都精确引用 7 本权威教材的章节。
+            </p>
+            <span class="arrow">→</span>
+          </a>
+
+          <a class="feature-card" href="./pages/resources/index.html">
+            <span class="feature-icon">🔗</span>
+            <h3 data-lang="en">Resources</h3>
+            <h3 data-lang="zh">资源集合</h3>
+            <p data-lang="en">
+              Books ranked by interview leverage. Top blogs (Chip Huyen, Eugene Yan, Anthropic/OpenAI engineering). Recommended courses (ByteByteGo, Educative, Hello Interview, Exponent) and GitHub repos.
+            </p>
+            <p data-lang="zh">
+              按面试权重排序的书单。顶尖博客（Chip Huyen、Eugene Yan、Anthropic/OpenAI 工程）。推荐课程（ByteByteGo、Educative、Hello Interview、Exponent）与 GitHub 仓库。
+            </p>
+            <span class="arrow">→</span>
+          </a>
+
+          <a class="feature-card" href="./pages/about/index.html">
+            <span class="feature-icon">📝</span>
+            <h3 data-lang="en">About &amp; Roadmap</h3>
+            <h3 data-lang="zh">关于与路线图</h3>
+            <p data-lang="en">
+              Methodology, credibility scoring (S/A/B/C/D), a proven 8-week study plan, and the exact stack used to build this site — so you can fork, extend, and deploy your own.
+            </p>
+            <p data-lang="zh">
+              方法论说明、可信度评级（S/A/B/C/D）、经过验证的 8 周备考计划，以及本站的完整技术栈——你可以直接 fork、扩展、部署自己的版本。
+            </p>
+            <span class="arrow">→</span>
+          </a>
+        </div>
+      </section>
+
+      <!-- ===== Featured: Top questions ===== -->
+      <section class="section">
+        <h2 class="section-title">
+          <span data-lang="en">Most-cited questions</span>
+          <span data-lang="zh">最高频真题</span>
+        </h2>
+        <p class="section-subtitle">
+          <span data-lang="en">Questions appearing in three or more independent reports — these are the ones you cannot afford to miss.</span>
+          <span data-lang="zh">在三份以上独立面经中出现——这些是你必须拿下的题目。</span>
+        </p>
+        <div class="question-list">
+          <a class="question-card company-anthropic" href="./pages/arena/questions/a11-llm-inference-service.html" data-company="anthropic">
+            <div class="question-header">
+              <div class="question-title">
+                <span class="question-id">A11</span>
+                <span data-lang="en">Design a high-concurrency LLM inference service</span>
+                <span data-lang="zh">设计高并发 LLM 推理服务</span>
+              </div>
+              <div class="question-meta">
+                <span class="tag company-anthropic">Anthropic</span>
+                <span class="tag freq-4">★★★★ frequent</span>
+                <span class="tag difficulty-hard">Hard</span>
+              </div>
+            </div>
+            <p class="question-desc">
+              <span data-lang="en">Streaming tokens, prefill vs decode, KV cache, continuous batching, tail latency control, GPU memory. The canonical Anthropic system-design question.</span>
+              <span data-lang="zh">流式 token、prefill 与 decode 分相、KV cache、连续 batching、尾延迟控制、GPU 显存。Anthropic 最经典的系统设计题。</span>
+            </p>
+            <div class="question-footer">
+              <span class="tag">LLM Serving</span>
+              <span class="tag">KV Cache</span>
+              <span class="tag">Batching</span>
+              <span class="question-source">PracHub · Onsite · 2026-02</span>
+            </div>
+          </a>
+
+          <a class="question-card company-openai" href="./pages/arena/questions/o1-webhook-delivery-platform.html" data-company="openai">
+            <div class="question-header">
+              <div class="question-title">
+                <span class="question-id">O1</span>
+                <span data-lang="en">Design a Webhook Delivery Platform</span>
+                <span data-lang="zh">设计 Webhook 投递平台</span>
+              </div>
+              <div class="question-meta">
+                <span class="tag company-openai">OpenAI</span>
+                <span class="tag freq-3">★★★ frequent</span>
+                <span class="tag difficulty-hard">Hard</span>
+              </div>
+            </div>
+            <p class="question-desc">
+              <span data-lang="en">Billions of requests, 24-hour retries, idempotency, DLQ, per-endpoint ordering, multi-tenant isolation. Interviewers drill into every component's internals.</span>
+              <span data-lang="zh">十亿级请求、24 小时重试、幂等性、死信队列、每 endpoint 顺序、多租户隔离。面试官会对每个组件追问到内部实现。</span>
+            </p>
+            <div class="question-footer">
+              <span class="tag">Queue &amp; Retry</span>
+              <span class="tag">Idempotency</span>
+              <span class="tag">Multi-tenant</span>
+              <span class="question-source">LeetCode · Blind · Screen · 2024-2026</span>
+            </div>
+          </a>
+
+          <a class="question-card company-anthropic" href="./pages/arena/questions/a12-gpu-batching.html" data-company="anthropic">
+            <div class="question-header">
+              <div class="question-title">
+                <span class="question-id">A12</span>
+                <span data-lang="en">Design GPU Inference Request Batching</span>
+                <span data-lang="zh">设计 GPU 推理动态 batching</span>
+              </div>
+              <div class="question-meta">
+                <span class="tag company-anthropic">Anthropic</span>
+                <span class="tag freq-3">★★★ frequent</span>
+                <span class="tag difficulty-hard">Hard</span>
+              </div>
+            </div>
+            <p class="question-desc">
+              <span data-lang="en">Balance throughput vs latency SLOs. Flush policies (size, age, length-spread), overload handling, admission control, observability.</span>
+              <span data-lang="zh">在吞吐与延迟 SLO 之间权衡。Flush 策略（大小/时间/长度方差）、过载处理、准入控制、可观测性。</span>
+            </p>
+            <div class="question-footer">
+              <span class="tag">Dynamic Batching</span>
+              <span class="tag">SLO</span>
+              <span class="tag">GPU</span>
+              <span class="question-source">PracHub · Onsite · 2026-03</span>
+            </div>
+          </a>
+
+          <a class="question-card company-openai" href="./pages/arena/questions/o4-design-slack.html" data-company="openai">
+            <div class="question-header">
+              <div class="question-title">
+                <span class="question-id">O4</span>
+                <span data-lang="en">Design Slack</span>
+                <span data-lang="zh">设计 Slack</span>
+              </div>
+              <div class="question-meta">
+                <span class="tag company-openai">OpenAI</span>
+                <span class="tag freq-3">★★★ frequent</span>
+                <span class="tag difficulty-hard">Hard</span>
+              </div>
+            </div>
+            <p class="question-desc">
+              <span data-lang="en">Real-time messaging, channels, presence, delivery reliability, fan-out strategy. 2-week-MVP framing is a trap — scope ruthlessly.</span>
+              <span data-lang="zh">实时消息、频道、在线状态、投递可靠性、fanout 策略。「2 周 MVP」是陷阱——必须果断砍需求。</span>
+            </p>
+            <div class="question-footer">
+              <span class="tag">Real-time</span>
+              <span class="tag">Fan-out</span>
+              <span class="tag">WebSocket</span>
+              <span class="question-source">LeetCode · Exponent · Glassdoor</span>
+            </div>
+          </a>
+        </div>
+        <div style="margin-top: 1rem; text-align: right;">
+          <a class="btn btn-secondary" href="./pages/arena/index.html">
+            <span data-lang="en">See all questions →</span>
+            <span data-lang="zh">查看全部真题 →</span>
+          </a>
+        </div>
+      </section>
+
+      <!-- ===== Evaluation rubric ===== -->
+      <section class="section">
+        <h2 class="section-title">
+          <span data-lang="en">What they actually evaluate</span>
+          <span data-lang="zh">他们究竟在评估什么</span>
+        </h2>
+        <p class="section-subtitle">
+          <span data-lang="en">Anthropic engineers publicly list 5 criteria. OpenAI cares about agency and scale. Both want evidence, not buzzwords.</span>
+          <span data-lang="zh">Anthropic 工程师公开了 5 条评分维度。OpenAI 看重主动性与规模思维。两家都要证据，不要口号。</span>
+        </p>
+        <div class="grid-3">
+          <div class="feature-card">
+            <h3>
+              <span data-lang="en">1. Abstraction</span>
+              <span data-lang="zh">1. 抽象能力</span>
+            </h3>
+            <p data-lang="en">Can you see through the "AI wrapper" to the core infra problem? Most LLM questions reduce to queues, schedulers, storage.</p>
+            <p data-lang="zh">能否穿透「AI 外衣」看到核心基础设施问题？多数 LLM 题本质是队列、调度、存储。</p>
+          </div>
+          <div class="feature-card">
+            <h3>
+              <span data-lang="en">2. Trade-off articulation</span>
+              <span data-lang="zh">2. 权衡表达</span>
+            </h3>
+            <p data-lang="en">Latency vs throughput, sync vs async — with reasoning that cites SLOs, not vibes.</p>
+            <p data-lang="zh">延迟 vs 吞吐、同步 vs 异步——推理必须引用 SLO，而非感觉。</p>
+          </div>
+          <div class="feature-card">
+            <h3>
+              <span data-lang="en">3. Failure-mode reasoning</span>
+              <span data-lang="zh">3. 故障模式推理</span>
+            </h3>
+            <p data-lang="en">"What if the queue dies? What if load drops to zero? What about partial batch failures?" — proactively proposing these is a senior signal.</p>
+            <p data-lang="zh">「队列挂了怎么办？请求突然归零怎么办？批内部分失败怎么办？」——主动提出这些，是高级工程师信号。</p>
+          </div>
+          <div class="feature-card">
+            <h3>
+              <span data-lang="en">4. Scale reasoning</span>
+              <span data-lang="zh">4. 规模推理</span>
+            </h3>
+            <p data-lang="en">Designs must work under real constraints. "Just add more servers" is a disqualifier.</p>
+            <p data-lang="zh">设计必须在真实约束下成立。「加服务器就行」是一票否决。</p>
+          </div>
+          <div class="feature-card">
+            <h3>
+              <span data-lang="en">5. Driving the conversation</span>
+              <span data-lang="zh">5. 主导对话</span>
+            </h3>
+            <p data-lang="en">You set scope, pick the deep-dive, declare what to skip. Asking "what should I focus on?" = junior.</p>
+            <p data-lang="zh">你来设定范围、选择深入点、声明跳过哪些。问「我该关注什么？」= 级别不够。</p>
+          </div>
+          <div class="feature-card">
+            <h3>
+              <span data-lang="en">6. Safety (Anthropic gate)</span>
+              <span data-lang="zh">6. Safety（Anthropic 门槛）</span>
+            </h3>
+            <p data-lang="en">Every round has a safety lens. Treating it as a checkbox is a reject signal. Prepare 2–3 behavioral stories where you caught a safety issue early.</p>
+            <p data-lang="zh">每一轮都有安全视角。把它当「勾选项」= 拒绝信号。准备 2-3 个「早期发现安全问题」的行为面试故事。</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== Footer ===== -->
+      <footer class="footer">
+        <div class="footer-inner">
+          <div>
+            <span data-lang="en">Built by synthesizing verified 2023–2026 interview reports and seven canonical books.</span>
+            <span data-lang="zh">整合 2023-2026 年真实面经与七本权威教材综合而成。</span>
+          </div>
+          <div>
+            <a href="./pages/about/index.html">
+              <span data-lang="en">Methodology &amp; roadmap →</span>
+              <span data-lang="zh">方法论与路线图 →</span>
+            </a>
+          </div>
+        </div>
+      </footer>
+    </div>
+  </main>
+
+  <script src="./assets/js/app.js"></script>
+</body>
+</html>

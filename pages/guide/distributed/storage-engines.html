@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Storage Engines — SD-Guide</title>
+  <meta name="description" content="B-trees vs LSM-trees, write/read amplification, compaction (leveled vs tiered), column stores, and bloom filters.">
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../../../pages/arena/index.html" data-match="/arena"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../../pages/guide/index.html" class="active" data-match="/guide"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../../pages/resources/index.html" data-match="/resources"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../../pages/about/index.html" data-match="/about"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+
+      <div class="breadcrumb">
+        <a href="../../../pages/guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a>
+        <span>›</span>
+        <span class="crumb-category">Distributed Systems<span data-lang="zh" style="display:none">分布式系统</span></span>
+      </div>
+
+      <header class="page-header">
+        <h1 class="page-title">
+          <span data-lang="en">Storage Engines</span>
+          <span data-lang="zh">存储引擎</span>
+        </h1>
+        <div class="topic-meta">
+          <span class="tag" style="background:var(--openai-glow);border-color:var(--openai)">📚 DDIA Ch.3</span><span class="tag">DDIA Ch.3</span><span class="tag">LSM-tree</span><span class="tag">compaction</span>
+        </div>
+        <p class="page-subtitle">
+          <span data-lang="en">B-trees vs LSM-trees, write/read amplification, compaction (leveled vs tiered), column stores, and bloom filters.</span>
+          <span data-lang="zh">B 树 vs LSM 树、写/读放大、压缩（leveled vs tiered）、列存、布隆过滤器。</span>
+        </p>
+      </header>
+
+      <article class="topic-prose">
+        <nav class="topic-toc">
+          <h4><span data-lang="en">On this page</span><span data-lang="zh">本页目录</span></h4>
+          <ol>
+            <li><a href="#s1"><span data-lang="en">Why storage engines matter</span><span data-lang="zh">为什么存储引擎重要</span></a></li>
+            <li><a href="#s2"><span data-lang="en">B-tree mechanics</span><span data-lang="zh">B 树机制</span></a></li>
+            <li><a href="#s3"><span data-lang="en">LSM-tree mechanics</span><span data-lang="zh">LSM 树机制</span></a></li>
+            <li><a href="#s4"><span data-lang="en">Amplification: write, read, space</span><span data-lang="zh">放大：写、读、空间</span></a></li>
+            <li><a href="#s5"><span data-lang="en">Compaction strategies</span><span data-lang="zh">压缩策略</span></a></li>
+            <li><a href="#s6"><span data-lang="en">Bloom filters and read-path tricks</span><span data-lang="zh">布隆过滤器与读路径小技巧</span></a></li>
+            <li><a href="#s7"><span data-lang="en">Column stores and OLAP</span><span data-lang="zh">列存与 OLAP</span></a></li>
+          </ol>
+        </nav>
+
+        <div data-lang="en">
+
+<h2 id="s1">Why storage engines matter</h2>
+<p>Picking "Postgres" or "Cassandra" is picking a storage engine architecture. DDIA Ch.3 argues — correctly — that understanding the B-tree vs LSM-tree distinction is what lets you predict the performance envelope of any new database you meet. Two rules:</p>
+<ul>
+  <li><strong>B-trees</strong> are tuned for <em>read-heavy, mutation-heavy</em> workloads with low latency. MySQL/InnoDB, Postgres, SQL Server, Oracle.</li>
+  <li><strong>LSM-trees</strong> are tuned for <em>write-heavy</em> workloads with time-series or append-like access. RocksDB, Cassandra, HBase, DynamoDB, ScyllaDB.</li>
+</ul>
+<div class="callout tip"><h4>Source cross-reference</h4><p>DDIA Ch.3 is the single best explanation of both engines. Pair with the original LSM paper (O'Neil et al. 1996) and Google's Bigtable paper (2006) for depth.</p></div>
+
+<h2 id="s2">B-tree mechanics</h2>
+<p>A balanced n-ary tree where each page (4–16 KB) holds a sorted array of keys and child pointers. A 4-level B-tree with 256-key fan-out indexes 4 billion rows; a read costs log_256(N) disk seeks = 4 for a huge table. With buffer-pool caching of inner pages, only the leaf read hits disk — ~100 µs on NVMe.</p>
+<p>Writes are <strong>in-place</strong>: find leaf, modify, optionally split. To survive crashes mid-split, every write first goes to a <em>write-ahead log (WAL)</em>. Recovery replays WAL into the tree.</p>
+<ul>
+  <li>Update latency: ~1 WAL append (fsync: 50–200 µs) + occasional leaf fsync.</li>
+  <li>Write amplification: ~1–3× (WAL + page write).</li>
+  <li>Space amplification: low; each logical byte is ~1.3 physical bytes after indexes.</li>
+</ul>
+<div class="callout warn"><h4>Anti-pattern</h4><p>Claiming B-trees have "no write amp." They write both WAL and page. A random-write workload against a 10 TB B-tree with 16 KB pages produces 16 KB I/O per 100-byte logical write = 160× amplification in the worst case.</p></div>
+
+<h2 id="s3">LSM-tree mechanics</h2>
+<p>Writes go to an in-memory <em>memtable</em> (sorted by key; typically a skip list). When memtable hits threshold (~64 MB), it is flushed as an immutable <em>SSTable</em> to disk. Background <em>compaction</em> merges SSTables into larger sorted runs.</p>
+<div class="mermaid-container"><pre class="mermaid">
+flowchart TB
+    W[Write] --&gt; M[Memtable<br/>RAM, sorted]
+    M -- flush 64 MB --&gt; L0[(L0 SSTables)]
+    L0 -- compact --&gt; L1[(L1 SSTables)]
+    L1 -- compact --&gt; L2[(L2 SSTables)]
+    L2 -- compact --&gt; L3[(L3 SSTables)]
+    R[Read] --&gt; M
+    R --&gt; L0
+    R --&gt; L1
+    R --&gt; L2
+    R --&gt; L3
+</pre></div>
+<p>Reads must check memtable + all SSTable levels; bloom filters (see below) short-circuit most negative lookups. Writes are always <strong>sequential appends</strong>, which SSDs prefer.</p>
+<ul>
+  <li>Write throughput: 10–100 MB/s sustained per disk for LSM vs 1–10 MB/s for B-tree on random-write workloads.</li>
+  <li>Read latency: higher tail (may visit many SSTables).</li>
+  <li>Write amplification: 10–30× (leveled compaction); 2–10× (tiered). See next section.</li>
+</ul>
+
+<h2 id="s4">Amplification: write, read, space</h2>
+<table>
+  <thead><tr><th>Amplification</th><th>Definition</th><th>B-tree</th><th>LSM (leveled)</th><th>LSM (tiered)</th></tr></thead>
+  <tbody>
+    <tr><td>Write</td><td>physical bytes / logical bytes</td><td>1–3×</td><td>10–30×</td><td>2–10×</td></tr>
+    <tr><td>Read</td><td>physical reads / logical read</td><td>1 (leaf)</td><td>1–3</td><td>5–10</td></tr>
+    <tr><td>Space</td><td>physical bytes / logical bytes</td><td>1.3×</td><td>1.1×</td><td>1.5–2×</td></tr>
+  </tbody>
+</table>
+<p>Quote to memorize: "Leveled compaction gives write amp 10–30× at the cost of space amp 1.1×; tiered gives 2–10× at the cost of read amp 5–10×." State it with numbers; interviewers love the specific ratios.</p>
+
+<h2 id="s5">Compaction strategies</h2>
+<p><strong>Leveled compaction</strong> (LevelDB, RocksDB default, CockroachDB): L_i is ~10× L_{i-1}; each level is a single sorted run (except L0). On compaction, one SSTable from L_i merges with overlapping SSTables in L_{i+1}. Minimizes space amp and read amp, pays in write amp.</p>
+<p><strong>Tiered compaction</strong> (Cassandra Size-Tiered STCS, many time-series DBs): L_i holds K similar-sized SSTables; when full, merge all K into one at L_{i+1}. Minimizes write amp, pays in read amp (many overlapping runs) and space amp (pre-compaction duplicates).</p>
+<p><strong>Time-window compaction</strong> (Cassandra TWCS): partition data by write-time window (1 hour, 1 day); compact only within window. Ideal for time-series with TTL — drop whole SSTables on expiry with zero compaction cost.</p>
+<p>Real numbers: a Cassandra node with STCS and 500 GB data produces ~8 TB of compaction I/O/day; switching to LCS drops that to ~15 TB over the life of the data but amortized — read latency p99 drops ~40%. Instagram's 2019 migration from STCS to LCS paper is the canonical reference.</p>
+
+<h2 id="s6">Bloom filters and read-path tricks</h2>
+<p>A Bloom filter is a compact probabilistic set: "might contain, or definitely does not." 10 bits per key gives ~1% false-positive rate. For every SSTable, keep an in-memory bloom; on a point lookup, skip SSTables whose bloom says "definitely not here." Dramatically reduces LSM read I/O on missing keys.</p>
+<p>Other read-path tricks:</p>
+<ul>
+  <li><strong>Block cache</strong>: LRU of recently-read data blocks. 4–32 GB per node typical.</li>
+  <li><strong>Index block cache</strong>: index blocks of SSTables kept hot.</li>
+  <li><strong>Prefix bloom</strong>: bloom for key prefixes, enabling range prefix skip.</li>
+  <li><strong>Ribbon filter</strong> (Facebook 2022): ~30% smaller than bloom for same FP rate; used in newer RocksDB.</li>
+</ul>
+<div class="callout openai"><h4>OpenAI-specific</h4><p>Vector DB backends (Turbopuffer, LanceDB) are essentially LSM engines with bloom-filter equivalents on IVF partitions. For "design a vector DB" mention LSM + WAL replication + bloom on partition IDs. See <a href="../../arena/questions/o18-vector-database.html">vector DB arena</a>.</p></div>
+
+<h2 id="s7">Column stores and OLAP</h2>
+<p>Columnar storage (Parquet, Apache Arrow, C-Store/Vertica, ClickHouse, Snowflake, DuckDB) stores each column contiguously instead of each row. Benefits:</p>
+<ul>
+  <li><strong>Compression</strong>: same-type values compress 5–20× with dictionary encoding + RLE + delta.</li>
+  <li><strong>Vectorized execution</strong>: SIMD over tight column arrays; 10–100× faster scans than row stores.</li>
+  <li><strong>Column pruning</strong>: <code>SELECT a, b</code> from a 200-column table reads only 1% of bytes.</li>
+</ul>
+<p>Cost: individual row lookups and updates are expensive; column stores are OLAP (analytics), not OLTP (transactions). Typical split: OLTP row store (Postgres) → CDC → columnar warehouse (Snowflake/BigQuery) for reporting and ML features.</p>
+<div class="callout anthropic"><h4>Anthropic-specific</h4><p>For model evaluation data (millions of (prompt, completion, eval_score) rows) you want a columnar store, not Postgres. Mention Parquet on S3 + DuckDB or ClickHouse for interactive eval dashboards. This is a routine Anthropic interview hook — showing familiarity with evaluation infrastructure signals fit.</p></div>
+<div class="callout warn"><h4>Closing anti-pattern</h4><p>Defaulting to "use Postgres" for a 100 TB analytical workload. Postgres is a row store; scan times are hours. The right answer is "ETL to Parquet on S3, query with ClickHouse or Snowflake" — one sentence that shows you know the OLTP/OLAP divide.</p></div>
+
+        </div>
+        <div data-lang="zh">
+
+<h2 id="s1">为什么存储引擎重要</h2>
+<p>选「Postgres」或「Cassandra」就是在选存储引擎架构。DDIA 第 3 章强调——正确地——理解 B 树 vs LSM 树之分，让你能预测任何新数据库的性能包络。两条：</p>
+<ul>
+  <li><strong>B 树</strong>适合<em>读多、改多</em>、要求低延迟的负载。MySQL/InnoDB、Postgres、SQL Server、Oracle。</li>
+  <li><strong>LSM 树</strong>适合<em>写多</em>、时序或追加型访问。RocksDB、Cassandra、HBase、DynamoDB、ScyllaDB。</li>
+</ul>
+<div class="callout tip"><h4>来源交叉引用</h4><p>DDIA 第 3 章是两种引擎最好的解释。配 LSM 原论文（O'Neil 等 1996）与 Google Bigtable 论文（2006）加深度。</p></div>
+
+<h2 id="s2">B 树机制</h2>
+<p>平衡 n 叉树，每页（4–16 KB）存有序 key 数组和子指针。256 fan-out 的 4 层 B 树索引 40 亿行；读取 log_256(N) 次磁盘 = 大表 4 次。内部页缓冲池命中后，只有叶读盘——NVMe ~100 µs。</p>
+<p>写入<strong>原地</strong>：找叶、改、必要时分裂。为防崩溃，每写先入<em>预写日志 WAL</em>。恢复时重放 WAL。</p>
+<ul>
+  <li>更新延迟：~1 次 WAL 追加（fsync 50–200 µs）+ 偶发叶 fsync。</li>
+  <li>写放大：~1–3×（WAL + 页写）。</li>
+  <li>空间放大：低；含索引后每逻辑字节约 1.3 物理字节。</li>
+</ul>
+<div class="callout warn"><h4>反模式</h4><p>声称 B 树「无写放大」。它既写 WAL 也写页。16 KB 页、10 TB B 树的随机写负载最坏情况：100 字节逻辑写对应 16 KB IO = 160× 放大。</p></div>
+
+<h2 id="s3">LSM 树机制</h2>
+<p>写入进 RAM 中的<em>memtable</em>（按 key 排序，通常跳表）。满 ~64 MB 后作为不可变 <em>SSTable</em> 刷盘。后台<em>压缩</em>把 SSTable 合并成更大的有序段。</p>
+<div class="mermaid-container"><pre class="mermaid">
+flowchart TB
+    W[写] --&gt; M[Memtable<br/>RAM, 有序]
+    M -- 刷 64 MB --&gt; L0[(L0 SSTables)]
+    L0 -- 压缩 --&gt; L1[(L1 SSTables)]
+    L1 -- 压缩 --&gt; L2[(L2 SSTables)]
+    L2 -- 压缩 --&gt; L3[(L3 SSTables)]
+    R[读] --&gt; M
+    R --&gt; L0
+    R --&gt; L1
+    R --&gt; L2
+    R --&gt; L3
+</pre></div>
+<p>读要查 memtable + 所有层 SSTable；布隆过滤器（见下）短路大部分 miss。写永远<strong>顺序追加</strong>，SSD 喜欢。</p>
+<ul>
+  <li>写吞吐：随机写负载 LSM 持续 10–100 MB/s/盘，B 树 1–10 MB/s。</li>
+  <li>读延迟：尾更高（可能访问多个 SSTable）。</li>
+  <li>写放大：leveled 10–30×；tiered 2–10×。下节。</li>
+</ul>
+
+<h2 id="s4">放大：写、读、空间</h2>
+<table>
+  <thead><tr><th>放大</th><th>定义</th><th>B 树</th><th>LSM (leveled)</th><th>LSM (tiered)</th></tr></thead>
+  <tbody>
+    <tr><td>写</td><td>物理字节 / 逻辑字节</td><td>1–3×</td><td>10–30×</td><td>2–10×</td></tr>
+    <tr><td>读</td><td>物理读 / 逻辑读</td><td>1（叶）</td><td>1–3</td><td>5–10</td></tr>
+    <tr><td>空间</td><td>物理字节 / 逻辑字节</td><td>1.3×</td><td>1.1×</td><td>1.5–2×</td></tr>
+  </tbody>
+</table>
+<p>要背的口诀：「leveled 压缩写放大 10–30×，空间放大 1.1×；tiered 写 2–10×，代价是读放大 5–10×。」说出具体数字，面试官最吃这套。</p>
+
+<h2 id="s5">压缩策略</h2>
+<p><strong>Leveled compaction</strong>（LevelDB、RocksDB 默认、CockroachDB）：L_i ≈ 10× L_{i-1}；每层为单一有序段（L0 除外）。压缩时 L_i 一个 SSTable 与 L_{i+1} 重叠者合并。空间/读放大最小，写放大为代价。</p>
+<p><strong>Tiered compaction</strong>（Cassandra STCS、许多时序 DB）：L_i 存 K 个近似大小的 SSTable，满了合并成 L_{i+1} 的一个。写放大最小，读放大（多重叠段）与空间放大（压缩前重复）为代价。</p>
+<p><strong>时间窗口压缩</strong>（Cassandra TWCS）：按写时间窗口（1 小时、1 天）分区，只窗口内压缩。TTL 时序数据理想：到期整段 SSTable 删除，零压缩成本。</p>
+<p>真实数字：STCS 的 Cassandra 节点 500 GB 数据 ~8 TB/天压缩 IO；切 LCS 后全生命周期 ~15 TB 但摊薄，p99 读延迟降 ~40%。Instagram 2019 STCS→LCS 迁移是经典参考。</p>
+
+<h2 id="s6">布隆过滤器与读路径小技巧</h2>
+<p>布隆过滤器是紧凑概率集：「可能有或一定没有」。每 key 10 bit 的假阳率 ~1%。每个 SSTable 一个内存布隆；点查「一定没有」直接跳过。极大降 LSM 在缺 key 的读 IO。</p>
+<p>其他读路径技巧：</p>
+<ul>
+  <li><strong>块缓存</strong>：最近读数据块 LRU。典型每节点 4–32 GB。</li>
+  <li><strong>索引块缓存</strong>：SSTable 索引块常驻。</li>
+  <li><strong>前缀布隆</strong>：按 key 前缀，支持范围前缀跳跃。</li>
+  <li><strong>Ribbon filter</strong>（Facebook 2022）：同假阳率比布隆小 ~30%，新 RocksDB 用。</li>
+</ul>
+<div class="callout openai"><h4>OpenAI 专属</h4><p>向量 DB 后端（Turbopuffer、LanceDB）本质是 LSM + IVF 分区上的布隆等价物。「设计向量 DB」答题时提 LSM + WAL 复制 + 分区 ID 布隆，见 <a href="../../arena/questions/o18-vector-database.html">向量 DB 真题</a>。</p></div>
+
+<h2 id="s7">列存与 OLAP</h2>
+<p>列存（Parquet、Apache Arrow、C-Store/Vertica、ClickHouse、Snowflake、DuckDB）按列连续存而非按行。好处：</p>
+<ul>
+  <li><strong>压缩</strong>：同类型字典编码 + RLE + delta 压缩 5–20×。</li>
+  <li><strong>向量化执行</strong>：紧凑列数组上 SIMD，扫描比行存快 10–100×。</li>
+  <li><strong>列裁剪</strong>：200 列表 <code>SELECT a, b</code> 只读 1% 字节。</li>
+</ul>
+<p>代价：单行查改贵，列存是 OLAP（分析）不是 OLTP。典型分层：OLTP 行存（Postgres）→ CDC → 列存数仓（Snowflake/BigQuery）做报表和 ML 特征。</p>
+<div class="callout anthropic"><h4>Anthropic 专属</h4><p>模型评估数据（数百万 (prompt, completion, eval_score) 行）要列存不是 Postgres。提 S3 上 Parquet + DuckDB 或 ClickHouse 做交互式 eval 看板。这是 Anthropic 面试常见钩子——表现出对评测基础设施的熟悉度就是契合信号。</p></div>
+<div class="callout warn"><h4>收尾反模式</h4><p>100 TB 分析负载默认「用 Postgres」。Postgres 是行存，全扫要小时。正解是「ETL 成 S3 Parquet，ClickHouse 或 Snowflake 查」——一句话展示你懂 OLTP/OLAP 分界。</p></div>
+
+        </div>
+      </article>
+
+      <section class="topic-footer-links">
+        <a href="../../guide/distributed/stream-batch.html"><span class="label"><span data-lang="en">Previous</span><span data-lang="zh">上一</span></span><strong><span data-lang="en">Stream & batch processing</span><span data-lang="zh">流与批处理</span></strong></a>
+        <a href="../../guide/foundations/interview-framework.html"><span class="label"><span data-lang="en">Next track</span><span data-lang="zh">下一主线</span></span><strong><span data-lang="en">Interview framework (revisit)</span><span data-lang="zh">面试框架（回顾）</span></strong></a>
+        <a href="../../arena/questions/o9-in-memory-database.html"><span class="label"><span data-lang="en">Arena</span><span data-lang="zh">真题</span></span><strong><span data-lang="en">In-memory database</span><span data-lang="zh">内存数据库</span></strong></a>
+        <a href="../../arena/questions/a24-key-value-store.html"><span class="label"><span data-lang="en">Arena</span><span data-lang="zh">真题</span></span><strong><span data-lang="en">Key-value store</span><span data-lang="zh">键值存储</span></strong></a>
+        <a href="../../arena/questions/o18-vector-database.html"><span class="label"><span data-lang="en">Arena</span><span data-lang="zh">真题</span></span><strong><span data-lang="en">Vector database</span><span data-lang="zh">向量数据库</span></strong></a>
+      </section>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <p>
+        <span data-lang="en">© SD-Guide · Built for OpenAI &amp; Anthropic system design prep. Not affiliated with either company.</span>
+        <span data-lang="zh">© SD-Guide · 为 OpenAI 与 Anthropic 系统设计面试准备。与两家公司无关联。</span>
+      </p>
+    </div>
+  </footer>
+
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

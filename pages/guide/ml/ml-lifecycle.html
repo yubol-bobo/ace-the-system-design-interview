@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ML Lifecycle & Platform — SD-Guide</title>
+  <meta name="description" content="From a raw feature table to a production model serving 10k QPS: feature store, training pipeline, model registry, CI/CD for ML, and the three deploy shapes (batch, online, streaming) — plus the shadow / canary / A-B hierarchy that keeps regressions out of production.">
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../../../pages/arena/index.html" data-match="/arena"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../../pages/guide/index.html" class="active" data-match="/guide"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../../pages/resources/index.html" data-match="/resources"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../../pages/about/index.html" data-match="/about"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+
+      <div class="breadcrumb">
+        <a href="../../../pages/guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a>
+        <span>›</span>
+        <span class="crumb-category">ML Systems<span data-lang="zh" style="display:none">ML 系统</span></span>
+      </div>
+
+      <header class="page-header">
+        <h1 class="page-title">
+          <span data-lang="en">ML Lifecycle & Platform</span>
+          <span data-lang="zh">ML 生命周期与平台</span>
+        </h1>
+        <div class="topic-meta">
+          <span class="tag" style="background:var(--openai-glow);border-color:var(--openai)">📚 Chip Huyen Ch.7 · Chip Huyen Ch.10 · Khang Pham Ch.2</span><span class="tag">Feature store</span><span class="tag">Model registry</span><span class="tag">Shadow/canary</span><span class="tag">MLOps</span>
+        </div>
+        <p class="page-subtitle">
+          <span data-lang="en">From a raw feature table to a production model serving 10k QPS: feature store, training pipeline, model registry, CI/CD for ML, and the three deploy shapes (batch, online, streaming) — plus the shadow / canary / A-B hierarchy that keeps regressions out of production.</span>
+          <span data-lang="zh">从原始特征表到承载 10k QPS 的生产模型：特征平台、训练流水线、模型注册表、ML 的 CI/CD、三种部署形态（批、在线、流），以及把回归挡在门外的 shadow / canary / A-B 层级。</span>
+        </p>
+      </header>
+
+      <article class="topic-prose">
+        <nav class="topic-toc">
+          <h4><span data-lang="en">On this page</span><span data-lang="zh">本页目录</span></h4>
+          <ol>
+            <li><a href="#s1"><span data-lang="en">Why an ML platform exists</span><span data-lang="zh">为什么需要 ML 平台</span></a></li>
+            <li><a href="#s2"><span data-lang="en">Feature store: offline vs online split</span><span data-lang="zh">特征平台：离线/在线双库</span></a></li>
+            <li><a href="#s3"><span data-lang="en">Training pipeline & model registry</span><span data-lang="zh">训练流水线与模型注册表</span></a></li>
+            <li><a href="#s4"><span data-lang="en">CI/CD for ML (tests that matter)</span><span data-lang="zh">ML 的 CI/CD（哪些测试最重要）</span></a></li>
+            <li><a href="#s5"><span data-lang="en">Serving: batch vs online vs streaming</span><span data-lang="zh">服务化：批 vs 在线 vs 流</span></a></li>
+            <li><a href="#s6"><span data-lang="en">Shadow, canary, A/B and interleaving</span><span data-lang="zh">Shadow、灰度、A/B 与 interleaving</span></a></li>
+            <li><a href="#s7"><span data-lang="en">OpenAI vs Anthropic framing</span><span data-lang="zh">OpenAI 与 Anthropic 的视角差异</span></a></li>
+          </ol>
+        </nav>
+
+        <div data-lang="en">
+
+        <div class="callout openai">
+          <h4>Source cross-reference</h4>
+          <p>This page synthesises <strong>Chip Huyen Ch.7 (Deployment)</strong>, <strong>Ch.10 (Infra &amp; MLOps)</strong> and <strong>Khang Pham Ch.2</strong> (core ML primer). Read Chip Huyen Ch.7 on "Batch prediction vs online prediction" and Ch.10 on "ML platforms" as the companions to this note.</p>
+        </div>
+
+        <h2 id="s1">Why an ML platform exists</h2>
+        <p>A team with one model and one engineer needs no platform. A team with <strong>20 models, 40 features per model, 5 training frameworks and weekly deploys</strong> cannot survive without one. Chip Huyen Ch.10 frames the problem as removing the <em>N&times;M explosion</em>: N modelling teams &times; M plumbing concerns (feature freshness, online lookup, rollback, monitoring). A platform collapses the M concerns into one paved road.</p>
+        <p>In interviews, when the question says "design a recommender for 100M DAU", do not jump to models. First sketch the lifecycle: <em>data &rarr; features &rarr; training &rarr; registry &rarr; serving &rarr; monitoring &rarr; retraining</em>, and only then drill into the piece the interviewer cares about. Scoring rubrics at both OpenAI and Anthropic reward candidates who explicitly trace a feature from source log to a served prediction.</p>
+
+        <h2 id="s2">Feature store: offline vs online split</h2>
+        <p>A feature store has <strong>two physical stores with one logical API</strong>: an offline store (Hive, S3+Parquet, BigQuery) sized in terabytes for training, and an online store (Redis, DynamoDB, RocksDB, ScyllaDB) sized in gigabytes for serving with p99 &lt; 5 ms lookups. The two must stay consistent; any skew becomes an invisible prediction bug. Feast, Tecton and Databricks Feature Store are the common concretisations; roll-your-own is a valid answer if you justify it.</p>
+        <div class="mermaid-container"><pre class="mermaid">
+flowchart LR
+  logs[Event logs / CDC] --> stream[Stream job: Flink/Spark Streaming]
+  logs --> batch[Batch job: Spark/dbt]
+  batch --> off[(Offline store<br/>Parquet/Iceberg)]
+  stream --> on[(Online store<br/>Redis/Scylla)]
+  stream -.replicate.-> off
+  off --> train[Training job]
+  on --> serve[Inference service]
+  train --> reg[Model registry]
+  reg --> serve
+        </pre></div>
+        <p>Key design rules:</p>
+        <ul>
+          <li><strong>Point-in-time joins</strong> on the offline side to prevent label leakage; you must reconstruct what the online store would have returned at event time.</li>
+          <li><strong>Feature versioning</strong>: adding a feature never mutates an existing ID; it creates <code>feature_v2</code> to preserve reproducibility.</li>
+          <li><strong>TTL and freshness budget per feature</strong>: a user-activity counter might have a 10 s freshness SLO, country-of-residence 24 h.</li>
+          <li>Typical scale: Uber's Michelangelo reports ~10,000 features, ~2,000 online features touched per request, p99 ~2 ms from a sharded Cassandra.</li>
+        </ul>
+
+        <h2 id="s3">Training pipeline &amp; model registry</h2>
+        <p>Training is not a notebook; it is a DAG executed by Airflow, Kubeflow, Metaflow, or Flyte. The DAG must be <strong>idempotent, parameterised, and reproducible</strong>: same inputs + same code + same seeds &rArr; bit-equivalent model, within fp tolerance. Outputs go to a registry (MLflow, Weights &amp; Biases, SageMaker Model Registry, Vertex AI Model Registry) keyed by <code>(model_name, version)</code> and carrying <strong>lineage metadata</strong>: training dataset hash, feature schema version, code commit SHA, hyperparameters, offline metrics, and human sign-off.</p>
+        <p>Registry state machine: <code>trained &rarr; staging &rarr; production &rarr; archived</code>. Promotion from staging to production is gated by the CI/CD tests below, never by a human pressing a green button alone.</p>
+
+        <h2 id="s4">CI/CD for ML (tests that matter)</h2>
+        <p>Traditional CI tests code. ML CI tests <em>code + data + model</em>. The five tests that catch 90% of regressions:</p>
+        <ol>
+          <li><strong>Schema test</strong>: new feature batch matches the declared schema (types, ranges, nullability).</li>
+          <li><strong>Data drift test</strong>: PSI &lt; 0.2 vs training distribution on every top-20 feature.</li>
+          <li><strong>Offline metric test</strong>: new model's AUC / NDCG / calibration is no worse than previous by more than a configured epsilon (e.g. 0.3%).</li>
+          <li><strong>Slice test</strong>: no protected subgroup (geo, language, new-user cohort) regresses by &gt;1%.</li>
+          <li><strong>Behavioural test</strong>: a curated set of ~200 "golden" inputs produce expected outputs; equivalent to unit tests but on model outputs.</li>
+        </ol>
+        <div class="callout tip">
+          <h4>Concrete numbers</h4>
+          <p>A healthy ML platform at a mid-sized company ships 5&ndash;20 model versions per week to staging, 1&ndash;3 to production. Median time from commit to canary = <strong>2 hours</strong>; full rollout with 48 h observation window = <strong>2&ndash;3 days</strong>.</p>
+        </div>
+
+        <h2 id="s5">Serving: batch vs online vs streaming</h2>
+        <p>Chip Huyen Ch.7 makes three shapes explicit; know when to pick each:</p>
+        <ul>
+          <li><strong>Batch prediction</strong>: compute daily/hourly, store into a KV; serve by lookup. Used when inputs change slowly (user LTV, lead score). p99 read = &lt;10 ms. Drawback: stale predictions for new users.</li>
+          <li><strong>Online (request-time)</strong>: compute on the hot path. Used when inputs change fast (search ranking, ad CTR, LLM routing). p99 = 20&ndash;200 ms. Drawback: tail latency and cost risk.</li>
+          <li><strong>Streaming</strong>: pre-compute on events as they arrive (Flink, Spark Streaming); store into online store. Used when you need "online-like" freshness but the model itself is too heavy for request-time (e.g. user embedding update every session).</li>
+        </ul>
+        <p>Hybrid is the norm: candidate generation batch-precomputed, ranking online, feature updates streaming.</p>
+
+        <h2 id="s6">Shadow, canary, A/B and interleaving</h2>
+        <p>Chip Huyen Ch.9 catalogues the four <em>online evaluation</em> strategies; they are a hierarchy of risk/information trade-offs:</p>
+        <div class="mermaid-container"><pre class="mermaid">
+flowchart LR
+  new[New model v2] --> shadow[1. Shadow<br/>0% user impact<br/>log only]
+  shadow --> canary[2. Canary<br/>1-5% traffic<br/>abort on KPI regression]
+  canary --> ab[3. A/B test<br/>50/50 · 1-2 weeks<br/>powered for MDE]
+  ab --> rollout[4. Full rollout<br/>100%]
+  ab -.-> interleave[Interleaving<br/>same-user pairs<br/>10x sample efficiency]
+        </pre></div>
+        <ol>
+          <li><strong>Shadow</strong>: send the same request to v1 and v2, serve v1, log both. Catches crashes, latency regressions and gross output drift before any user sees v2.</li>
+          <li><strong>Canary</strong>: route 1&ndash;5% of traffic to v2 with automatic abort on pre-declared KPI guardrails (error rate, latency p99, business metric).</li>
+          <li><strong>A/B</strong>: 50/50 (or power-calculated) split for 1&ndash;2 weeks. Requires an MDE (minimum detectable effect) calculation; a common anti-pattern is reading the test early and declaring victory on noise.</li>
+          <li><strong>Interleaving</strong> (for ranked lists): serve a list that interleaves v1 and v2 results to the <em>same user</em>; about 10&times; more sample-efficient than user-split A/B for ranking problems (Chapelle &amp; Li).</li>
+        </ol>
+        <div class="callout warn">
+          <h4>Anti-pattern: "we deployed straight to 100%"</h4>
+          <p>Skipping shadow + canary and going directly to A/B is the most common outage generator. A new embedding version with a silent OOV bug can null-out 0.5% of recommendations and cost days of debugging. Always spend the 48 h in shadow, regardless of urgency.</p>
+        </div>
+
+        <h2 id="s7">OpenAI vs Anthropic framing</h2>
+        <div class="callout openai">
+          <h4>OpenAI emphasis</h4>
+          <p>OpenAI interviews treat the ML platform as the <em>foundation for fast iteration</em>: expect probing on feature-store freshness SLOs, online feature serving latency, and the CI/CD tests that keep a model-versions-per-week cadence safe. Bias toward <strong>online serving</strong> examples (search, ranking, ad).</p>
+        </div>
+        <div class="callout anthropic">
+          <h4>Anthropic emphasis</h4>
+          <p>Anthropic asks the same questions but from a <em>safety-first</em> angle: shadow mode is non-negotiable, rollback must be one click, every promotion must carry a human sign-off field in the registry, and offline eval suites must include harm-slice tests alongside accuracy. The registry is a compliance artefact, not just a version list.</p>
+        </div>
+        <p>Either way, the winning interview narrative is: define the lifecycle, pick the deploy shape justified by input velocity, bound the risk with shadow&rarr;canary&rarr;A/B, and wire monitoring to the registry so you can roll back in &lt;5 min.</p>
+
+        </div>
+        <div data-lang="zh">
+
+        <div class="callout openai">
+          <h4>来源对照</h4>
+          <p>本页综合 <strong>Chip Huyen 第 7 章（部署）</strong>、<strong>第 10 章（基础设施与 MLOps）</strong>与 <strong>Khang Pham 第 2 章</strong>（ML 核心入门）。建议配合 Chip Huyen Ch.7「批预测 vs 在线预测」与 Ch.10「ML 平台」一起阅读。</p>
+        </div>
+
+        <h2 id="s1">为什么需要 ML 平台</h2>
+        <p>一个团队、一个模型、一个工程师，完全不需要平台。但当团队有 <strong>20 个模型、每个 40 个特征、5 种训练框架、每周都要上线</strong>时，没有平台是活不下去的。Chip Huyen 第 10 章把问题抽象为消除 <em>N&times;M 爆炸</em>：N 个建模团队 &times; M 个基础设施问题（特征时效、在线查询、回滚、监控）。平台把这 M 件事汇聚成一条「铺好的路」。</p>
+        <p>面试里，当题目说「为 1 亿 DAU 设计推荐系统」，不要直接冲进模型。先画出生命周期：<em>数据 &rarr; 特征 &rarr; 训练 &rarr; 注册表 &rarr; 服务 &rarr; 监控 &rarr; 再训练</em>，再根据面试官的兴趣点深挖。OpenAI 与 Anthropic 的评分标准都奖励能把某个特征从源日志追踪到被服务端预测使用的候选人。</p>
+
+        <h2 id="s2">特征平台：离线/在线双库</h2>
+        <p>特征平台有<strong>两个物理库、一个逻辑 API</strong>：离线库（Hive、S3+Parquet、BigQuery），TB 量级，供训练；在线库（Redis、DynamoDB、RocksDB、ScyllaDB），GB 量级，服务时 p99 &lt; 5 ms。两者必须保持一致——任何偏差都会变成看不见的预测 bug。常见实现有 Feast、Tecton、Databricks Feature Store；自研也是合理答案，但要说明理由。</p>
+        <div class="mermaid-container"><pre class="mermaid">
+flowchart LR
+  logs[事件日志 / CDC] --> stream[流任务 Flink/Spark]
+  logs --> batch[批任务 Spark/dbt]
+  batch --> off[(离线库<br/>Parquet/Iceberg)]
+  stream --> on[(在线库<br/>Redis/Scylla)]
+  stream -.回写.-> off
+  off --> train[训练任务]
+  on --> serve[推理服务]
+  train --> reg[模型注册表]
+  reg --> serve
+        </pre></div>
+        <p>关键设计点：</p>
+        <ul>
+          <li><strong>时间点连接（point-in-time join）</strong>——离线必须重现事件发生那一刻在线库会返回的数据，防止 label 泄漏。</li>
+          <li><strong>特征版本化</strong>——新增特征永远新建 <code>feature_v2</code>，不动旧 ID，确保可复现。</li>
+          <li><strong>每个特征独立的 TTL 与时效预算</strong>：比如「用户活跃计数」10 秒，「居住国」24 小时。</li>
+          <li>规模参考：Uber Michelangelo 约 1 万个特征，每次请求用到 2,000 个在线特征，分片 Cassandra 上 p99 约 2 ms。</li>
+        </ul>
+
+        <h2 id="s3">训练流水线与模型注册表</h2>
+        <p>训练不是 Notebook，而是一个由 Airflow / Kubeflow / Metaflow / Flyte 执行的 DAG。DAG 必须<strong>幂等、参数化、可复现</strong>：同输入+同代码+同种子 &rArr; 浮点误差内的比特等模型。产物写入注册表（MLflow、W&amp;B、SageMaker、Vertex AI），以 <code>(model_name, version)</code> 为主键，并附带<strong>血缘元数据</strong>：训练数据哈希、特征 schema 版本、代码 commit SHA、超参数、离线指标、人工签字。</p>
+        <p>注册表状态机：<code>trained &rarr; staging &rarr; production &rarr; archived</code>。staging 到 production 的晋升应由 CI/CD 测试把关，而不是仅靠人点绿色按钮。</p>
+
+        <h2 id="s4">ML 的 CI/CD（哪些测试最重要）</h2>
+        <p>传统 CI 测代码；ML CI 要测<em>代码+数据+模型</em>。能拦住 90% 回归的五类测试：</p>
+        <ol>
+          <li><strong>Schema 测试</strong>——新一批特征的类型、范围、是否可空要与声明一致。</li>
+          <li><strong>数据漂移测试</strong>——每个 Top-20 特征相对训练分布的 PSI &lt; 0.2。</li>
+          <li><strong>离线指标测试</strong>——新模型 AUC / NDCG / 校准度相对旧模型不能劣化超过 epsilon（例如 0.3%）。</li>
+          <li><strong>分片测试</strong>——任何受保护子群（地域、语言、新用户）不得劣化 &gt;1%。</li>
+          <li><strong>行为测试</strong>——约 200 个「金样本」输入产出固定输出，相当于模型输出的单元测试。</li>
+        </ol>
+        <div class="callout tip">
+          <h4>具体数字</h4>
+          <p>健康的 ML 平台每周推 5&ndash;20 个模型版本到 staging，1&ndash;3 个到生产。commit 到 canary 中位数 <strong>2 小时</strong>，含 48 小时观察期的全量发布 <strong>2&ndash;3 天</strong>。</p>
+        </div>
+
+        <h2 id="s5">服务化：批 vs 在线 vs 流</h2>
+        <p>Chip Huyen Ch.7 把三种形态讲得很清楚：</p>
+        <ul>
+          <li><strong>批预测</strong>——每日/小时跑一次，结果进 KV，查即返。适用于输入变化慢的场景（用户 LTV、线索评分）。p99 读 &lt;10 ms。缺点：新用户预测会滞后。</li>
+          <li><strong>在线（请求时）</strong>——直接在热路径上算。适用于输入变化快的场景（搜索排序、广告 CTR、LLM 路由）。p99 = 20&ndash;200 ms。缺点：长尾延迟和成本。</li>
+          <li><strong>流式</strong>——事件到达时提前算（Flink、Spark Streaming），写入在线库。用于需要「近实时」新鲜度、但模型本身太重无法请求时跑的情况（例如会话级用户 embedding 更新）。</li>
+        </ul>
+        <p>实战里几乎都是混合：召回批预计算，排序在线算，特征流式更新。</p>
+
+        <h2 id="s6">Shadow、灰度、A/B 与 interleaving</h2>
+        <p>Chip Huyen Ch.9 把四种<em>在线评估</em>策略按风险/信息量排成层级：</p>
+        <div class="mermaid-container"><pre class="mermaid">
+flowchart LR
+  new[新模型 v2] --> shadow[1. Shadow<br/>0% 用户影响<br/>仅记录]
+  shadow --> canary[2. Canary<br/>1-5% 流量<br/>KPI 异常自动中止]
+  canary --> ab[3. A/B 测试<br/>50/50 · 1-2 周<br/>按 MDE 配置样本]
+  ab --> rollout[4. 全量]
+  ab -.-> interleave[Interleaving<br/>同用户对比<br/>样本效率 10x]
+        </pre></div>
+        <ol>
+          <li><strong>Shadow</strong>：请求同时发给 v1 与 v2，只返 v1，双边记录。可在用户看不到 v2 之前就发现崩溃、延迟退化、严重输出漂移。</li>
+          <li><strong>Canary</strong>：1&ndash;5% 流量打到 v2，按预设 KPI 护栏（错误率、p99、业务指标）自动中止。</li>
+          <li><strong>A/B</strong>：50/50（或按 power 计算）拆分 1&ndash;2 周。必须先算 MDE（最小可检测效应）；常见反模式是提前读数、把噪音当胜利。</li>
+          <li><strong>Interleaving</strong>（排序列表专属）：把 v1 与 v2 的结果交织给<em>同一个用户</em>，比用户拆分 A/B 高 10&times; 样本效率（Chapelle &amp; Li）。</li>
+        </ol>
+        <div class="callout warn">
+          <h4>反模式：「我们直接上了 100%」</h4>
+          <p>跳过 shadow + canary 直接 A/B 是事故最大来源。一个有 OOV bug 的 embedding 新版本可能静默把 0.5% 推荐置空，排查耗掉几天。无论多紧急，都要走完 48 小时 shadow。</p>
+        </div>
+
+        <h2 id="s7">OpenAI 与 Anthropic 的视角差异</h2>
+        <div class="callout openai">
+          <h4>OpenAI 侧重</h4>
+          <p>OpenAI 面试把 ML 平台当作<em>快速迭代的地基</em>：会追问特征新鲜度 SLO、在线特征查询延迟、支撑每周多次发版的 CI/CD 测试。偏爱<strong>在线服务</strong>类案例（搜索、排序、广告）。</p>
+        </div>
+        <div class="callout anthropic">
+          <h4>Anthropic 侧重</h4>
+          <p>Anthropic 会从<em>安全优先</em>角度问同样的问题：shadow 模式不可省；回滚必须一键；注册表的每次晋升都要带人工签字字段；离线评估套件必须包含「伤害分片测试」，不能只看准确率。注册表在这里是合规制品，不仅是版本号列表。</p>
+        </div>
+        <p>无论对谁，获胜的叙事是：先定义生命周期；再依据输入变化速率选择部署形态；用 shadow&rarr;canary&rarr;A/B 约束风险；把监控与注册表连通，确保 5 分钟内可回滚。</p>
+
+        </div>
+      </article>
+
+      <section class="topic-footer-links">
+        <a href="./drift-monitoring.html"><span class="label"><span data-lang="en">Next</span><span data-lang="zh">下一篇</span></span><strong><span data-lang="en">Drift Detection & Monitoring</span><span data-lang="zh">漂移检测与监控</span></strong></a>
+        <a href="../../arena/questions/a16-low-latency-inference-api.html"><span class="label"><span data-lang="en">Arena</span><span data-lang="zh">真题</span></span><strong><span data-lang="en">A16 · Low-latency ML inference API</span><span data-lang="zh">A16 · 低延迟 ML 推理 API</span></strong></a>
+        <a href="../../arena/questions/o8-search-recommendation-llm.html"><span class="label"><span data-lang="en">Arena</span><span data-lang="zh">真题</span></span><strong><span data-lang="en">O8 · Search / recommendation + LLM</span><span data-lang="zh">O8 · 搜索/推荐 + LLM</span></strong></a>
+        <a href="../llm/llm-serving.html"><span class="label"><span data-lang="en">Related</span><span data-lang="zh">相关</span></span><strong><span data-lang="en">LLM Serving & Inference</span><span data-lang="zh">LLM 推理服务</span></strong></a>
+      </section>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <p>
+        <span data-lang="en">© SD-Guide · Built for OpenAI &amp; Anthropic system design prep. Not affiliated with either company.</span>
+        <span data-lang="zh">© SD-Guide · 为 OpenAI 与 Anthropic 系统设计面试准备。与两家公司无关联。</span>
+      </p>
+    </div>
+  </footer>
+
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

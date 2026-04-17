@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Webhook Delivery Platforms — SD-Guide</title>
+  <meta name="description" content="At-least-once delivery, idempotency, retry with exponential backoff and jitter, DLQ, per-endpoint ordering, circuit breakers — the Stripe/Svix pattern.">
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../../../pages/arena/index.html" data-match="/arena"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../../pages/guide/index.html" class="active" data-match="/guide"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../../pages/resources/index.html" data-match="/resources"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../../pages/about/index.html" data-match="/about"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+
+      <div class="breadcrumb">
+        <a href="../../../pages/guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a>
+        <span>›</span>
+        <span class="crumb-category">Classical Designs<span data-lang="zh" style="display:none">经典设计</span></span>
+      </div>
+
+      <header class="page-header">
+        <h1 class="page-title">
+          <span data-lang="en">Webhook Delivery Platforms</span>
+          <span data-lang="zh">Webhook 投递平台</span>
+        </h1>
+        <div class="topic-meta">
+          <span class="tag" style="background:var(--openai-glow);border-color:var(--openai)">📚 DDIA Ch.11 · Acing SDI Ch.5</span><span class="tag">At-least-once</span><span class="tag">Idempotency</span><span class="tag">DLQ</span><span class="tag">Circuit breaker</span>
+        </div>
+        <p class="page-subtitle">
+          <span data-lang="en">At-least-once delivery, idempotency, retry with exponential backoff and jitter, DLQ, per-endpoint ordering, circuit breakers — the Stripe/Svix pattern.</span>
+          <span data-lang="zh">至少一次投递、幂等、指数退避+抖动重试、死信队列、每端点顺序、熔断——Stripe/Svix 模式。</span>
+        </p>
+      </header>
+
+      <article class="topic-prose">
+        <nav class="topic-toc">
+          <h4><span data-lang="en">On this page</span><span data-lang="zh">本页目录</span></h4>
+          <ol>
+            <li><a href="#s1"><span data-lang="en">Why webhooks are hard</span><span data-lang="zh">为什么 Webhook 很难</span></a></li>
+            <li><a href="#s2"><span data-lang="en">Delivery state machine</span><span data-lang="zh">投递状态机</span></a></li>
+            <li><a href="#s3"><span data-lang="en">Retry, backoff, jitter, and DLQ</span><span data-lang="zh">重试、退避、抖动、DLQ</span></a></li>
+            <li><a href="#s4"><span data-lang="en">Idempotency and ordering</span><span data-lang="zh">幂等与顺序</span></a></li>
+            <li><a href="#s5"><span data-lang="en">Poison-pill isolation and circuit breakers</span><span data-lang="zh">毒丸隔离与熔断</span></a></li>
+            <li><a href="#s6"><span data-lang="en">Security, observability, interview checklist</span><span data-lang="zh">安全、可观测性、面试清单</span></a></li>
+          </ol>
+        </nav>
+
+        <div data-lang="en">
+
+<h2 id="s1">Why webhooks are hard</h2>
+<p>A webhook platform is the outbound equivalent of a public API: your service <em>calls</em> customers' HTTP endpoints when events happen (Stripe on <code>charge.succeeded</code>, GitHub on <code>push</code>, OpenAI on fine-tuning job completion). It looks simple — "just POST the JSON" — but customer endpoints are the most hostile dependency in the world:</p>
+<ul>
+  <li>Endpoints go down without warning; they p99 at 10s; they return 500 for hours.</li>
+  <li>Some are slow; a single tenant at 30s latency can starve a worker pool serving thousands.</li>
+  <li>Some return 200 but never processed the event (at-least-once is your <em>only</em> realistic guarantee).</li>
+  <li>Some get duplicate events; they need an <code>Idempotency-Key</code> to dedupe.</li>
+  <li>Some expect strict ordering per customer object (a <code>customer.updated</code> from 10s ago cannot land after the latest one).</li>
+</ul>
+<p>Scale anchor: Stripe delivers billions of webhooks per month; p99 endpoint response ~2s; retry budget up to 72 hours; Svix quotes 99.99% eventual delivery. Those numbers don't happen by accident.</p>
+<div class="callout tip"><h4>Source cross-reference</h4><p>DDIA Ch.11 (stream processing, exactly-once / effectively-once, idempotency) is the theory. Acing SDI Ch.5 covers distributed transactions and idempotency keys. Stripe's and Svix's public engineering blogs are the best real-world references; OpenAI's webhook-for-fine-tuning docs describe the same pattern.</p></div>
+
+<h2 id="s2">Delivery state machine</h2>
+<p>Every webhook attempt is a tiny state machine. Drawing it on the whiteboard signals senior-level thinking.</p>
+<div class="mermaid-container"><pre class="mermaid">
+stateDiagram-v2
+  [*] --&gt; Pending
+  Pending --&gt; Delivering: worker picks up
+  Delivering --&gt; Delivered: 2xx response
+  Delivering --&gt; Retrying: 5xx / timeout / 429
+  Delivering --&gt; Failed: 4xx (except 408/429)
+  Retrying --&gt; Delivering: backoff elapsed
+  Retrying --&gt; DLQ: max_attempts or 72h
+  Delivered --&gt; [*]
+  Failed --&gt; [*]
+  DLQ --&gt; [*]
+</pre></div>
+<p><strong>Status rules:</strong></p>
+<ul>
+  <li>2xx → Delivered. Stop retrying.</li>
+  <li>408 (timeout), 429 (rate-limit), 5xx → Retrying with backoff.</li>
+  <li>Other 4xx (malformed endpoint, bad signature) → Failed. Don't burn retries on permanent errors.</li>
+  <li>After N attempts or wall-clock cutoff → DLQ.</li>
+</ul>
+<h3>Architecture</h3>
+<div class="mermaid-container"><pre class="mermaid">
+flowchart LR
+  EV[Event Source] --&gt; IQ[Ingest API]
+  IQ --&gt; DB[(Delivery Store<br/>Postgres)]
+  IQ --&gt; SCH[Scheduler]
+  SCH --&gt; WQ[Delivery Queue<br/>partitioned by endpoint_id]
+  WQ --&gt; W1[Worker pool]
+  W1 --&gt;|HTTPS POST + HMAC| EP[Customer Endpoint]
+  W1 --&gt; DB
+  W1 --&gt;|failed| RQ[Retry queue<br/>delayed]
+  RQ --&gt; WQ
+  W1 --&gt;|exhausted| DLQ[(DLQ)]
+  DLQ --&gt; UI[Dashboard replay]
+</pre></div>
+<p>Key design choice: the delivery queue is <em>partitioned by destination endpoint</em>, not by event. This is how you prevent one slow tenant from starving the fleet.</p>
+
+<h2 id="s3">Retry, backoff, jitter, and DLQ</h2>
+<h3>Backoff</h3>
+<p>Exponential backoff with jitter is the industry default. Stripe's published schedule is roughly: 10s, 1min, 5min, 15min, 1h, 2h, 4h, 8h, ..., capped at 72 hours. Concrete formula:</p>
+<pre><code>delay = min(base * 2**(attempt-1), cap)
+jittered = random.uniform(0, delay)   # "full jitter" per AWS architecture blog
+</code></pre>
+<p>Why jitter? Without it, 10k failed deliveries all retry at exactly the same second and DDoS your own workers (and the customer's endpoint). <em>Full jitter</em> (uniform 0..delay) beats <em>equal jitter</em> (delay/2 + random) at reducing contention — AWS blog benchmarks show ~30% better completion time under high contention.</p>
+<h3>Retry budget</h3>
+<ul>
+  <li>Max attempts: typically 16–24 (exponential climb caps out).</li>
+  <li>Max age: 24–72 hours (Stripe uses 72h).</li>
+  <li>After exhaustion → DLQ with full payload + error trace.</li>
+</ul>
+<h3>DLQ</h3>
+<p>The DLQ must be <em>inspectable</em>: a UI or API to list, filter, and <em>replay</em> failed deliveries after the customer fixes their endpoint. This is the #1 feature customers ask for. Don't use a raw Kafka topic without tooling.</p>
+<div class="callout warn"><h4>Anti-pattern</h4><p>Fixed 30-second retry with unlimited attempts. 10k stuck deliveries to one dead endpoint generate 10k RPS forever — you've built a DDoS gun pointing at your customer. Always use exponential + jitter + cutoff.</p></div>
+
+<h2 id="s4">Idempotency and ordering</h2>
+<h3>Idempotency</h3>
+<p>Because you retry, the customer <em>will</em> receive duplicates. They dedupe by a stable id. Contract:</p>
+<ul>
+  <li>Every event has a globally unique <code>event.id</code> — UUID v4 or Snowflake.</li>
+  <li>Send it in the body and the <code>Webhook-ID</code> header. Customer's <code>INSERT ... ON CONFLICT DO NOTHING</code> on that id makes processing exactly-once on their side.</li>
+  <li>Include <code>event.created_at</code> so customers can detect out-of-order delivery.</li>
+</ul>
+<h3>Ordering</h3>
+<p>At-least-once delivery with retries means out-of-order is inevitable. Two strategies:</p>
+<ol>
+  <li><strong>Best-effort order</strong> (Stripe default) — deliver in approximate order; customer uses <code>created_at</code> to discard stale updates (last-write-wins by timestamp on their side).</li>
+  <li><strong>Strict per-key order</strong> (opt-in) — partition the delivery queue by <code>(endpoint_id, object_key)</code>, e.g., <code>customer_id</code>. One in-flight message per partition. If delivery 1 fails, delivery 2 waits. This is how Kafka gives per-partition order.</li>
+</ol>
+<p>Strict ordering costs throughput: one stuck object blocks its entire key's queue. Offer it as a tier setting, not a default.</p>
+
+<h2 id="s5">Poison-pill isolation and circuit breakers</h2>
+<h3>The poison pill</h3>
+<p>A "poison pill" is a customer endpoint that fails repeatedly and ties up workers. Without isolation, 50 workers all serving the dead endpoint = 50 workers unavailable for everyone else. Solutions:</p>
+<ul>
+  <li><strong>Per-endpoint concurrency cap</strong>: at most K in-flight deliveries per endpoint (typically K=8–16). Enforced with a semaphore or a per-endpoint queue.</li>
+  <li><strong>Tenant-fair scheduling</strong>: worker picks the next eligible endpoint round-robin, not FIFO on the global queue. Prevents head-of-line blocking.</li>
+  <li><strong>Quarantine queue</strong>: once an endpoint is circuit-broken, its messages go to a slow-lane queue with a tiny worker pool. Healthy tenants are unaffected.</li>
+</ul>
+<h3>Circuit breaker</h3>
+<p>Standard three states (closed / open / half-open). Trigger: error rate &gt; 50% over last 1 minute <em>and</em> ≥ 20 attempts. When open:</p>
+<ul>
+  <li>Stop sending to that endpoint for N minutes (typically 5–30).</li>
+  <li>Queue keeps accumulating; if age exceeds retry budget, DLQ.</li>
+  <li>Half-open: send a single probe; on success → closed, on failure → back to open with longer cooldown.</li>
+  <li>Alert the customer via dashboard banner + email. Stripe does this.</li>
+</ul>
+<div class="callout anthropic"><h4>Anthropic-specific</h4><p>Anthropic's internal tooling for batch-processing webhooks (e.g., Message Batches API completion notifications) uses a similar per-endpoint circuit breaker. Batch completion events can arrive hours after submission, so the delivery platform must hold state long-term — a relational store (Postgres) is preferred over a short-TTL queue.</p></div>
+<div class="callout openai"><h4>OpenAI-specific</h4><p>OpenAI's webhook events for fine-tuning and file processing use signed HMAC headers and an <code>X-OpenAI-Delivery</code> id. Documented retry: up to 72 hours. Customers are advised to verify signatures <em>before</em> doing any database work — the canonical order is verify → dedupe by event id → process.</p></div>
+
+<h2 id="s6">Security, observability, interview checklist</h2>
+<h3>Security</h3>
+<ul>
+  <li><strong>HMAC signatures</strong>: <code>X-Signature: t=&lt;ts&gt;,v1=hex(HMAC_SHA256(secret, ts + "." + body))</code>. Include timestamp to prevent replay; reject if &gt;5 min old.</li>
+  <li><strong>TLS only</strong> — never POST secrets over plain HTTP.</li>
+  <li><strong>IP allowlisting</strong>: publish your egress IPs so customer firewalls can whitelist.</li>
+  <li><strong>Secret rotation</strong>: dual-secret window — customers verify against either for 24h, then old expires.</li>
+</ul>
+<h3>Observability</h3>
+<p>Per-endpoint dashboard: success rate, p50/p95/p99 latency, attempt histogram, DLQ count, time-since-last-success. Expose to customers too; they will save you support tickets. Global SLO: &gt; 99.9% of events delivered within 5 minutes of creation.</p>
+<div class="callout warn"><h4>Anti-patterns</h4>
+<ul>
+  <li><strong>Synchronous delivery inside the event producer.</strong> Your checkout pipeline should never block on POSTing to a customer. Always enqueue.</li>
+  <li><strong>Single global FIFO queue.</strong> One slow customer = everybody slow. Partition by endpoint_id.</li>
+  <li><strong>Retrying 4xx.</strong> Endpoint says 400 = you sent bad JSON; retrying doesn't fix it.</li>
+  <li><strong>No timeout cap.</strong> Workers blocked 60s by a hanging endpoint — you bleed capacity. Use 15–30s timeout.</li>
+  <li><strong>No DLQ replay UI.</strong> Customers call your oncall at 3am begging to redeliver yesterday's event.</li>
+</ul></div>
+<p><strong>Whiteboard checklist:</strong> producer → delivery store + scheduler; partitioned queue by endpoint_id; worker with HMAC + 15s timeout; retry state machine with exponential backoff + full jitter + 72h cap; idempotency via event.id and Webhook-ID header; per-endpoint circuit breaker; DLQ with replay UI; per-endpoint observability.</p>
+
+        </div>
+        <div data-lang="zh">
+
+<h2 id="s1">为什么 Webhook 很难</h2>
+<p>Webhook 平台是公开 API 的出站版本：事件发生时你的服务<em>调用</em>客户的 HTTP 端点（Stripe 的 <code>charge.succeeded</code>、GitHub 的 <code>push</code>、OpenAI 的微调完成）。看似简单——"POST JSON 而已"——但客户端点是世界上最敌对的依赖：</p>
+<ul>
+  <li>端点毫无预警下线；p99 10s；连续几小时 500。</li>
+  <li>慢租户 30s 延迟会饿死服务上千人的 worker 池。</li>
+  <li>有的返回 200 却从未处理事件（至少一次是你<em>唯一</em>现实的保证）。</li>
+  <li>有的收到重复事件；需要 <code>Idempotency-Key</code> 去重。</li>
+  <li>有的要求按客户对象严格顺序（10s 前的 <code>customer.updated</code> 不能晚于最新那条）。</li>
+</ul>
+<p>规模锚点：Stripe 每月投递数十亿 webhook；端点 p99 响应 ~2s；重试预算最长 72 小时；Svix 承诺 99.99% 最终投递。这些数字不是偶然的。</p>
+<div class="callout tip"><h4>参考来源</h4><p>DDIA 第 11 章是理论；Acing SDI 第 5 章讲分布式事务与幂等 key；Stripe 和 Svix 的工程博客最佳实战；OpenAI 微调 webhook 文档描述同样模式。</p></div>
+
+<h2 id="s2">投递状态机</h2>
+<p>每次 webhook 尝试都是个小状态机。白板画出来说明你有 senior 思维。</p>
+<div class="mermaid-container"><pre class="mermaid">
+stateDiagram-v2
+  [*] --&gt; Pending
+  Pending --&gt; Delivering: worker 拾取
+  Delivering --&gt; Delivered: 2xx
+  Delivering --&gt; Retrying: 5xx / timeout / 429
+  Delivering --&gt; Failed: 4xx (除 408/429)
+  Retrying --&gt; Delivering: 退避结束
+  Retrying --&gt; DLQ: 达到 max_attempts 或 72h
+  Delivered --&gt; [*]
+  Failed --&gt; [*]
+  DLQ --&gt; [*]
+</pre></div>
+<p><strong>状态规则：</strong>2xx → Delivered；408/429/5xx → Retrying；其他 4xx → Failed（不要浪费重试在永久错误上）；N 次或时间墙 → DLQ。</p>
+<h3>架构</h3>
+<div class="mermaid-container"><pre class="mermaid">
+flowchart LR
+  EV[事件源] --&gt; IQ[摄入 API]
+  IQ --&gt; DB[(投递存储<br/>Postgres)]
+  IQ --&gt; SCH[调度器]
+  SCH --&gt; WQ[投递队列<br/>按 endpoint_id 分区]
+  WQ --&gt; W1[Worker 池]
+  W1 --&gt;|HTTPS POST + HMAC| EP[客户端点]
+  W1 --&gt; DB
+  W1 --&gt;|失败| RQ[重试队列<br/>延迟]
+  RQ --&gt; WQ
+  W1 --&gt;|耗尽| DLQ[(DLQ)]
+  DLQ --&gt; UI[Dashboard 回放]
+</pre></div>
+<p>关键设计：投递队列<em>按目标端点分区</em>，不是按事件。这是防止一个慢租户饿死整舰队的方式。</p>
+
+<h2 id="s3">重试、退避、抖动、DLQ</h2>
+<h3>退避</h3>
+<p>指数退避+抖动是行业默认。Stripe 公开计划大致是：10s、1min、5min、15min、1h、2h、4h、8h……上限 72 小时。公式：</p>
+<pre><code>delay = min(base * 2**(attempt-1), cap)
+jittered = random.uniform(0, delay)   # AWS 架构博客的 full jitter
+</code></pre>
+<p>为什么抖动？没有的话，10000 失败投递都在同一秒重试，DDoS 自己的 worker 和客户端点。<em>Full jitter</em> 比 <em>equal jitter</em> 在高竞争下减约 30% 完成时间（AWS 博客基准）。</p>
+<h3>重试预算</h3>
+<ul>
+  <li>最大尝试：通常 16–24（指数爬升会封顶）。</li>
+  <li>最大龄：24–72 小时（Stripe 用 72h）。</li>
+  <li>耗尽 → DLQ 附完整 payload + 错误追踪。</li>
+</ul>
+<h3>DLQ</h3>
+<p>DLQ 必须<em>可检视</em>：UI 或 API 列出、过滤、并在客户修复后<em>回放</em>失败投递。这是客户最常要求的功能。别直接扔到一个没工具的 Kafka topic。</p>
+<div class="callout warn"><h4>反模式</h4><p>固定 30 秒无限重试。10000 卡住的投递指向一个挂掉的端点 = 永远 10k RPS——你造了一把瞄准客户的 DDoS 枪。永远用指数+抖动+截止。</p></div>
+
+<h2 id="s4">幂等与顺序</h2>
+<h3>幂等</h3>
+<p>因为你会重试，客户<em>一定</em>会收到重复。他们按稳定 id 去重。合约：</p>
+<ul>
+  <li>每个事件全局唯一 <code>event.id</code>——UUID v4 或 Snowflake。</li>
+  <li>放在 body 与 <code>Webhook-ID</code> header 中。客户 <code>INSERT ... ON CONFLICT DO NOTHING</code> 让他们这边 exactly-once。</li>
+  <li>包含 <code>event.created_at</code>，让客户检测乱序。</li>
+</ul>
+<h3>顺序</h3>
+<p>至少一次+重试意味着乱序不可避免。两种策略：</p>
+<ol>
+  <li><strong>尽力而为顺序</strong>（Stripe 默认）——近似顺序投递；客户用 <code>created_at</code> 丢弃过期更新（last-write-wins）。</li>
+  <li><strong>严格按 key 顺序</strong>（opt-in）——投递队列按 <code>(endpoint_id, object_key)</code>（例如 <code>customer_id</code>）分区。每分区单 in-flight。投递 1 失败时投递 2 等。这就是 Kafka 给每分区顺序的方式。</li>
+</ol>
+<p>严格顺序代价是吞吐：一个卡住的对象会阻塞它的整个 key 队列。做成 tier 设置，别做默认。</p>
+
+<h2 id="s5">毒丸隔离与熔断</h2>
+<h3>毒丸</h3>
+<p>"毒丸"是反复失败占用 worker 的客户端点。没有隔离的话，50 worker 都服务那个死端点 = 大家都服务不到。方案：</p>
+<ul>
+  <li><strong>每端点并发上限</strong>：每端点最多 K in-flight（典型 K=8–16），用信号量或每端点队列。</li>
+  <li><strong>租户公平调度</strong>：worker 轮流选下一个合格端点，不是全局队列 FIFO。防止头阻塞。</li>
+  <li><strong>隔离队列</strong>：一旦端点被熔断，消息进入慢车道小 worker 池。健康租户不受影响。</li>
+</ul>
+<h3>熔断器</h3>
+<p>标准三态（closed/open/half-open）。触发：最近 1 分钟错误率 &gt; 50% <em>且</em> ≥20 次尝试。Open 状态下：</p>
+<ul>
+  <li>停止发到该端点 N 分钟（5–30）。</li>
+  <li>队列继续累积；龄超预算 → DLQ。</li>
+  <li>Half-open：发一个探针；成功 → closed，失败 → open 且冷却时间加长。</li>
+  <li>通过 dashboard 横幅 + 邮件告知客户。Stripe 就这么做。</li>
+</ul>
+<div class="callout anthropic"><h4>Anthropic 细节</h4><p>Anthropic 批处理 webhook（例如 Message Batches API 完成通知）用类似的每端点熔断器。批完成事件可能提交数小时后才到，平台必须长久持状态——关系存储（Postgres）优于短 TTL 队列。</p></div>
+<div class="callout openai"><h4>OpenAI 细节</h4><p>OpenAI 微调与文件处理 webhook 用签名 HMAC header 与 <code>X-OpenAI-Delivery</code> id。文档重试：最长 72 小时。建议客户<em>先</em>验证签名再做数据库工作——顺序是 verify → 按 event id 去重 → 处理。</p></div>
+
+<h2 id="s6">安全、可观测性、面试清单</h2>
+<h3>安全</h3>
+<ul>
+  <li><strong>HMAC 签名</strong>：<code>X-Signature: t=&lt;ts&gt;,v1=hex(HMAC_SHA256(secret, ts + "." + body))</code>。含时间戳防重放，&gt;5 分钟拒绝。</li>
+  <li><strong>只走 TLS</strong>——绝不明文 POST secret。</li>
+  <li><strong>IP 白名单</strong>：公开出口 IP，让客户防火墙放行。</li>
+  <li><strong>密钥轮转</strong>：双 secret 24h 窗口，过期后旧 secret 失效。</li>
+</ul>
+<h3>可观测性</h3>
+<p>每端点仪表板：成功率、p50/p95/p99 延迟、尝试直方图、DLQ 数、距上次成功时间。也暴露给客户，能省你不少工单。全局 SLO：&gt;99.9% 事件在创建后 5 分钟内投递。</p>
+<div class="callout warn"><h4>反模式</h4>
+<ul>
+  <li><strong>在事件生产方同步投递。</strong>结账流程绝不应该阻塞在 POST 客户端点。永远入队。</li>
+  <li><strong>单个全局 FIFO 队列。</strong>一个慢客户 = 全员慢。按 endpoint_id 分区。</li>
+  <li><strong>重试 4xx。</strong>端点说 400 = 你 JSON 错了，重试不会修。</li>
+  <li><strong>没有超时上限。</strong>挂起端点阻塞 worker 60s，你在流血。用 15-30s 超时。</li>
+  <li><strong>没有 DLQ 回放 UI。</strong>客户凌晨 3 点打你值班电话求重投昨天的事件。</li>
+</ul></div>
+<p><strong>白板清单：</strong>producer → 投递存储 + 调度；按 endpoint_id 分区队列；worker 加 HMAC 与 15s 超时；重试状态机（指数退避 + full jitter + 72h 上限）；event.id 与 Webhook-ID 幂等；每端点熔断；带回放 UI 的 DLQ；每端点可观测。</p>
+
+        </div>
+      </article>
+
+      <section class="topic-footer-links">
+        <a href="../../arena/questions/o1-webhook-delivery-platform.html"><span class="label"><span data-lang="en">Arena question</span><span data-lang="zh">真题</span></span><strong><span data-lang="en">O1 · Webhook Delivery Platform</span><span data-lang="zh">O1 · Webhook 投递平台</span></strong></a>
+        <a href="news-feed.html"><span class="label"><span data-lang="en">Previous</span><span data-lang="zh">上一主题</span></span><strong><span data-lang="en">News Feed / Chat / Notifications</span><span data-lang="zh">信息流 / 聊天 / 通知</span></strong></a>
+        <a href="../llm/agentic-patterns.html"><span class="label"><span data-lang="en">Related LLM</span><span data-lang="zh">相关 LLM</span></span><strong><span data-lang="en">Agentic Patterns</span><span data-lang="zh">Agentic 模式</span></strong></a>
+        <a href="../../arena/questions/o9-in-memory-database.html"><span class="label"><span data-lang="en">Related arena</span><span data-lang="zh">相关真题</span></span><strong><span data-lang="en">O9 · In-Memory DB</span><span data-lang="zh">O9 · 内存数据库</span></strong></a>
+      </section>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <p>
+        <span data-lang="en">© SD-Guide · Built for OpenAI &amp; Anthropic system design prep. Not affiliated with either company.</span>
+        <span data-lang="zh">© SD-Guide · 为 OpenAI 与 Anthropic 系统设计面试准备。与两家公司无关联。</span>
+      </p>
+    </div>
+  </footer>
+
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

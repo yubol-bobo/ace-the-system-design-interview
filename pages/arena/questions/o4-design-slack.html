@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>O4. Design Slack — SD-Guide</title>
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../index.html" class="active"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../resources/index.html"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../about/index.html"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a>
+        <span class="sep">›</span>
+        <a href="../index.html"><span data-lang="en">Arena</span><span data-lang="zh">竞技场</span></a>
+        <span class="sep">›</span>
+        <span>O4</span>
+      </div>
+
+      <article class="prose wide">
+        <div class="question-meta" style="margin-bottom:1rem;">
+          <span class="tag company-openai">OpenAI</span>
+          <span class="tag freq-3">★★★ Frequent</span>
+          <span class="tag difficulty-hard">Hard</span>
+          <span class="tag">WebSocket</span><span class="tag">Fan-out</span><span class="tag">Chat</span>
+        </div>
+
+        <h1>
+          <span data-lang="en">O4 · Design Slack</span>
+          <span data-lang="zh">O4 · 设计 Slack</span>
+        </h1>
+
+        <div class="callout openai">
+          <h4><span data-lang="en">Verified source</span><span data-lang="zh">经核实出处</span></h4>
+          <p>Original prompt: "design slack…deliver a MVP in 2 weeks…message delivery scalability/reliability" — <a href="https://leetcode.com/discuss" target="_blank" rel="noopener">LeetCode</a>, 2024-10-30. Also reported on Exponent and Glassdoor. Credibility <strong>C</strong>.</p>
+        </div>
+
+        <h2><span data-lang="en">Framing the MVP correctly</span><span data-lang="zh">MVP 砍对范围</span></h2>
+<p><span data-lang="en">Two-week MVP means <strong>ruthless scoping</strong>. In-scope: 1:1 &amp; small-group chat, send/receive, fetch history, online push via WebSocket, basic auth. <strong>Out of scope</strong>: search, files, complex permissions, cross-device state sync, read receipts.</span><span data-lang="zh">两周 MVP 意味着<strong>果断砍需求</strong>。范围内：1:1 与小群聊、发送/接收、拉历史、WebSocket 在线推送、基础鉴权。<strong>范围外</strong>：搜索、文件、复杂权限、跨设备状态同步、已读回执。</span></p><h2><span data-lang="en">Minimum architecture</span><span data-lang="zh">最小架构</span></h2>
+<div class="mermaid-container"><pre class="mermaid">
+flowchart LR
+  C[Client] --> G[Gateway]
+  G --> A[Auth]
+  G --> M[Message Service]
+  M --> D[(Message DB)]
+  M --> Q[Fanout Queue]
+  Q --> N[Notification/Push]
+  N --> C
+</pre></div><h2><span data-lang="en">Semantics you MUST nail</span><span data-lang="zh">必须讲清的语义</span></h2>
+<ul><li><span data-lang="en"><strong>Delivery guarantee</strong>: at-least-once is standard; client dedups on message_id.</span><span data-lang="zh"><strong>投递保证</strong>：at-least-once 是标准；客户端按 message_id 去重。</span></li><li><span data-lang="en"><strong>Ordering</strong>: per-channel monotonic <code>seq</code>; no cross-channel ordering.</span><span data-lang="zh"><strong>顺序</strong>：每 channel 单调递增 <code>seq</code>；跨 channel 无序。</span></li><li><span data-lang="en"><strong>Offline</strong>: persist all messages; on reconnect, pull history since last <code>seq</code> + subscribe to stream.</span><span data-lang="zh"><strong>离线</strong>：所有消息持久化；重连时按最后 <code>seq</code> 拉历史 + 订阅流。</span></li><li><span data-lang="en"><strong>Multi-device</strong>: one user multiple sessions; server tracks <code>last_read_seq</code> per session.</span><span data-lang="zh"><strong>多端</strong>：单用户多 session；服务端记录每 session 的 <code>last_read_seq</code>。</span></li></ul><h2><span data-lang="en">API (MVP)</span><span data-lang="zh">API（MVP）</span></h2>
+<pre><code>POST /channels/{id}/messages  { client_msg_id, text }
+GET  /channels/{id}/messages?before=&limit=
+GET  /ws  (or /events/stream)  — streaming new messages
+                                heartbeat every 30s, cursor resume on reconnect</code></pre><h2><span data-lang="en">Data model</span><span data-lang="zh">数据模型</span></h2>
+<pre><code>Message(channel_id, message_id, sender_id, created_at, payload, seq)
+-- Index: (channel_id, seq DESC) for pagination
+Channel(channel_id, type, members, next_seq)</code></pre><h2><span data-lang="en">Scale &amp; consistency</span><span data-lang="zh">扩展与一致性</span></h2>
+<ul><li><span data-lang="en"><strong>Strict per-channel ordering via single-partition writes</strong> caps throughput. Mitigation: shard by channel_id; use claim-check for attachments.</span><span data-lang="zh"><strong>严格每 channel 顺序 = 单分区写</strong>限制吞吐。缓解：按 channel_id 分片；附件用 claim-check 模式。</span></li><li><span data-lang="en"><strong>Fanout-on-write</strong> (push to each user inbox) vs <strong>fanout-on-read</strong> (aggregate on read). MVP uses fanout-on-read for small groups; production mixes them for big channels.</span><span data-lang="zh"><strong>Fanout-on-write</strong>（推送到每用户 inbox） vs <strong>fanout-on-read</strong>（读时聚合）。MVP 用 fanout-on-read；生产混合策略应对大群。</span></li></ul><div class="callout warn"><h4><span data-lang="en">Hot channel / big group</span><span data-lang="zh">热频道 / 大群</span></h4><p><span data-lang="en">A 10,000-member channel can cause a fanout storm. Solution: push to online users in real time, offline users pull on reconnect; big channels use a layered topic.</span><span data-lang="zh">1 万人频道会触发 fanout 风暴。方案：在线用户实时推送，离线用户重连时拉取；大频道用分层 topic。</span></p></div><h2><span data-lang="en">Follow-ups</span><span data-lang="zh">追问</span></h2>
+<ol><li><span data-lang="en"><strong>Exactly-once?</strong> Not in messaging — use client_msg_id dedup.</span><span data-lang="zh"><strong>Exactly-once？</strong>IM 不做；用 client_msg_id 去重。</span></li><li><span data-lang="en"><strong>Edit/delete?</strong> New event (edit_event) with same message_id; client replays.</span><span data-lang="zh"><strong>编辑/撤回？</strong>新事件（edit_event）复用 message_id；客户端重放。</span></li><li><span data-lang="en"><strong>Presence?</strong> Heartbeat → short TTL cache; online/offline is eventually consistent.</span><span data-lang="zh"><strong>在线状态？</strong>心跳 → 短 TTL 缓存；在线/离线最终一致。</span></li></ol>
+
+        <h2><span data-lang="en">Related study-guide topics</span><span data-lang="zh">相关学习手册专题</span></h2>
+        <ul><li><a href="../../guide/classical/news-feed.html"><span data-lang="en">News feed &amp; fanout</span><span data-lang="zh">新闻流与 fanout</span></a></li><li><a href="../../guide/distributed/partitioning.html"><span data-lang="en">Partitioning</span><span data-lang="zh">分区</span></a></li></ul>
+      </article>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

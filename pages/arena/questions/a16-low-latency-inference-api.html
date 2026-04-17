@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>A16. Low-Latency ML Inference API — SD-Guide</title>
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../index.html" class="active"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../resources/index.html"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../about/index.html"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a>
+        <span class="sep">›</span>
+        <a href="../index.html"><span data-lang="en">Arena</span><span data-lang="zh">竞技场</span></a>
+        <span class="sep">›</span>
+        <span>A16</span>
+      </div>
+
+      <article class="prose wide">
+        <div class="question-meta" style="margin-bottom:1rem;">
+          <span class="tag company-anthropic">Anthropic</span>
+          <span class="tag freq-3">★★★ Frequent</span>
+          <span class="tag difficulty-hard">Hard</span>
+          <span class="tag">Feature Store</span><span class="tag">Drift</span>
+        </div>
+
+        <h1>
+          <span data-lang="en">A16 · Low-Latency ML Inference API</span>
+          <span data-lang="zh">A16 · 低延迟 ML 推理 API</span>
+        </h1>
+
+        <div class="callout anthropic">
+          <h4><span data-lang="en">Verified source</span><span data-lang="zh">经核实出处</span></h4>
+          <p>Prompt: "Design a low-latency ML inference API…SLOs…feature retrieval…canary/rollbacks…drift detection" — PracHub, Onsite. Credibility <strong>B</strong>.</p>
+        </div>
+
+        <h2><span data-lang="en">Three numbers you must have</span><span data-lang="zh">必须给出的三个数字</span></h2>
+<ul><li><span data-lang="en">p95 latency (e.g. 50–150ms depending on business).</span><span data-lang="zh">p95 延迟（如 50–150ms，按业务）。</span></li><li><span data-lang="en">Availability SLO (99.9 / 99.99).</span><span data-lang="zh">可用性 SLO（99.9 / 99.99）。</span></li><li><span data-lang="en">QPS / throughput for capacity math.</span><span data-lang="zh">QPS/吞吐用于容量规划。</span></li></ul><h2><span data-lang="en">Architecture</span><span data-lang="zh">架构</span></h2>
+<div class="mermaid-container"><pre class="mermaid">
+flowchart LR
+  U[Product Service] --> API[Inference API]
+  API --> FS[Feature Store]
+  API --> MS[Model Server]
+  MS --> API
+  API --> MON[Metrics + Drift]
+</pre></div><h2><span data-lang="en">Feature store realism</span><span data-lang="zh">Feature store 的现实</span></h2>
+<ul><li><span data-lang="en">Online store must be low-latency. Training-serving skew is the #1 bug.</span><span data-lang="zh">在线 store 必须低延迟。Training-serving skew 是头号 bug。</span></li><li><span data-lang="en">Cache hot features with TTL + version.</span><span data-lang="zh">热特征缓存 + TTL + 版本。</span></li></ul><h2><span data-lang="en">Fallback (don&apos;t crash on partial failure)</span><span data-lang="zh">降级（部分故障时不崩）</span></h2>
+<ul><li><span data-lang="en">Feature store slow → return default features / smaller model.</span><span data-lang="zh">Feature store 慢 → 返回默认特征 / 小模型。</span></li><li><span data-lang="en">GPU pool starved → switch to CPU / smaller model.</span><span data-lang="zh">GPU 池不足 → 切 CPU / 小模型。</span></li><li><span data-lang="en">Model anomaly → rollback to previous (always keep prior warm).</span><span data-lang="zh">模型异常 → 回滚上一个（上一版始终保持预热）。</span></li></ul>
+
+        <h2><span data-lang="en">Related study-guide topics</span><span data-lang="zh">相关学习手册专题</span></h2>
+        <ul><li><a href="../../guide/ml/drift-monitoring.html"><span data-lang="en">Drift &amp; monitoring</span><span data-lang="zh">漂移与监控</span></a></li><li><a href="../../guide/ml/ml-lifecycle.html"><span data-lang="en">ML lifecycle</span><span data-lang="zh">ML 生命周期</span></a></li></ul>
+      </article>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

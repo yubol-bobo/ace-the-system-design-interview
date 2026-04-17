@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>O11. Design the OpenAI Playground — SD-Guide</title>
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../index.html" class="active"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../resources/index.html"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../about/index.html"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a>
+        <span class="sep">›</span>
+        <a href="../index.html"><span data-lang="en">Arena</span><span data-lang="zh">竞技场</span></a>
+        <span class="sep">›</span>
+        <span>O11</span>
+      </div>
+
+      <article class="prose wide">
+        <div class="question-meta" style="margin-bottom:1rem;">
+          <span class="tag company-openai">OpenAI</span>
+          <span class="tag freq-3">★★★ Frequent</span>
+          <span class="tag difficulty-hard">Hard</span>
+          <span class="tag">Product Design</span><span class="tag">Streaming</span><span class="tag">Versioning</span>
+        </div>
+
+        <h1>
+          <span data-lang="en">O11 · Design the OpenAI Playground</span>
+          <span data-lang="zh">O11 · 设计 OpenAI Playground</span>
+        </h1>
+
+        <div class="callout openai">
+          <h4><span data-lang="en">Verified source</span><span data-lang="zh">经核实出处</span></h4>
+          <p>Prompt: "Design the OpenAI Playground." — <a href="https://www.tryexponent.com/" target="_blank" rel="noopener">Exponent</a> (candidate-verified, 2024–2025). Credibility <strong>B</strong>.</p>
+        </div>
+
+        <h2><span data-lang="en">Scope clarification</span><span data-lang="zh">范围澄清</span></h2>
+<ul><li><span data-lang="en">Target audience: developers debugging prompts, or end users? (Developers.)</span><span data-lang="zh">目标用户：调试 prompt 的开发者，还是终端用户？（开发者）</span></li><li><span data-lang="en">Which surfaces: web only, or web + API + SDK?</span><span data-lang="zh">覆盖面：仅 Web，还是 Web + API + SDK？</span></li><li><span data-lang="en">Multi-turn threads persisted? Sharable? Versioned?</span><span data-lang="zh">多轮线程是否持久化？可分享？版本化？</span></li><li><span data-lang="en">Cost visibility: token counter per-run?</span><span data-lang="zh">成本可见性：每次运行的 token 计数？</span></li></ul><h2><span data-lang="en">Architecture</span><span data-lang="zh">架构</span></h2>
+<div class="mermaid-container"><pre class="mermaid">
+flowchart LR
+  UI[Web UI / SDK] --> GW[API Gateway]
+  GW --> AUTH[Auth + Rate Limit]
+  GW --> TH[Thread Service]
+  GW --> MS[Model Service]
+  TH --> DB[(Threads DB)]
+  MS --> LLM[LLM Inference]
+  MS --> METER[Usage Metering]
+  MS --> STREAM[SSE / WebSocket]
+</pre></div><h2><span data-lang="en">Thread / Message data model</span><span data-lang="zh">线程/消息数据模型</span></h2>
+<pre><code>Thread(thread_id, user_id, title, model, system_prompt, created_at, updated_at)
+Message(message_id, thread_id, role, content, parent_id, token_count, model_version)
+Run(run_id, thread_id, message_id, model, params, status, latency_ms, cost_usd)</code></pre><h2><span data-lang="en">API</span><span data-lang="zh">API</span></h2>
+<pre><code>POST /threads                         -&gt; { thread_id }
+POST /threads/{id}/messages  -&gt; SSE stream of tokens
+GET  /threads/{id}/messages?cursor=
+POST /threads/{id}/fork               (for A/B compare)</code></pre><h2><span data-lang="en">Key engineering topics</span><span data-lang="zh">关键工程点</span></h2>
+<ul><li><span data-lang="en"><strong>Streaming</strong>: SSE per request; reconnect via message_id + token cursor.</span><span data-lang="zh"><strong>流式</strong>：SSE per request；按 message_id + token cursor 重连。</span></li><li><span data-lang="en"><strong>Versioning</strong>: model version &amp; system prompt pinned per Run for reproducibility.</span><span data-lang="zh"><strong>版本化</strong>：模型版本与 system prompt 固化到 Run，保障可复现。</span></li><li><span data-lang="en"><strong>Metering</strong>: count tokens twice (local estimate + server truth) to show pre-send budget.</span><span data-lang="zh"><strong>计量</strong>：本地估算 + 服务端真实，用于发送前预算显示。</span></li><li><span data-lang="en"><strong>Multi-model selector</strong>: unified API, model-specific context-window enforcement.</span><span data-lang="zh"><strong>多模型选择器</strong>：统一 API，按模型各自上下文长度校验。</span></li></ul>
+
+        <h2><span data-lang="en">Related study-guide topics</span><span data-lang="zh">相关学习手册专题</span></h2>
+        <ul><li><a href="../../guide/llm/llm-serving.html"><span data-lang="en">LLM serving</span><span data-lang="zh">LLM 推理服务</span></a></li><li><a href="../../guide/llm/agentic-patterns.html"><span data-lang="en">Agent patterns</span><span data-lang="zh">Agent 模式</span></a></li></ul>
+      </article>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

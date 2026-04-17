@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>A22. P2P File Distribution (BitTorrent-style) — SD-Guide</title>
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../index.html" class="active"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../resources/index.html"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../about/index.html"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a>
+        <span class="sep">›</span>
+        <a href="../index.html"><span data-lang="en">Arena</span><span data-lang="zh">竞技场</span></a>
+        <span class="sep">›</span>
+        <span>A22</span>
+      </div>
+
+      <article class="prose wide">
+        <div class="question-meta" style="margin-bottom:1rem;">
+          <span class="tag company-anthropic">Anthropic</span>
+          <span class="tag freq-2">★★ Frequent</span>
+          <span class="tag difficulty-hard">Hard</span>
+          <span class="tag">P2P</span><span class="tag">Bandwidth</span>
+        </div>
+
+        <h1>
+          <span data-lang="en">A22 · P2P File Distribution (BitTorrent-style)</span>
+          <span data-lang="zh">A22 · P2P 大文件分发（类 BitTorrent）</span>
+        </h1>
+
+        <div class="callout anthropic">
+          <h4><span data-lang="en">Verified source</span><span data-lang="zh">经核实出处</span></h4>
+          <p>Prompt: "Design a Peer-to-Peer File Distribution System" (bandwidth-constrained, thousands of machines). — Exponent. Credibility <strong>B/C</strong>.</p>
+        </div>
+
+        <h2><span data-lang="en">Why P2P here</span><span data-lang="zh">为什么用 P2P</span></h2>
+<p><span data-lang="en">Distributing TB-scale model weights to thousands of hosts from a single origin saturates the origin's uplink. P2P shares upload bandwidth across peers.</span><span data-lang="zh">从单源向数千主机分发 TB 级模型权重会打满上行。P2P 把上传带宽分摊到 peers。</span></p><h2><span data-lang="en">Core mechanics (BitTorrent-style)</span><span data-lang="zh">核心机制（BitTorrent 风格）</span></h2>
+<ul><li><span data-lang="en">Chunk the file into fixed-size pieces, each with a SHA-256.</span><span data-lang="zh">将文件切成固定大小的片段，每片带 SHA-256。</span></li><li><span data-lang="en">Tracker discovery: simple centralized tracker returns peer list per-chunk.</span><span data-lang="zh">Tracker 发现：中心化 tracker 按 chunk 返回 peer 列表。</span></li><li><span data-lang="en">Chunk selection: <strong>rarest-first</strong> to avoid last-chunk starvation.</span><span data-lang="zh">Chunk 选择：<strong>最稀缺优先</strong>，避免最后一片饥饿。</span></li><li><span data-lang="en">Peer selection: <strong>tit-for-tat</strong> unchoking — prefer peers that upload back to you.</span><span data-lang="zh">Peer 选择：<strong>tit-for-tat</strong>——优先给会回上传给你的 peer。</span></li><li><span data-lang="en">Super-seeding mode for initial seeder: feeds each peer a different chunk first.</span><span data-lang="zh">初始 seeder 的 super-seeding：先给每个 peer 不同 chunk。</span></li></ul><h2><span data-lang="en">Production tweaks for model weights</span><span data-lang="zh">模型权重场景的生产调优</span></h2>
+<ul><li><span data-lang="en">Signed manifests to prevent poisoning.</span><span data-lang="zh">签名 manifest 防止投毒。</span></li><li><span data-lang="en">Rack-aware peer selection (prefer same-AZ peers).</span><span data-lang="zh">机架感知 peer 选择（优先同 AZ）。</span></li><li><span data-lang="en">Staged rollout: 1% → 10% → 100% by AZ + validation.</span><span data-lang="zh">分级 rollout：1% → 10% → 100% 按 AZ 推 + 验证。</span></li></ul>
+
+        <h2><span data-lang="en">Related study-guide topics</span><span data-lang="zh">相关学习手册专题</span></h2>
+        <ul><li><a href="../../guide/distributed/partitioning.html"><span data-lang="en">Partitioning</span><span data-lang="zh">分区</span></a></li></ul>
+      </article>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>News Feed, Chat, and Notifications — SD-Guide</title>
+  <meta name="description" content="Fan-out on write vs read, WebSocket chat with presence, and push/SMS/email fan-out — three question types that share one mental model.">
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../../../pages/arena/index.html" data-match="/arena"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../../pages/guide/index.html" class="active" data-match="/guide"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../../pages/resources/index.html" data-match="/resources"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../../pages/about/index.html" data-match="/about"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+
+      <div class="breadcrumb">
+        <a href="../../../pages/guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a>
+        <span>›</span>
+        <span class="crumb-category">Classical Designs<span data-lang="zh" style="display:none">经典设计</span></span>
+      </div>
+
+      <header class="page-header">
+        <h1 class="page-title">
+          <span data-lang="en">News Feed, Chat, and Notifications</span>
+          <span data-lang="zh">信息流、聊天与通知</span>
+        </h1>
+        <div class="topic-meta">
+          <span class="tag" style="background:var(--openai-glow);border-color:var(--openai)">📚 Alex Xu V1 Ch.10-12 · Acing SDI Ch.14+16</span><span class="tag">Fan-out</span><span class="tag">WebSocket</span><span class="tag">Presence</span><span class="tag">Pub/Sub</span>
+        </div>
+        <p class="page-subtitle">
+          <span data-lang="en">Fan-out on write vs read, WebSocket chat with presence, and push/SMS/email fan-out — three question types that share one mental model.</span>
+          <span data-lang="zh">写扩散 vs 读扩散、带 presence 的 WebSocket 聊天、push/SMS/邮件扩散——三类题目共享同一套心智模型。</span>
+        </p>
+      </header>
+
+      <article class="topic-prose">
+        <nav class="topic-toc">
+          <h4><span data-lang="en">On this page</span><span data-lang="zh">本页目录</span></h4>
+          <ol>
+            <li><a href="#s1"><span data-lang="en">Three questions, one mental model</span><span data-lang="zh">三类题、一套模型</span></a></li>
+            <li><a href="#s2"><span data-lang="en">News feed: fan-out on write vs read</span><span data-lang="zh">信息流：写扩散 vs 读扩散</span></a></li>
+            <li><a href="#s3"><span data-lang="en">The celebrity problem (hybrid fan-out)</span><span data-lang="zh">名人问题（混合扩散）</span></a></li>
+            <li><a href="#s4"><span data-lang="en">Chat: WebSocket, presence, delivery semantics</span><span data-lang="zh">聊天：WebSocket、Presence、投递语义</span></a></li>
+            <li><a href="#s5"><span data-lang="en">Notifications: push / SMS / email fan-out</span><span data-lang="zh">通知：push / SMS / 邮件扩散</span></a></li>
+            <li><a href="#s6"><span data-lang="en">Cross-cutting concerns and interview checklist</span><span data-lang="zh">横切关注点与面试清单</span></a></li>
+          </ol>
+        </nav>
+
+        <div data-lang="en">
+
+<h2 id="s1">Three questions, one mental model</h2>
+<p>Facebook news feed, Slack chat, and a Twilio-style notification service look different, but all three reduce to: <em>how does a producer event reach N consumers, and where does the fan-out live?</em> Master the fan-out spectrum and you can answer any of them on a whiteboard.</p>
+<ul>
+  <li><strong>News feed</strong> — 1 author post → 1,000 followers (Twitter median) or 100M followers (celebrity). Asynchronous, minutes-tolerant.</li>
+  <li><strong>Chat</strong> — 1 message → 2 people (DM) or 10k (Slack channel). Synchronous, seconds-tolerant, ordered, presence-sensitive.</li>
+  <li><strong>Notifications</strong> — 1 event → 1 user across N channels (APNs, FCM, SMS, email). Fire-and-forget, minutes-tolerant, strict idempotency.</li>
+</ul>
+<p>The shared mental model: <strong>producer → pub/sub log (Kafka) → fan-out workers → per-consumer materialized view</strong>. The variable is what the materialized view is (feed, inbox, mailbox) and how fresh it must be.</p>
+<div class="callout tip"><h4>Source cross-reference</h4><p>Alex Xu V1 Ch.10 (notifications), Ch.11 (news feed), Ch.12 (chat) are the textbook answers. Acing SDI Ch.14 (messaging) and Ch.16 (news feed) add functional-partitioning depth.</p></div>
+
+<h2 id="s2">News feed: fan-out on write vs read</h2>
+<p>The core trade-off:</p>
+<table>
+  <thead><tr><th>Strategy</th><th>Write cost</th><th>Read cost</th><th>Storage</th><th>Freshness</th></tr></thead>
+  <tbody>
+    <tr><td>Fan-out on write (push)</td><td>O(followers) writes to follower timelines</td><td>O(1) read from your timeline</td><td>Duplicate post in each follower's list</td><td>Slow for celebrities, fast reads</td></tr>
+    <tr><td>Fan-out on read (pull)</td><td>O(1) write to author's posts</td><td>O(followees) reads + merge</td><td>Single copy</td><td>Always fresh, expensive reads</td></tr>
+    <tr><td>Hybrid</td><td>Push for normal users, pull for celebrities</td><td>O(1) + a few pulls</td><td>Mostly duplicated</td><td>Best of both</td></tr>
+  </tbody>
+</table>
+<p><strong>Numbers:</strong> Twitter's median user has ~200 followers; the 99th percentile has 10k+; Taylor Swift has 90M. A pure push model for her generates 90M Redis writes per tweet — fine at Twitter's write volume (~300k tweets/s at peak) only because they batch and offload to a dedicated "fanout" tier. A pure pull model would require reading from thousands of friends for a typical user — the merge is too slow.</p>
+<div class="mermaid-container"><pre class="mermaid">
+flowchart TB
+  A[User posts] --&gt; K[Kafka: post_events]
+  K --&gt; FW[Fanout Workers]
+  FW --&gt;|if author.followers&lt;10k| T[(Redis: per-user timeline ZSET)]
+  FW --&gt;|if celebrity| C[(Celebrity posts store)]
+  U[Viewer opens feed] --&gt; API[Feed API]
+  API --&gt; T
+  API --&gt; C
+  API --&gt;|merge+rank| U
+</pre></div>
+
+<h2 id="s3">The celebrity problem (hybrid fan-out)</h2>
+<p>The classic interview trap: if you pick push, the hiring manager asks "what about Taylor Swift?" If you pick pull, they ask "what about 500M DAU reading their feed?"</p>
+<p>The answer is <strong>hybrid</strong>:</p>
+<ol>
+  <li>Define a threshold (e.g., &gt;10k followers = celebrity).</li>
+  <li>Normal users: fan-out on write into follower timeline ZSETs (<code>ZADD timeline:{follower_id} ts post_id</code>).</li>
+  <li>Celebrities: skip fan-out; writers emit to a per-celebrity post list.</li>
+  <li>On read, merge the follower's timeline ZSET with the recent posts of each celebrity they follow (usually 0–50 celebs).</li>
+</ol>
+<p>Ranking (for Facebook-style feeds) is a separate ML step on top: retrieve 2000 candidates, rerank with a model, paginate. Chip Huyen Ch.6 discusses the offline/online evaluation of ranking. Khang Pham covers the two-tower retrieval architecture.</p>
+<div class="callout warn"><h4>Anti-pattern</h4><p>Materializing timelines with SQL <code>SELECT * FROM posts WHERE author IN (followees) ORDER BY ts DESC LIMIT 50</code>. This reads millions of rows for any user who follows 500 people. Always use a precomputed timeline or a time-partitioned read.</p></div>
+
+<h2 id="s4">Chat: WebSocket, presence, delivery semantics</h2>
+<h3>Transport</h3>
+<ul>
+  <li><strong>Long polling</strong> — fallback; high overhead, extra latency.</li>
+  <li><strong>Server-Sent Events (SSE)</strong> — one-way push; good for notifications, not chat.</li>
+  <li><strong>WebSocket</strong> — bidirectional, single TCP connection, <code>wss://</code>. Every modern chat uses it (Slack, Discord, Telegram web).</li>
+</ul>
+<p>A single WebSocket server holds ~50k–100k concurrent connections (tuning <code>ulimit</code>, kernel socket buffers, and epoll). Slack holds tens of millions of concurrent sockets across a fleet.</p>
+<h3>Architecture</h3>
+<div class="mermaid-container"><pre class="mermaid">
+flowchart LR
+  U1[User A socket] --&gt; GW[WS Gateway<br/>sticky by user_id]
+  U2[User B socket] --&gt; GW
+  GW --&gt; S[Session Store<br/>user_id to gateway_host]
+  GW --&gt; PS[Pub/Sub: Kafka or Redis]
+  PS --&gt; GW
+  GW --&gt; MS[Message Service]
+  MS --&gt; DB[(Messages DB<br/>partition by channel_id)]
+  MS --&gt; PR[Presence Service<br/>Redis TTL heartbeat]
+</pre></div>
+<h3>Presence</h3>
+<p>Presence (online/offline/away) is deceptively hard. Naive "update a row" = write amplification on every heartbeat. Standard answer: Redis key <code>presence:{user_id}</code> with TTL 30s, refreshed by heartbeat. To notify friends, fan-out presence changes into channel Pub/Sub. Slack channels use <em>lazy presence</em>: only compute online members when someone opens the member list.</p>
+<h3>Delivery semantics</h3>
+<ul>
+  <li><strong>At-least-once</strong> is the default. Client dedupes by <code>(channel_id, msg_seq)</code>.</li>
+  <li><strong>Ordered within a channel</strong>: partition Kafka by <code>channel_id</code>; messages in one partition are ordered. Across channels, no order guarantee.</li>
+  <li><strong>Read receipts</strong>: last-read pointer per (user, channel); O(1) updates, O(1) unread count via <code>latest_seq - last_read_seq</code>.</li>
+</ul>
+
+<h2 id="s5">Notifications: push / SMS / email fan-out</h2>
+<p>A notification system accepts an <em>event</em> (e.g., "order shipped") and fans it out across channels subject to user preferences, throttling, and deliverability rules.</p>
+<div class="mermaid-container"><pre class="mermaid">
+flowchart LR
+  EV[Event Sources] --&gt; IQ[Ingest Queue]
+  IQ --&gt; NS[Notification Service]
+  NS --&gt;|pref lookup| PR[(Prefs DB)]
+  NS --&gt;|render template| TP[Template Service]
+  NS --&gt; Q1[APNs queue]
+  NS --&gt; Q2[FCM queue]
+  NS --&gt; Q3[Twilio SMS]
+  NS --&gt; Q4[SES email]
+  Q1 --&gt; A[APNs]
+  Q2 --&gt; G[FCM]
+  Q3 --&gt; T[Carrier]
+  Q4 --&gt; E[SMTP]
+  A --&gt; DLQ1[DLQ on invalid token]
+</pre></div>
+<ul>
+  <li><strong>Idempotency key</strong> = <code>(event_id, user_id, channel)</code>. Without it, a worker retry double-texts the user at 2am.</li>
+  <li><strong>Rate limits per user</strong> — no more than K notifications per hour to avoid spam fatigue. Token bucket per user.</li>
+  <li><strong>DLQ and invalid-token cleanup</strong> — APNs returns "BadDeviceToken"; you must delete that token or you'll leak capacity forever.</li>
+  <li><strong>Deliverability</strong> — email domain reputation (DKIM/SPF/DMARC), SMS opt-out (STOP keyword compliance), APNs silent pushes.</li>
+</ul>
+<div class="callout openai"><h4>OpenAI/Anthropic angle</h4><p>LLM platforms have internal notification systems for safety escalations: content classifier flags → on-call paging + email digest + Slack. Anthropic publishes Claude safety cards and uses similar fan-out for policy reviewers — the same architecture as any consumer notification system, but with stricter audit logging.</p></div>
+
+<h2 id="s6">Cross-cutting concerns and interview checklist</h2>
+<h3>Shared concerns</h3>
+<ul>
+  <li><strong>Ordering</strong> — partition by the entity that defines order (channel_id for chat, user_id for feed, event_id for notifications).</li>
+  <li><strong>Idempotency</strong> — producer retry + consumer dedup via (source, seq).</li>
+  <li><strong>Backpressure</strong> — bounded queues + shed or buffer on spike.</li>
+  <li><strong>Observability</strong> — end-to-end latency histograms from event to delivered, per channel.</li>
+</ul>
+<div class="callout warn"><h4>Anti-patterns</h4>
+<ul>
+  <li>Using a relational DB for the active timeline ZSET. Redis sorted sets give you O(log N) inserts and O(1) top-K reads — Postgres will cry.</li>
+  <li>Broadcasting presence on every keystroke. Debounce to 1 update / 30s.</li>
+  <li>One Kafka partition for all chat messages. You lose parallelism; channels block each other.</li>
+  <li>Retrying failed SMS forever. Set a retry cap (e.g., 3) and move to DLQ — carriers rate-limit aggressively.</li>
+</ul></div>
+<p><strong>Whiteboard checklist:</strong> clarify event type and consumer count; pick fan-out strategy (write/read/hybrid); choose transport (WS for chat, queue for notifications, ZSET for feeds); define idempotency key; specify ordering and delivery semantics; add presence/rate limits; close with observability.</p>
+
+        </div>
+        <div data-lang="zh">
+
+<h2 id="s1">三类题、一套模型</h2>
+<p>Facebook 信息流、Slack 聊天、Twilio 通知看起来不同，但都可以归结为：<em>一个生产者事件怎样到达 N 个消费者，扩散发生在哪里？</em>掌握扩散光谱后，你能在白板上解决任何一个。</p>
+<ul>
+  <li><strong>信息流</strong>——1 条帖子 → 1000 粉丝（Twitter 中位）或 1 亿粉丝（名人）。异步、容忍分钟延迟。</li>
+  <li><strong>聊天</strong>——1 条消息 → 2 人（DM）或 1 万（Slack 频道）。同步、秒级、有序、感知 presence。</li>
+  <li><strong>通知</strong>——1 个事件 → 1 个用户跨 N 个渠道（APNs、FCM、SMS、email）。发射即忘、严格幂等。</li>
+</ul>
+<p>共享模型：<strong>生产者 → Pub/Sub 日志（Kafka）→ fan-out workers → 每消费者物化视图</strong>。变量是视图是什么（feed、inbox、mailbox）和新鲜度要求。</p>
+<div class="callout tip"><h4>参考来源</h4><p>Alex Xu V1 第 10-12 章是教科书答案；Acing SDI 第 14、16 章补充功能分区的深度。</p></div>
+
+<h2 id="s2">信息流：写扩散 vs 读扩散</h2>
+<p>核心权衡：</p>
+<table>
+  <thead><tr><th>策略</th><th>写开销</th><th>读开销</th><th>存储</th><th>新鲜度</th></tr></thead>
+  <tbody>
+    <tr><td>写扩散 (push)</td><td>O(followers) 写入每个粉丝时间线</td><td>O(1) 读自己时间线</td><td>帖子在每粉丝列表重复</td><td>名人慢，读快</td></tr>
+    <tr><td>读扩散 (pull)</td><td>O(1) 写作者帖子</td><td>O(followees) 读 + 合并</td><td>单份</td><td>永远新鲜，读贵</td></tr>
+    <tr><td>混合</td><td>普通 push，名人 pull</td><td>O(1) + 少量 pull</td><td>大部分重复</td><td>两全</td></tr>
+  </tbody>
+</table>
+<p><strong>数据：</strong>Twitter 用户中位 200 粉丝，99 分位 1 万+，Taylor Swift 9000 万。纯 push 她每条推要 9000 万次 Redis 写——在 Twitter 峰值 30 万推/秒下可行，仅因为他们批处理并卸载到专用 fanout 层。纯 pull 对普通用户要读上千好友——合并太慢。</p>
+<div class="mermaid-container"><pre class="mermaid">
+flowchart TB
+  A[用户发帖] --&gt; K[Kafka: post_events]
+  K --&gt; FW[Fanout Workers]
+  FW --&gt;|若作者粉丝&lt;1万| T[(Redis: 每用户时间线 ZSET)]
+  FW --&gt;|若名人| C[(名人帖子存储)]
+  U[读者打开信息流] --&gt; API[Feed API]
+  API --&gt; T
+  API --&gt; C
+  API --&gt;|合并+排序| U
+</pre></div>
+
+<h2 id="s3">名人问题（混合扩散）</h2>
+<p>经典面试陷阱：选 push，面试官问"Taylor Swift 怎么办？"选 pull，问"5 亿 DAU 读 feed 怎么办？"</p>
+<p>答案是 <strong>混合</strong>：</p>
+<ol>
+  <li>定义阈值（例如粉丝 &gt;1 万 = 名人）。</li>
+  <li>普通用户：写扩散到粉丝时间线 ZSET (<code>ZADD timeline:{follower_id} ts post_id</code>)。</li>
+  <li>名人：跳过扩散，写入每名人帖子列表。</li>
+  <li>读时，合并粉丝时间线与其关注的每位名人的近期帖子（通常 0–50 位）。</li>
+</ol>
+<p>排序（Facebook 风格）是之上的 ML 步骤：召回 2000 候选，模型重排，分页。Chip Huyen 第 6 章讲离线/在线评估；Khang Pham 讲双塔召回架构。</p>
+<div class="callout warn"><h4>反模式</h4><p>用 SQL <code>SELECT * FROM posts WHERE author IN (followees) ORDER BY ts DESC LIMIT 50</code> 实现时间线。任何关注 500 人的用户都要读百万行。永远用预计算时间线或时间分区读。</p></div>
+
+<h2 id="s4">聊天：WebSocket、Presence、投递语义</h2>
+<h3>传输</h3>
+<ul>
+  <li><strong>Long polling</strong>——降级方案，开销高、额外延迟。</li>
+  <li><strong>SSE</strong>——单向 push，适合通知不适合聊天。</li>
+  <li><strong>WebSocket</strong>——双向、单 TCP、<code>wss://</code>。现代聊天都用它（Slack、Discord、Telegram web）。</li>
+</ul>
+<p>单 WebSocket 服务器承载 5-10 万并发连接（调 ulimit、socket 缓冲、epoll）。Slack 全舰队数千万并发 socket。</p>
+<h3>架构</h3>
+<div class="mermaid-container"><pre class="mermaid">
+flowchart LR
+  U1[用户 A socket] --&gt; GW[WS Gateway<br/>按 user_id 粘性]
+  U2[用户 B socket] --&gt; GW
+  GW --&gt; S[Session Store<br/>user_id 到 gateway_host]
+  GW --&gt; PS[Pub/Sub: Kafka 或 Redis]
+  PS --&gt; GW
+  GW --&gt; MS[Message Service]
+  MS --&gt; DB[(Messages DB<br/>按 channel_id 分区)]
+  MS --&gt; PR[Presence Service<br/>Redis TTL 心跳]
+</pre></div>
+<h3>Presence</h3>
+<p>Presence 看似简单其实难。朴素"更新一行" = 每心跳写放大。标准答案：Redis <code>presence:{user_id}</code> TTL 30s 由心跳刷新。通知好友时 fan-out 到 channel Pub/Sub。Slack 频道用 <em>懒 presence</em>：只有打开成员列表时才计算在线成员。</p>
+<h3>投递语义</h3>
+<ul>
+  <li><strong>至少一次</strong>是默认。客户端按 <code>(channel_id, msg_seq)</code> 去重。</li>
+  <li><strong>频道内有序</strong>：Kafka 按 <code>channel_id</code> 分区。跨频道无序。</li>
+  <li><strong>已读</strong>：每 (user, channel) 一个 last-read 指针；O(1) 更新，<code>latest_seq - last_read_seq</code> 计算未读。</li>
+</ul>
+
+<h2 id="s5">通知：push / SMS / 邮件扩散</h2>
+<p>通知系统接收<em>事件</em>（例如"订单已发货"）并按用户偏好、节流、送达规则扇出到多渠道。</p>
+<div class="mermaid-container"><pre class="mermaid">
+flowchart LR
+  EV[事件源] --&gt; IQ[摄入队列]
+  IQ --&gt; NS[通知服务]
+  NS --&gt;|偏好查询| PR[(Prefs DB)]
+  NS --&gt;|渲染模板| TP[模板服务]
+  NS --&gt; Q1[APNs 队列]
+  NS --&gt; Q2[FCM 队列]
+  NS --&gt; Q3[Twilio SMS]
+  NS --&gt; Q4[SES 邮件]
+  Q1 --&gt; A[APNs]
+  Q2 --&gt; G[FCM]
+  Q4 --&gt; E[SMTP]
+  A --&gt; DLQ1[无效 token DLQ]
+</pre></div>
+<ul>
+  <li><strong>幂等 key</strong> = <code>(event_id, user_id, channel)</code>。没有它，worker 重试会凌晨 2 点给用户双发短信。</li>
+  <li><strong>每用户速率限制</strong>——每小时不超过 K 条。per-user 令牌桶。</li>
+  <li><strong>DLQ 与无效 token 清理</strong>——APNs 返回 "BadDeviceToken" 必须删除该 token，否则永久漏容量。</li>
+  <li><strong>送达率</strong>——邮件域名声誉（DKIM/SPF/DMARC）、SMS 退订（STOP 合规）、APNs 静默推送。</li>
+</ul>
+<div class="callout openai"><h4>OpenAI/Anthropic 视角</h4><p>LLM 平台有内部通知系统做安全升级：内容分类器告警 → 值班呼叫 + 邮件摘要 + Slack。Anthropic 发布 Claude 安全卡，策略审核者用同样扇出架构——架构相同但审计日志更严格。</p></div>
+
+<h2 id="s6">横切关注点与面试清单</h2>
+<h3>共享关注</h3>
+<ul>
+  <li><strong>有序</strong>——按定义顺序的实体分区（聊天 channel_id、信息流 user_id、通知 event_id）。</li>
+  <li><strong>幂等</strong>——生产者重试 + 消费者按 (source, seq) 去重。</li>
+  <li><strong>背压</strong>——有界队列 + 峰值削峰或缓冲。</li>
+  <li><strong>可观测性</strong>——从事件到送达的端到端延迟直方图，按渠道。</li>
+</ul>
+<div class="callout warn"><h4>反模式</h4>
+<ul>
+  <li>用关系数据库存活跃时间线 ZSET。Redis 有序集合是 O(log N) 插入和 O(1) top-K，Postgres 会哭。</li>
+  <li>每次键击广播 presence。去抖到 1 次/30s。</li>
+  <li>所有聊天消息用一个 Kafka 分区。失去并行、频道互相阻塞。</li>
+  <li>SMS 失败永久重试。设重试上限（例如 3）进 DLQ——运营商限流很严。</li>
+</ul></div>
+<p><strong>白板清单：</strong>明确事件类型和消费者规模；扇出策略（写/读/混合）；传输（聊天用 WS、通知用队列、feed 用 ZSET）；幂等 key；有序与投递语义；presence/速率限制；可观测性收尾。</p>
+
+        </div>
+      </article>
+
+      <section class="topic-footer-links">
+        <a href="../../arena/questions/o4-design-slack.html"><span class="label"><span data-lang="en">Arena question</span><span data-lang="zh">真题</span></span><strong><span data-lang="en">O4 · Design Slack</span><span data-lang="zh">O4 · 设计 Slack</span></strong></a>
+        <a href="rate-limiter.html"><span class="label"><span data-lang="en">Previous</span><span data-lang="zh">上一主题</span></span><strong><span data-lang="en">Rate Limiter</span><span data-lang="zh">限流器</span></strong></a>
+        <a href="webhook-platforms.html"><span class="label"><span data-lang="en">Next topic</span><span data-lang="zh">下一主题</span></span><strong><span data-lang="en">Webhook Platforms</span><span data-lang="zh">Webhook 平台</span></strong></a>
+        <a href="../../arena/questions/a24-key-value-store.html"><span class="label"><span data-lang="en">Related arena</span><span data-lang="zh">相关真题</span></span><strong><span data-lang="en">A24 · Key-Value Store</span><span data-lang="zh">A24 · KV 存储</span></strong></a>
+      </section>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <p>
+        <span data-lang="en">© SD-Guide · Built for OpenAI &amp; Anthropic system design prep. Not affiliated with either company.</span>
+        <span data-lang="zh">© SD-Guide · 为 OpenAI 与 Anthropic 系统设计面试准备。与两家公司无关联。</span>
+      </p>
+    </div>
+  </footer>
+
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

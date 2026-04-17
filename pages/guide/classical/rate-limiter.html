@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rate Limiter — SD-Guide</title>
+  <meta name="description" content="Token bucket, leaky bucket, sliding window, and token-aware limits for LLM APIs — built on Redis+Lua for atomicity at millions of RPS.">
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../../../pages/arena/index.html" data-match="/arena"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../../pages/guide/index.html" class="active" data-match="/guide"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../../pages/resources/index.html" data-match="/resources"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../../pages/about/index.html" data-match="/about"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+
+      <div class="breadcrumb">
+        <a href="../../../pages/guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a>
+        <span>›</span>
+        <span class="crumb-category">Classical Designs<span data-lang="zh" style="display:none">经典设计</span></span>
+      </div>
+
+      <header class="page-header">
+        <h1 class="page-title">
+          <span data-lang="en">Rate Limiter</span>
+          <span data-lang="zh">限流器</span>
+        </h1>
+        <div class="topic-meta">
+          <span class="tag" style="background:var(--openai-glow);border-color:var(--openai)">📚 Alex Xu V1 Ch.4 · Acing SDI Ch.8 · ByteByteGo</span><span class="tag">Token bucket</span><span class="tag">Sliding window</span><span class="tag">Redis+Lua</span><span class="tag">LLM RPM/TPM</span>
+        </div>
+        <p class="page-subtitle">
+          <span data-lang="en">Token bucket, leaky bucket, sliding window, and token-aware limits for LLM APIs — built on Redis+Lua for atomicity at millions of RPS.</span>
+          <span data-lang="zh">令牌桶、漏桶、滑动窗口，以及面向 LLM API 的按 token 限流——基于 Redis+Lua 在百万 QPS 下实现原子性。</span>
+        </p>
+      </header>
+
+      <article class="topic-prose">
+        <nav class="topic-toc">
+          <h4><span data-lang="en">On this page</span><span data-lang="zh">本页目录</span></h4>
+          <ol>
+            <li><a href="#s1"><span data-lang="en">Requirements and back-of-envelope</span><span data-lang="zh">需求与容量估算</span></a></li>
+            <li><a href="#s2"><span data-lang="en">Four canonical algorithms</span><span data-lang="zh">四种经典算法</span></a></li>
+            <li><a href="#s3"><span data-lang="en">Distributed implementation (Redis + Lua)</span><span data-lang="zh">分布式实现 (Redis + Lua)</span></a></li>
+            <li><a href="#s4"><span data-lang="en">Token-aware limits for LLM APIs</span><span data-lang="zh">LLM API 的按 token 限流</span></a></li>
+            <li><a href="#s5"><span data-lang="en">Placement, failure modes, observability</span><span data-lang="zh">部署位置、故障模式、可观测性</span></a></li>
+            <li><a href="#s6"><span data-lang="en">Interview anti-patterns and checklist</span><span data-lang="zh">面试反模式与清单</span></a></li>
+          </ol>
+        </nav>
+
+        <div data-lang="en">
+
+<h2 id="s1">Requirements and back-of-envelope</h2>
+<p>A rate limiter throttles traffic per <em>identity</em> (user, API key, IP, tenant, model) to protect downstream services and enforce quota. Start the interview by forcing three clarifying questions:</p>
+<ul>
+  <li><strong>What is the identity key?</strong> Per-user, per-API-key, per-IP, per-org, or composite (e.g., <code>(org_id, model)</code> for Anthropic's <code>claude-3-5-sonnet</code> RPM).</li>
+  <li><strong>What is the unit?</strong> Requests, bytes, <em>tokens</em>, or dollars. LLM APIs charge both RPM (requests/minute) <em>and</em> TPM (tokens/minute) — they are independent limits.</li>
+  <li><strong>Hard or soft?</strong> Reject with HTTP 429 + <code>Retry-After</code>, shed to a cheaper tier, or queue with backpressure.</li>
+</ul>
+<p>Scale sanity check: at 1M RPS, a naive per-request database write is impossible. A single Redis node handles ~100k ops/s; you must shard by key. Memory: one counter per (key, window) = ~100 bytes; 10M keys × 100B ≈ 1 GB — comfortable on one replica. Latency budget: &lt;1ms p99 added to every request, which rules out synchronous DB writes.</p>
+<div class="callout tip"><h4>Source cross-reference</h4><p>Alex Xu V1 Ch.4 walks the four algorithms and the Redis implementation sketch. Acing SDI Ch.8 adds the control-plane (quota service) and discusses functional partitioning. ByteByteGo's "Top 5 Rate-Limiting Algorithms" article is the quick visual.</p></div>
+
+<h2 id="s2">Four canonical algorithms</h2>
+<p>Memorize these four — any interview follow-up is a variant.</p>
+<table>
+  <thead><tr><th>Algorithm</th><th>Idea</th><th>Burst</th><th>Memory/key</th><th>Typical use</th></tr></thead>
+  <tbody>
+    <tr><td>Token bucket</td><td>Bucket refills at rate <code>r</code>, capacity <code>b</code>; each request consumes 1 (or N) tokens.</td><td>Allows bursts up to <code>b</code>.</td><td>16 B (tokens, last_refill_ts)</td><td>Public APIs (Stripe, AWS, Anthropic).</td></tr>
+    <tr><td>Leaky bucket</td><td>Fixed-rate queue drains at <code>r</code>; overflows drop.</td><td>Strictly smooths.</td><td>~24 B + queue</td><td>Outbound (SMS, email gateways).</td></tr>
+    <tr><td>Fixed window counter</td><td>Counter per wall-clock minute.</td><td>2× burst at boundary.</td><td>8 B</td><td>Cheap, coarse.</td></tr>
+    <tr><td>Sliding window log</td><td>Sorted set of exact timestamps, trim old.</td><td>Exact.</td><td>N × 16 B (N = limit)</td><td>Small limits where accuracy matters.</td></tr>
+    <tr><td>Sliding window counter</td><td>Weighted blend of current + prior fixed window.</td><td>~5% error.</td><td>16 B</td><td>The pragmatic default.</td></tr>
+  </tbody>
+</table>
+<p><strong>Token bucket in one formula:</strong> on each request <code>tokens = min(b, tokens + (now - last_refill) * r); if tokens &gt;= cost: tokens -= cost; allow else deny</code>. This is the algorithm Anthropic and OpenAI use for published RPM/TPM.</p>
+<p><strong>Sliding window counter</strong> is the sweet spot for 100k-RPS gateways: <code>count = curr_window * elapsed_fraction + prev_window * (1 - elapsed_fraction)</code>. Two 8-byte counters, no sorted-set cost.</p>
+
+<h2 id="s3">Distributed implementation (Redis + Lua)</h2>
+<p>Any in-memory counter in a single app server is wrong the moment you autoscale. The standard pattern: Redis with an atomic Lua script.</p>
+<pre><code>-- KEYS[1]=bucket_key  ARGV={capacity, refill_rate, now_ms, cost}
+local b = redis.call('HMGET', KEYS[1], 't', 'ts')
+local tokens = tonumber(b[1]) or tonumber(ARGV[1])
+local ts     = tonumber(b[2]) or tonumber(ARGV[3])
+local delta  = (tonumber(ARGV[3]) - ts) * tonumber(ARGV[2]) / 1000
+tokens = math.min(tonumber(ARGV[1]), tokens + delta)
+if tokens &lt; tonumber(ARGV[4]) then return {0, tokens} end
+tokens = tokens - tonumber(ARGV[4])
+redis.call('HMSET', KEYS[1], 't', tokens, 'ts', ARGV[3])
+redis.call('PEXPIRE', KEYS[1], 60000)
+return {1, tokens}</code></pre>
+<p>Lua runs atomically inside the Redis single thread — no race between HMGET and HMSET. Cost: one RTT (~0.3 ms intra-AZ). Shard by hashing <code>(api_key, model)</code>; Redis Cluster handles resharding.</p>
+<div class="mermaid-container"><pre class="mermaid">
+flowchart LR
+  C[Client] --&gt; GW[API Gateway / Envoy]
+  GW --&gt; RL{Rate Limiter<br/>sidecar}
+  RL --&gt;|EVALSHA token_bucket.lua| R[(Redis Cluster<br/>sharded by key)]
+  RL --&gt;|allow| APP[App / LLM inference]
+  RL --&gt;|deny 429 + Retry-After| C
+  APP --&gt; M[Metrics: tokens_used]
+  M --&gt;|async decrement| R
+</pre></div>
+<p><strong>Consistency trade-off:</strong> global exactness requires a central Redis — a failure domain. Cell-based rate limiters approximate by giving each cell a share (e.g., 1/8 of the quota) and reconciling asynchronously. AWS API Gateway uses this.</p>
+
+<h2 id="s4">Token-aware limits for LLM APIs</h2>
+<p>LLM inference is priced and capacity-planned by <em>tokens</em>, not requests. Both Anthropic and OpenAI publish two independent limits per model:</p>
+<ul>
+  <li><strong>RPM</strong> — requests per minute (cheap to check at gateway).</li>
+  <li><strong>TPM</strong> — tokens per minute = input + output. You cannot check this precisely <em>before</em> generation because output length is unknown.</li>
+</ul>
+<p>The industry pattern is <strong>pessimistic debit, refund on completion</strong>:</p>
+<ol>
+  <li>Count input tokens (tokenizer runs in &lt;1ms for 4k tokens).</li>
+  <li>Reserve <code>input_tokens + max_output_tokens</code> against the TPM bucket.</li>
+  <li>If reservation fails → 429 with <code>Retry-After</code> = seconds until bucket refills to the request cost.</li>
+  <li>After generation, refund <code>(reserved - actual_output_tokens)</code> back to the bucket.</li>
+</ol>
+<div class="callout anthropic"><h4>Anthropic-specific</h4><p>Anthropic exposes <code>anthropic-ratelimit-tokens-remaining</code>, <code>anthropic-ratelimit-requests-remaining</code>, and reset timestamps as response headers. Clients should parse these to do <em>predictive</em> client-side throttling rather than retry-until-429. Messages API also splits input/output TPM on some tiers.</p></div>
+<div class="callout openai"><h4>OpenAI-specific</h4><p>OpenAI returns <code>x-ratelimit-*</code> headers and also a <code>Retry-After</code>. The Tier system (Tier 1–5) raises limits based on cumulative spend; new tenants sit at 500 RPM / 30k TPM on GPT-4-class models. Azure OpenAI uses PTU (Provisioned Throughput Units) as a different capacity model — dedicated capacity vs shared pool.</p></div>
+
+<h2 id="s5">Placement, failure modes, observability</h2>
+<h3>Where does the limiter live?</h3>
+<ul>
+  <li><strong>Client SDK</strong> — cooperative, prevents wasted RTT; cannot be trusted (bypassed by bad actors).</li>
+  <li><strong>Edge / API gateway</strong> (Envoy, Kong, AWS API GW) — authoritative, coarse-grained. Ideal for DDoS shedding.</li>
+  <li><strong>Service mesh sidecar</strong> — per-service, uniform policy, centrally managed.</li>
+  <li><strong>Application code</strong> — fine-grained (e.g., per-operation inside a service).</li>
+</ul>
+<p>Production systems use all four — defense in depth.</p>
+<h3>Failure modes</h3>
+<ul>
+  <li><strong>Redis down.</strong> Options: fail-open (availability over quota) or fail-closed (block until Redis returns). Anthropic/OpenAI fail-open with a local cap so a Redis outage doesn't 429 everyone.</li>
+  <li><strong>Clock skew.</strong> Use monotonic or server-provided time; never trust client <code>now</code>.</li>
+  <li><strong>Hot key.</strong> One whale tenant overwhelms a single Redis shard. Mitigate with key splitting (<code>hash(key) % N</code> sub-buckets, summed) or local token pre-fetching.</li>
+  <li><strong>Retry storm.</strong> Clients that ignore <code>Retry-After</code> amplify load. Always return jittered hints.</li>
+</ul>
+<h3>Observability</h3>
+<p>Emit: <code>rl_allow_total{tenant,model}</code>, <code>rl_deny_total</code>, <code>rl_bucket_utilization</code>. Alert when <code>deny_total/allow_total &gt; 1%</code> for a top-N tenant — usually means their quota needs a bump or they have a bug.</p>
+
+<h2 id="s6">Interview anti-patterns and checklist</h2>
+<div class="callout warn"><h4>Anti-patterns to avoid</h4>
+<ul>
+  <li><strong>In-process counter behind a load balancer.</strong> Each replica gets <code>limit/N</code> and bursts are 2× at window boundaries.</li>
+  <li><strong>Unbounded sorted-set log per IP.</strong> At 10k RPS one IP stores 600k timestamps in a single key — OOM.</li>
+  <li><strong>Read-modify-write without Lua.</strong> Two concurrent requests both read 0 tokens and both allow themselves. Use EVALSHA or <code>WATCH/MULTI/EXEC</code>.</li>
+  <li><strong>Ignoring output tokens.</strong> For LLMs, charging only input tokens lets a 16k-output request slip under any input-only limit.</li>
+  <li><strong>Hard-coded limits.</strong> Put them in a config service or DB so you can raise Tier-5 customers without a deploy.</li>
+</ul></div>
+<p><strong>Whiteboard checklist</strong> (say these out loud):</p>
+<ol>
+  <li>Identity + unit + hard/soft.</li>
+  <li>Algorithm pick (sliding window counter is a safe default).</li>
+  <li>Redis + Lua for atomicity; shard by identity.</li>
+  <li>Return 429 with <code>Retry-After</code> and rate-limit headers.</li>
+  <li>Fail-open with local cap on Redis outage.</li>
+  <li>Token-aware (reserve + refund) for LLM APIs.</li>
+  <li>Multi-layer: client SDK + edge + sidecar + app.</li>
+  <li>Metrics: allow/deny/utilization per tenant.</li>
+</ol>
+
+        </div>
+        <div data-lang="zh">
+
+<h2 id="s1">需求与容量估算</h2>
+<p>限流器按<strong>身份</strong>（用户、API Key、IP、租户、模型）限制流量，保护下游服务并执行配额。面试开场先问三个澄清问题：</p>
+<ul>
+  <li><strong>身份 key 是什么？</strong> per-user、per-API-key、per-IP、per-org，或者组合（例如 Anthropic 的 <code>(org_id, model)</code>）。</li>
+  <li><strong>计量单位是什么？</strong> 请求数、字节、<em>tokens</em> 还是美元。LLM API 同时收 RPM（请求/分钟）和 TPM（tokens/分钟）两种独立限制。</li>
+  <li><strong>硬限还是软限？</strong> 返回 429 + <code>Retry-After</code>、降级到便宜的模型、或者带背压的排队。</li>
+</ul>
+<p>规模估算：1M RPS 下，朴素的每请求写库不现实。单 Redis 节点 ~10 万 ops/s，必须按 key 分片。内存：每 (key, window) ≈ 100 B；1000 万 key ≈ 1 GB，单副本 OK。延迟预算：给每个请求增加 &lt;1ms p99，这排除了同步落库。</p>
+<div class="callout tip"><h4>参考来源</h4><p>Alex Xu V1 第 4 章详细讲了四种算法和 Redis 草图；Acing SDI 第 8 章补充了配额服务的控制面；ByteByteGo 的"Top 5 Rate-Limiting Algorithms"文章是快速视觉记忆。</p></div>
+
+<h2 id="s2">四种经典算法</h2>
+<p>背熟这四个——任何面试变体都能套。</p>
+<table>
+  <thead><tr><th>算法</th><th>思路</th><th>突发</th><th>每 key 内存</th><th>典型使用</th></tr></thead>
+  <tbody>
+    <tr><td>Token bucket 令牌桶</td><td>以 <code>r</code> 速率补充，容量 <code>b</code>；每请求消耗 1 或 N 个</td><td>允许 <code>b</code> 突发</td><td>16 B</td><td>公网 API (Stripe、AWS、Anthropic)</td></tr>
+    <tr><td>Leaky bucket 漏桶</td><td>固定速率队列 <code>r</code>，溢出丢弃</td><td>严格平滑</td><td>~24 B + 队列</td><td>出站 (SMS、邮件网关)</td></tr>
+    <tr><td>Fixed window 固定窗口</td><td>每分钟一个计数器</td><td>边界处 2× 突发</td><td>8 B</td><td>便宜粗糙</td></tr>
+    <tr><td>Sliding window log</td><td>按时间戳排序集合，修剪旧值</td><td>精确</td><td>N × 16 B</td><td>小限额要求精确</td></tr>
+    <tr><td>Sliding window counter</td><td>当前+前一固定窗口的加权混合</td><td>~5% 误差</td><td>16 B</td><td>实战默认</td></tr>
+  </tbody>
+</table>
+<p><strong>令牌桶一行公式：</strong> <code>tokens = min(b, tokens + (now - last_refill) * r); 若 tokens &gt;= cost 则允许</code>。Anthropic 与 OpenAI 的 RPM/TPM 正是这个算法。</p>
+<p><strong>滑动窗口计数器</strong> 是 10 万 QPS 网关的甜点：两个 8 字节计数器，无 sorted set 开销。</p>
+
+<h2 id="s3">分布式实现 (Redis + Lua)</h2>
+<p>单机内存计数器在自动扩缩容后就错了。标准做法是 Redis + 原子 Lua。</p>
+<pre><code>-- KEYS[1]=bucket_key  ARGV={capacity, refill_rate, now_ms, cost}
+local b = redis.call('HMGET', KEYS[1], 't', 'ts')
+local tokens = tonumber(b[1]) or tonumber(ARGV[1])
+local ts     = tonumber(b[2]) or tonumber(ARGV[3])
+local delta  = (tonumber(ARGV[3]) - ts) * tonumber(ARGV[2]) / 1000
+tokens = math.min(tonumber(ARGV[1]), tokens + delta)
+if tokens &lt; tonumber(ARGV[4]) then return {0, tokens} end
+tokens = tokens - tonumber(ARGV[4])
+redis.call('HMSET', KEYS[1], 't', tokens, 'ts', ARGV[3])
+redis.call('PEXPIRE', KEYS[1], 60000)
+return {1, tokens}</code></pre>
+<p>Lua 在 Redis 单线程内原子执行，HMGET 与 HMSET 之间不会有竞态。代价：一个 RTT（同 AZ ~0.3ms）。用 <code>(api_key, model)</code> 哈希分片，Redis Cluster 负责再分片。</p>
+<div class="mermaid-container"><pre class="mermaid">
+flowchart LR
+  C[Client] --&gt; GW[API Gateway / Envoy]
+  GW --&gt; RL{限流器 Sidecar}
+  RL --&gt;|EVALSHA token_bucket.lua| R[(Redis Cluster<br/>按 key 分片)]
+  RL --&gt;|allow| APP[App / LLM 推理]
+  RL --&gt;|deny 429 + Retry-After| C
+  APP --&gt; M[指标: tokens_used]
+  M --&gt;|异步扣减| R
+</pre></div>
+<p><strong>一致性取舍：</strong>全局精确要求中心化 Redis，是个故障域。Cell-based 限流给每 cell 分配一份配额（例如 1/8），异步对账——AWS API Gateway 用这招。</p>
+
+<h2 id="s4">LLM API 的按 token 限流</h2>
+<p>LLM 推理按 <em>tokens</em> 计价与规划容量，不是按请求。Anthropic 和 OpenAI 每个模型都发布两个独立限制：</p>
+<ul>
+  <li><strong>RPM</strong>——请求/分钟（网关便宜可查）。</li>
+  <li><strong>TPM</strong>——tokens/分钟 = 输入 + 输出。你在生成前无法精确知道输出长度。</li>
+</ul>
+<p>行业做法是 <strong>悲观扣减、完成后退款</strong>：</p>
+<ol>
+  <li>统计输入 tokens（tokenizer 对 4k tokens 跑 &lt;1ms）。</li>
+  <li>按 <code>input + max_output</code> 在 TPM 桶上预扣。</li>
+  <li>预扣失败 → 429 + <code>Retry-After</code> = 桶回填到够用需要的秒数。</li>
+  <li>生成结束后退还 <code>(预扣 - 实际输出)</code>。</li>
+</ol>
+<div class="callout anthropic"><h4>Anthropic 细节</h4><p>Anthropic 在响应头返回 <code>anthropic-ratelimit-tokens-remaining</code>、<code>anthropic-ratelimit-requests-remaining</code> 与重置时间戳。客户端应解析并做<em>预测性</em>节流，而不是撞 429 再重试。Messages API 在部分 tier 上还会把输入/输出 TPM 分开。</p></div>
+<div class="callout openai"><h4>OpenAI 细节</h4><p>OpenAI 返回 <code>x-ratelimit-*</code> 和 <code>Retry-After</code>。Tier 1–5 按累计消费升级限额；新租户在 GPT-4 类模型上只有 500 RPM / 30k TPM。Azure OpenAI 用 PTU（Provisioned Throughput Units）模型——独占容量而非共享池。</p></div>
+
+<h2 id="s5">部署位置、故障模式、可观测性</h2>
+<h3>限流器放在哪？</h3>
+<ul>
+  <li><strong>客户端 SDK</strong>——合作式，避免浪费 RTT；不可信（可被绕过）。</li>
+  <li><strong>边缘 / API 网关</strong> (Envoy、Kong、AWS API GW)——权威、粗粒度，适合 DDoS 削峰。</li>
+  <li><strong>服务网格 sidecar</strong>——每服务、策略一致、集中管理。</li>
+  <li><strong>应用代码</strong>——细粒度（例如每操作）。</li>
+</ul>
+<p>生产系统四层都有——纵深防御。</p>
+<h3>故障模式</h3>
+<ul>
+  <li><strong>Redis 挂了。</strong>选项：fail-open（可用性优先）或 fail-closed（阻塞）。Anthropic/OpenAI 都 fail-open 加本地上限，避免 Redis 故障导致全员 429。</li>
+  <li><strong>时钟漂移。</strong>用单调时钟或服务端时间，绝不信客户端 <code>now</code>。</li>
+  <li><strong>热点 key。</strong>某大户打爆单分片，解法是 key 拆分（<code>hash(key) % N</code> 子桶求和）或本地预取 token。</li>
+  <li><strong>重试风暴。</strong>忽略 <code>Retry-After</code> 的客户端会放大负载，务必返回带 jitter 的提示。</li>
+</ul>
+<h3>可观测性</h3>
+<p>指标：<code>rl_allow_total{tenant,model}</code>、<code>rl_deny_total</code>、<code>rl_bucket_utilization</code>。Top-N 租户 deny/allow &gt; 1% 时告警——通常说明要提额度或客户端有 bug。</p>
+
+<h2 id="s6">面试反模式与清单</h2>
+<div class="callout warn"><h4>面试要避开的反模式</h4>
+<ul>
+  <li><strong>负载均衡后面的进程内计数器。</strong>每个副本只有 limit/N，窗口边界 2× 突发。</li>
+  <li><strong>per-IP 无界 sorted set。</strong>10k RPS 的 IP 单 key 60 万时间戳，OOM。</li>
+  <li><strong>没 Lua 的 RMW。</strong>两个并发都读到 0 tokens 都通过。必须 EVALSHA 或 WATCH/MULTI/EXEC。</li>
+  <li><strong>忽略输出 tokens。</strong>LLM 只按输入限流，16k 输出可以绕过。</li>
+  <li><strong>硬编码限额。</strong>放 config 服务或 DB，才能不发版给 Tier-5 客户提额。</li>
+</ul></div>
+<p><strong>白板清单</strong>（请大声说出来）：身份 + 单位 + 硬/软；算法（滑动窗口计数器默认）；Redis + Lua 原子；返回 429 + Retry-After；Redis 故障 fail-open + 本地上限；LLM 按 token 预扣退款；客户端 + 边缘 + sidecar + app 多层；每租户 allow/deny 指标。</p>
+
+        </div>
+      </article>
+
+      <section class="topic-footer-links">
+        <a href="../../arena/questions/o17-rate-limiter.html"><span class="label"><span data-lang="en">Arena question</span><span data-lang="zh">真题</span></span><strong><span data-lang="en">O17 · Rate Limiter</span><span data-lang="zh">O17 · 限流器</span></strong></a>
+        <a href="../../arena/questions/a23-100k-rps-llm.html"><span class="label"><span data-lang="en">Arena question</span><span data-lang="zh">真题</span></span><strong><span data-lang="en">A23 · 100K RPS LLM</span><span data-lang="zh">A23 · 10万 QPS LLM</span></strong></a>
+        <a href="news-feed.html"><span class="label"><span data-lang="en">Next topic</span><span data-lang="zh">下一主题</span></span><strong><span data-lang="en">News Feed / Chat / Notifications</span><span data-lang="zh">信息流 / 聊天 / 通知</span></strong></a>
+        <a href="../llm/llm-serving.html"><span class="label"><span data-lang="en">Related LLM</span><span data-lang="zh">相关 LLM</span></span><strong><span data-lang="en">LLM Serving</span><span data-lang="zh">LLM 推理</span></strong></a>
+      </section>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <p>
+        <span data-lang="en">© SD-Guide · Built for OpenAI &amp; Anthropic system design prep. Not affiliated with either company.</span>
+        <span data-lang="zh">© SD-Guide · 为 OpenAI 与 Anthropic 系统设计面试准备。与两家公司无关联。</span>
+      </p>
+    </div>
+  </footer>
+
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

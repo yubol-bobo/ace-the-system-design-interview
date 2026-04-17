@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>A25. Design an Agentic AI System — SD-Guide</title>
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../index.html" class="active"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../resources/index.html"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../about/index.html"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a>
+        <span class="sep">›</span>
+        <a href="../index.html"><span data-lang="en">Arena</span><span data-lang="zh">竞技场</span></a>
+        <span class="sep">›</span>
+        <span>A25</span>
+      </div>
+
+      <article class="prose wide">
+        <div class="question-meta" style="margin-bottom:1rem;">
+          <span class="tag company-anthropic">Anthropic</span>
+          <span class="tag freq-2">★★ Frequent</span>
+          <span class="tag difficulty-hard">Hard</span>
+          <span class="tag">Agent</span><span class="tag">MCP</span><span class="tag">Guardrails</span>
+        </div>
+
+        <h1>
+          <span data-lang="en">A25 · Design an Agentic AI System</span>
+          <span data-lang="zh">A25 · 设计自主 Agent 系统</span>
+        </h1>
+
+        <div class="callout anthropic">
+          <h4><span data-lang="en">Verified source</span><span data-lang="zh">经核实出处</span></h4>
+          <p>Prompt: "Design an Agentic AI System." — Exponent (MLE role). Credibility <strong>B/C</strong>.</p>
+        </div>
+
+        <h2><span data-lang="en">The four core components</span><span data-lang="zh">四大核心组件</span></h2>
+<ul><li><span data-lang="en"><strong>LLM reasoning engine</strong>: CoT / ToT / ReAct; produces plans and tool calls.</span><span data-lang="zh"><strong>LLM 推理引擎</strong>：CoT/ToT/ReAct；产出 plan 与工具调用。</span></li><li><span data-lang="en"><strong>Planning module</strong>: task decomposition, self-reflection, goal monitoring.</span><span data-lang="zh"><strong>规划模块</strong>：任务分解、自我反思、目标监控。</span></li><li><span data-lang="en"><strong>Memory</strong>: short-term (scratchpad) + long-term (vector store + episodic summaries).</span><span data-lang="zh"><strong>记忆</strong>：短期（scratchpad）+ 长期（向量库 + 情景摘要）。</span></li><li><span data-lang="en"><strong>Tool use</strong>: typed tool API (function calling) + MCP for standardized external integrations.</span><span data-lang="zh"><strong>工具使用</strong>：类型化工具 API（function calling）+ MCP 标准化外部集成。</span></li></ul><h2><span data-lang="en">Anthropic&apos;s MCP is a must-name</span><span data-lang="zh">必须提到 Anthropic 的 MCP</span></h2>
+<p><span data-lang="en">Model Context Protocol reduces the N×M tool-integration problem to N+M by standardizing the agent↔tool contract. Mention it and you signal current awareness.</span><span data-lang="zh">MCP 把 N×M 的工具集成问题降到 N+M——标准化了 Agent↔Tool 合约。提到它 = 现代认知的信号。</span></p><h2><span data-lang="en">Multi-agent patterns (Gulli Ch 7)</span><span data-lang="zh">多 Agent 架构（Gulli 第 7 章）</span></h2>
+<ul><li><span data-lang="en"><strong>Orchestrator</strong> pattern: one agent delegates to specialist agents.</span><span data-lang="zh"><strong>编排者</strong>模式：一个 agent 分派给专家 agent。</span></li><li><span data-lang="en"><strong>Blackboard</strong>: shared memory with multiple agents reading/writing.</span><span data-lang="zh"><strong>黑板架构</strong>：多 agent 读写共享记忆。</span></li><li><span data-lang="en"><strong>Conversational</strong>: agents as peers debating (actor-critic).</span><span data-lang="zh"><strong>对话式</strong>：agents 作为同辈辩论（演员-评论家）。</span></li><li><span data-lang="en"><strong>Role-based</strong>: domain-specialist agents (planner, coder, reviewer).</span><span data-lang="zh"><strong>角色式</strong>：领域专家 agent（规划器、编码器、评审）。</span></li></ul><h2><span data-lang="en">Safety &amp; loop-prevention</span><span data-lang="zh">安全与循环防护</span></h2>
+<ul><li><span data-lang="en">Max-step limit per plan; detect repeated same-action-same-state loops.</span><span data-lang="zh">每 plan 最大步数；检测相同 state+action 的循环。</span></li><li><span data-lang="en">Tool-call approval gate for destructive actions (delete, payment).</span><span data-lang="zh">破坏性操作（删除、支付）的工具调用审批门。</span></li><li><span data-lang="en">Sandboxed execution environment for code/shell tools.</span><span data-lang="zh">代码/shell 工具的沙箱执行环境。</span></li><li><span data-lang="en">Audit log of every tool call with inputs/outputs.</span><span data-lang="zh">记录每次工具调用的输入/输出到审计日志。</span></li></ul>
+
+        <h2><span data-lang="en">Related study-guide topics</span><span data-lang="zh">相关学习手册专题</span></h2>
+        <ul><li><a href="../../guide/llm/agentic-patterns.html"><span data-lang="en">Agentic patterns</span><span data-lang="zh">Agent 模式</span></a></li><li><a href="../../guide/safety/safety-engineering.html"><span data-lang="en">Safety</span><span data-lang="zh">安全</span></a></li></ul>
+      </article>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

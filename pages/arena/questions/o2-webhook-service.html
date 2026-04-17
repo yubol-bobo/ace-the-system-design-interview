@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>O2. Design a Webhook Service (REST API) — SD-Guide</title>
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../index.html" class="active"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../resources/index.html"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../about/index.html"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a>
+        <span class="sep">›</span>
+        <a href="../index.html"><span data-lang="en">Arena</span><span data-lang="zh">竞技场</span></a>
+        <span class="sep">›</span>
+        <span>O2</span>
+      </div>
+
+      <article class="prose wide">
+        <div class="question-meta" style="margin-bottom:1rem;">
+          <span class="tag company-openai">OpenAI</span>
+          <span class="tag freq-3">★★★ Frequent</span>
+          <span class="tag difficulty-hard">Hard</span>
+          <span class="tag">REST</span><span class="tag">Caching</span><span class="tag">Queue</span>
+        </div>
+
+        <h1>
+          <span data-lang="en">O2 · Design a Webhook Service (REST API)</span>
+          <span data-lang="zh">O2 · 设计 Webhook 服务（REST API）</span>
+        </h1>
+
+        <div class="callout openai">
+          <h4><span data-lang="en">Verified source</span><span data-lang="zh">经核实出处</span></h4>
+          <p>Original prompt: "System design Webhook service…caching, db design, focus on failure and retry mechanism in message queue. Implement the REST service with JSON body and query for GET and POST." — <a href="https://www.teamblind.com" target="_blank" rel="noopener">TeamBlind</a>, 2024-04-10, screening round. Credibility <strong>C</strong>.</p>
+        </div>
+
+        <h2><span data-lang="en">Requirements clarification</span><span data-lang="zh">需求澄清</span></h2>
+<p><span data-lang="en">Unlike O1 (internal platform), this framing wants a <strong>product API</strong>. Make GET/POST resource semantics explicit: resource paths, filtering, pagination. Confirm whether delivery is at-least-once (almost always yes) and the max retry window.</span><span data-lang="zh">与 O1 不同，这题把 webhook 当作<strong>产品 API</strong>。要讲清 GET/POST 的资源语义：路径、过滤、分页。确认投递是否 at-least-once（基本都是）与最大重试窗口。</span></p><h2><span data-lang="en">High-level architecture</span><span data-lang="zh">高层架构</span></h2>
+<p><span data-lang="en">Split read path (config lookups, dashboard) from write path (delivery). Cache the read-heavy config layer, but avoid caching delivery results unless a clear hot-read pattern exists.</span><span data-lang="zh">读路径（配置查询、仪表盘）与写路径（投递）分离。对读多的 config 层做缓存；除非有明显的热读，否则不要缓存投递结果。</span></p><div class="mermaid-container"><pre class="mermaid">
+flowchart LR
+  U[API Caller] --> G[REST API]
+  G --> C[Config Cache]
+  C -->|miss| D[(Config DB)]
+  G --> Q[Delivery Queue]
+  Q --> W[Workers]
+  W --> T[Target URL]
+  W --> L[(Delivery Log)]
+</pre></div><h2><span data-lang="en">MVP resource model</span><span data-lang="zh">MVP 资源模型</span></h2>
+<pre><code>WebhookSubscription(subscription_id, tenant_id, event_type, endpoint_id)
+WebhookDelivery(delivery_id, subscription_id, event_id, status, last_attempt)
+WebhookAttempt(attempt_id, delivery_id, status_code, latency_ms, timestamp)</code></pre><h2><span data-lang="en">API</span><span data-lang="zh">API 设计</span></h2>
+<pre><code>POST /subscriptions  { event_type, endpoint_id }
+POST /deliveries     { subscription_id, payload, idempotency_key } → { delivery_id }
+GET  /deliveries?subscription_id=&status=&cursor=
+GET  /deliveries/{delivery_id}/attempts</code></pre><h2><span data-lang="en">How to talk about cache like an engineer</span><span data-lang="zh">缓存该怎么讲才像真做过</span></h2>
+<ul><li><span data-lang="en"><strong>Cache endpoint/subscription config</strong>: read-heavy, cache-aside, write-DB-then-invalidate. Alternative write-through adds latency and is rarely worth it.</span><span data-lang="zh"><strong>缓存 endpoint/subscription 配置</strong>：读多，cache-aside，写 DB 后失效缓存。Write-through 方案会增加延迟，不划算。</span></li><li><span data-lang="en"><strong>Don&apos;t cache delivery results</strong> except for well-known hot debug pages, and then only with short TTL + singleflight.</span><span data-lang="zh"><strong>不要缓存投递结果</strong>，除非明显热读（调试页），且必须加短 TTL + singleflight。</span></li><li><span data-lang="en"><strong>Cache stampede mitigation</strong>: random TTL, singleflight, per-key rate limit. Mention these or you&apos;ll be asked.</span><span data-lang="zh"><strong>缓存雪崩/击穿</strong>：随机 TTL、singleflight、按 key 限流。主动提及，否则必被追问。</span></li></ul><h2><span data-lang="en">Consistency</span><span data-lang="zh">一致性</span></h2>
+<ul><li><span data-lang="en">Config updates are eventually consistent (cache may be briefly stale). But <em>disable_endpoint</em> must take effect fast — push to workers with a version number.</span><span data-lang="zh">配置更新最终一致（缓存可能短暂旧值）。但「禁用 endpoint」必须快速生效——给 worker 推送带版本号的禁用信号。</span></li><li><span data-lang="en">Delivery state uses append-only attempt log + materialized view to avoid write amplification.</span><span data-lang="zh">delivery 状态用追加式 attempt 日志 + 物化视图，避免写放大。</span></li></ul><h2><span data-lang="en">Common follow-ups</span><span data-lang="zh">高频追问</span></h2>
+<ol><li><span data-lang="en"><strong>Cache invalidation race with concurrent writes?</strong> Version key (<code>etag</code>/<code>updated_at</code>), invalidate after DB write, read-through correction.</span><span data-lang="zh"><strong>缓存失效与写竞态？</strong>版本号（<code>etag</code>/<code>updated_at</code>），写后失效，必要时读修正。</span></li><li><span data-lang="en"><strong>How do you implement delay queues?</strong> Either a delayed topic or a <code>scheduled_at</code> column with a worker that pulls due items.</span><span data-lang="zh"><strong>延迟队列如何实现？</strong>延迟 topic 或 <code>scheduled_at</code> 字段 + worker 拉取到期项。</span></li><li><span data-lang="en"><strong>How to paginate the attempts list?</strong> Cursor-based (<code>cursor=last_attempt_id</code>); offset pagination breaks under high write-rate.</span><span data-lang="zh"><strong>attempt 分页如何做？</strong>游标分页（<code>cursor=last_attempt_id</code>）；offset 在高写入速率下会错位。</span></li></ol>
+
+        <h2><span data-lang="en">Related study-guide topics</span><span data-lang="zh">相关学习手册专题</span></h2>
+        <ul><li><a href="../../guide/classical/rate-limiter.html"><span data-lang="en">Rate limiter</span><span data-lang="zh">限流器</span></a></li><li><a href="../../guide/distributed/stream-batch.html"><span data-lang="en">Stream processing</span><span data-lang="zh">流处理</span></a></li></ul>
+      </article>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>A15. Multi-Model GPU Inference API — SD-Guide</title>
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../index.html" class="active"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../resources/index.html"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../about/index.html"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a>
+        <span class="sep">›</span>
+        <a href="../index.html"><span data-lang="en">Arena</span><span data-lang="zh">竞技场</span></a>
+        <span class="sep">›</span>
+        <span>A15</span>
+      </div>
+
+      <article class="prose wide">
+        <div class="question-meta" style="margin-bottom:1rem;">
+          <span class="tag company-anthropic">Anthropic</span>
+          <span class="tag freq-3">★★★ Frequent</span>
+          <span class="tag difficulty-hard">Hard</span>
+          <span class="tag">Control Plane</span><span class="tag">Canary</span>
+        </div>
+
+        <h1>
+          <span data-lang="en">A15 · Multi-Model GPU Inference API</span>
+          <span data-lang="zh">A15 · 多模型 GPU 推理 API</span>
+        </h1>
+
+        <div class="callout anthropic">
+          <h4><span data-lang="en">Verified source</span><span data-lang="zh">经核实出处</span></h4>
+          <p>Prompt: "Design a GPU-backed inference API…multi-model…dynamic batching…A/B routing…autoscaling…KV/cache" — PracHub, Onsite. Credibility <strong>B</strong>.</p>
+        </div>
+
+        <h2><span data-lang="en">Two-layer design</span><span data-lang="zh">两层架构</span></h2>
+<ul><li><span data-lang="en"><strong>Data plane</strong>: request ingress → batcher → GPU worker → token stream.</span><span data-lang="zh"><strong>数据面</strong>：请求入口 → batcher → GPU worker → token 流。</span></li><li><span data-lang="en"><strong>Control plane</strong>: model registry, version rollouts, routing policy, autoscaling, cost policy.</span><span data-lang="zh"><strong>控制面</strong>：模型注册表、版本发布、路由策略、自动扩缩容、成本策略。</span></li></ul><h2><span data-lang="en">Architecture</span><span data-lang="zh">架构</span></h2>
+<div class="mermaid-container"><pre class="mermaid">
+flowchart LR
+  C[Client] --> GW[Gateway]
+  GW --> SCH[Scheduler / Batcher]
+  SCH --> GPU[GPU Workers]
+  CTRL[Control Plane] --> SCH
+  CTRL --> REG[(Model Registry)]
+  GPU --> OBS[Observability]
+</pre></div><h2><span data-lang="en">A/B routing</span><span data-lang="zh">A/B 路由</span></h2>
+<ul><li><span data-lang="en">Routing key: <code>tenant_id + experiment_id + user_id</code> for stickiness.</span><span data-lang="zh">路由键：<code>tenant_id + experiment_id + user_id</code> 保证粘性。</span></li><li><span data-lang="en">Rollback triggers: error-budget burn, p95 TTFT over threshold, rising OOM ratio.</span><span data-lang="zh">回滚触发：error-budget 烧光、p95 TTFT 超阈、OOM 比例上升。</span></li></ul><h2><span data-lang="en">Cold start is the hidden cost</span><span data-lang="zh">冷启动是隐藏成本</span></h2>
+<ul><li><span data-lang="en">Model load + warmup can take minutes. Solution: <strong>always-warm pool for top-N models</strong> + tiered SKU pools.</span><span data-lang="zh">模型加载 + warmup 耗时分钟级。方案：<strong>top-N 模型常驻热池</strong> + 分层 SKU 池。</span></li><li><span data-lang="en">KV-cache / weights reuse across tenants → citing vLLM PagedAttention credits you here.</span><span data-lang="zh">跨租户复用 KV-cache / weights → 引用 vLLM PagedAttention 加分。</span></li></ul>
+
+        <h2><span data-lang="en">Related study-guide topics</span><span data-lang="zh">相关学习手册专题</span></h2>
+        <ul><li><a href="../../guide/llm/llm-serving.html"><span data-lang="en">LLM serving</span><span data-lang="zh">LLM 推理服务</span></a></li></ul>
+      </article>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

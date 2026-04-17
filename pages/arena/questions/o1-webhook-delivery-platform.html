@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>O1. Webhook Delivery Platform — SD-Guide</title>
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../index.html" class="active"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../resources/index.html"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../about/index.html"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a>
+        <span class="sep">›</span>
+        <a href="../index.html"><span data-lang="en">Arena</span><span data-lang="zh">竞技场</span></a>
+        <span class="sep">›</span>
+        <span>O1</span>
+      </div>
+
+      <article class="prose wide">
+        <div class="question-meta" style="margin-bottom:1rem;">
+          <span class="tag company-openai">OpenAI</span>
+          <span class="tag freq-3">★★★ Frequent</span>
+          <span class="tag difficulty-hard">Hard</span>
+          <span class="tag">Classical SD</span>
+          <span class="tag">Platform</span>
+        </div>
+
+        <h1>
+          <span data-lang="en">O1 · Design a Webhook Delivery Platform</span>
+          <span data-lang="zh">O1 · 设计 Webhook 投递平台</span>
+        </h1>
+
+        <div class="callout openai">
+          <h4><span data-lang="en">Verified source</span><span data-lang="zh">经核实出处</span></h4>
+          <p>
+            <strong data-lang="en">Original prompt:</strong>
+            <strong data-lang="zh">原题：</strong>
+            "The system design problem focused on building a <strong>Webhook Delivery Platform</strong>." — OpenAI phone-screen round, <a href="https://leetcode.com/discuss" target="_blank" rel="noopener">LeetCode Discuss</a>, 2026-02-12.
+            Also reported on <a href="https://www.teamblind.com" target="_blank" rel="noopener">TeamBlind</a> (2024-04-10) and in multiple Jobright / Interviewing.io threads. Credibility <strong>C</strong> (multiple independent candidate self-reports).
+          </p>
+        </div>
+
+        <h2><span data-lang="en">Requirements clarification</span><span data-lang="zh">需求澄清</span></h2>
+        <p data-lang="en">
+          Get the semantics straight before you draw a box. <strong>Ask the interviewer</strong>:
+        </p>
+        <p data-lang="zh">
+          画框之前先把语义讲清楚。<strong>必须向面试官问</strong>：
+        </p>
+        <ul>
+          <li><span data-lang="en">Are we just the delivery layer, or do we also produce/subscribe events?</span><span data-lang="zh">我们只做投递层，还是也产生/订阅事件？</span></li>
+          <li><span data-lang="en">Multi-tenant? (99% yes — shapes quotas, isolation, billing.)</span><span data-lang="zh">是否多租户？（几乎肯定——决定了配额、隔离、计费）</span></li>
+          <li><span data-lang="en">Is <em>per-endpoint ordering</em> required? (Forces single-consumer queues per endpoint → hot-spot risk.)</span><span data-lang="zh">是否要求 <em>每 endpoint 顺序</em>？（会强制单消费者 → 热点风险）</span></li>
+          <li><span data-lang="en">What counts as "delivered" — 2xx response or signed ack?</span><span data-lang="zh">「送达」的判定——2xx 即成功，还是需要签名 ACK？</span></li>
+          <li><span data-lang="en">Retry window and backoff policy (the problem <em>explicitly</em> tests this).</span><span data-lang="zh">重试窗口与退避策略（题目明确考察）</span></li>
+          <li><span data-lang="en">One event fanned out to multiple endpoints?</span><span data-lang="zh">一个事件是否投递到多个 endpoint？</span></li>
+        </ul>
+
+        <h2><span data-lang="en">Back-of-envelope scale</span><span data-lang="zh">规模估算</span></h2>
+        <p data-lang="en">
+          Interviewers on this question used the phrase <em>"billions of requests"</em>, i.e. <strong>10<sup>9</sup> delivery attempts/day</strong> ≈ <strong>~12K attempts/sec average, peak ~50K/sec</strong>.
+          This is a <em>write-heavy</em> workload: ingest + attempt log dominate; reads are for the developer dashboard and debugging.
+        </p>
+        <p data-lang="zh">
+          面试官强调「数十亿级请求」，即每天 10<sup>9</sup> 次投递 ≈ 平均 ~12K/秒、峰值 ~50K/秒。这是<strong>写多读少</strong>：ingest + attempt 日志是主成本，读路径仅用于仪表盘/调试。
+        </p>
+
+        <h3><span data-lang="en">Storage math</span><span data-lang="zh">存储估算</span></h3>
+        <ul>
+          <li><span data-lang="en">Each attempt row ≈ 500 B → 500 GB / day → 15 TB / month.</span><span data-lang="zh">每条 attempt 约 500 B → 500 GB/天 → 15 TB/月</span></li>
+          <li><span data-lang="en">Keep detail log for 30 days, downsampled aggregates forever.</span><span data-lang="zh">详细日志保留 30 天，聚合数据永久保留</span></li>
+          <li><span data-lang="en">Event payloads: store once in object store (refs from rows).</span><span data-lang="zh">事件 payload 存对象存储（行表只保引用）</span></li>
+        </ul>
+
+        <h2><span data-lang="en">High-level architecture</span><span data-lang="zh">高层架构</span></h2>
+        <p data-lang="en">
+          The core pattern: <strong>queue + state machine + idempotency</strong>. Decouple "receive event" from "deliver event"; every delivery runs in an async retryable worker.
+        </p>
+        <p data-lang="zh">
+          核心模式：<strong>队列 + 状态机 + 幂等</strong>。将「接收事件」与「对外投递」解耦；所有投递都由可重试的异步单元完成。
+        </p>
+
+        <div class="mermaid-container">
+          <pre class="mermaid">
+flowchart LR
+  A[Producer / Client] --> B[Ingest API]
+  B --> C[(Event Store)]
+  B --> D[Dispatch Queue]
+  D --> E[Delivery Workers]
+  E --> F[Target Endpoint]
+  E --> G[(Attempt Log)]
+  E --> H[Retry Scheduler]
+  H --> D
+          </pre>
+        </div>
+
+        <h3><span data-lang="en">Component responsibilities</span><span data-lang="zh">组件职责</span></h3>
+        <ul>
+          <li><strong>Ingest API</strong>:
+            <span data-lang="en">auth, rate limit, write to Event Store, enqueue dispatch task. Returns 202 immediately.</span>
+            <span data-lang="zh">鉴权、限流、写入 Event Store、生成投递任务。立即返回 202。</span>
+          </li>
+          <li><strong>Dispatch Queue</strong>:
+            <span data-lang="en">partitioned by <code>endpoint_id</code> (or <code>tenant_id</code>) to preserve ordering if required. Kafka or Kinesis works; a DB-backed queue is also fine at this scale if you partition well.</span>
+            <span data-lang="zh">按 <code>endpoint_id</code> 或 <code>tenant_id</code> 分区保证顺序。Kafka/Kinesis 皆可，规模合适时 DB-backed queue 也行。</span>
+          </li>
+          <li><strong>Delivery Workers</strong>:
+            <span data-lang="en">HTTP call, signing, timeout, retry, attempt log write, state update. Stateless — horizontally scale freely.</span>
+            <span data-lang="zh">HTTP 调用、签名、超时、重试、写 attempt、更新状态。无状态，可自由水平扩展。</span>
+          </li>
+          <li><strong>Retry Scheduler</strong>:
+            <span data-lang="en">exponential backoff + jitter, max-attempt / deadline check, DLQ handoff.</span>
+            <span data-lang="zh">指数退避 + 抖动、检查最大次数/截止时间、DLQ 交接。</span>
+          </li>
+        </ul>
+
+        <h2><span data-lang="en">API design (the minimum-viable set)</span><span data-lang="zh">API 设计（最小可用集合）</span></h2>
+        <pre><code>POST /v1/webhook_endpoints
+  { url, secret, events[], enabled, rate_limit }
+  → { endpoint_id }
+
+POST /v1/events
+  { type, payload, idempotency_key, target_endpoints[]? }
+  → 202 { event_id }
+
+GET  /v1/events/{event_id}
+GET  /v1/events?since=&tenant_id=&cursor=
+GET  /v1/deliveries?endpoint_id=&event_id=&cursor=
+  → attempt history (timestamps, http_status, latency, error_code)</code></pre>
+
+        <div class="callout warn">
+          <h4><span data-lang="en">Idempotency is non-negotiable</span><span data-lang="zh">幂等性不容妥协</span></h4>
+          <p>
+            <span data-lang="en">Apply idempotency at <strong>two</strong> points: (1) event submission (<code>idempotency_key</code> → dedup at ingest), (2) attempt write (server-side attempt UUID). Without both, you'll see duplicate deliveries <em>or</em> duplicate billing.</span>
+            <span data-lang="zh">幂等必须在<strong>两个</strong>点生效：(1) 事件提交（<code>idempotency_key</code> → ingest 去重），(2) attempt 写入（服务端 attempt UUID）。缺一不可，否则会出现重复投递或重复计费。</span>
+          </p>
+        </div>
+
+        <h2><span data-lang="en">Data model</span><span data-lang="zh">数据模型</span></h2>
+        <pre><code>WebhookEndpoint(
+  endpoint_id PK, tenant_id, url, secret, status,
+  event_filter[], rate_limit, created_at, updated_at
+)
+Event(
+  event_id PK, tenant_id, type, payload_ref (S3 key),
+  idempotency_key, status, created_at
+)
+DeliveryAttempt(
+  attempt_id PK, event_id FK, endpoint_id FK,
+  scheduled_at, started_at, finished_at,
+  http_status, error_code, retry_count,
+  latency_ms, response_hash
+)</code></pre>
+        <p>
+          <strong data-lang="en">Index priorities:</strong><strong data-lang="zh">关键索引：</strong>
+          <code>(tenant_id, created_at)</code> — dashboard &amp; debug;
+          <code>(endpoint_id, scheduled_at)</code> — retry scheduler;
+          <code>(event_id, endpoint_id)</code> — delivery-history lookup.
+        </p>
+
+        <h2><span data-lang="en">Consistency / availability trade-offs</span><span data-lang="zh">一致性与可用性权衡</span></h2>
+        <ul>
+          <li>
+            <strong>At-least-once</strong> <span data-lang="en">is the industry default; let receivers dedup on <code>X-Webhook-Event-Id</code>. Strict exactly-once is impossible across a network boundary.</span>
+            <span data-lang="zh">行业默认；接收方应按 <code>X-Webhook-Event-Id</code> 去重。跨网络边界的严格 exactly-once 物理上无法实现。</span>
+          </li>
+          <li>
+            <strong><span data-lang="en">Per-endpoint ordering vs throughput</span><span data-lang="zh">每 endpoint 顺序 vs 吞吐</span></strong>:
+            <span data-lang="en">ordering requires single-flight per endpoint, which turns hot endpoints into bottlenecks. Offer ordered delivery as opt-in.</span>
+            <span data-lang="zh">顺序要求意味着每 endpoint 单一投递者，热点 endpoint 会成瓶颈。建议把「顺序投递」做成可选开关。</span>
+          </li>
+          <li>
+            <strong><span data-lang="en">Append-only attempt log + materialized status view</span><span data-lang="zh">追加式 attempt 日志 + 物化状态视图</span></strong>:
+            <span data-lang="en">at scale, use event sourcing for attempts and update the "current state" table via CDC — avoids write amplification.</span>
+            <span data-lang="zh">大规模下用事件溯源记录 attempts，并通过 CDC 异步更新「当前状态」视图——避免写放大。</span>
+          </li>
+        </ul>
+
+        <h2><span data-lang="en">Performance bottlenecks &amp; optimizations</span><span data-lang="zh">性能瓶颈与优化</span></h2>
+        <div class="callout">
+          <h4><span data-lang="en">Hot endpoint</span><span data-lang="zh">热点 endpoint</span></h4>
+          <p>
+            <span data-lang="en">One tenant's endpoint takes 80% of traffic. Solutions: (1) endpoint-level token bucket rate limiter, (2) partition-key design that spreads hot tenants across multiple partitions, (3) batch write attempt rows.</span>
+            <span data-lang="zh">一个租户的 endpoint 占 80% 流量。方案：(1) endpoint 级令牌桶限流，(2) 将热点租户分散到多分区的 partition key 设计，(3) 批量写 attempt。</span>
+          </p>
+        </div>
+        <div class="callout warn">
+          <h4><span data-lang="en">Retry storm</span><span data-lang="zh">重试风暴</span></h4>
+          <p>
+            <span data-lang="en">Target goes down → thousands of retries stack up. Solutions: (1) <strong>circuit breaker per domain</strong> — after N consecutive 5xx, open for T seconds, (2) error classification (4xx except 429 → no retry), (3) honor <code>Retry-After</code>, (4) cap global retry budget per minute.</span>
+            <span data-lang="zh">目标宕机导致千级重试堆积。方案：(1) <strong>按 domain 的熔断器</strong>——连续 N 次 5xx 后开路 T 秒，(2) 错误分类（4xx 除 429 外不重试），(3) 遵守 <code>Retry-After</code>，(4) 全局每分钟重试预算。</span>
+          </p>
+        </div>
+        <div class="callout">
+          <h4><span data-lang="en">Connection &amp; DNS</span><span data-lang="zh">连接与 DNS</span></h4>
+          <p>
+            <span data-lang="en">At 50K RPS against thousands of domains: reuse HTTP keep-alive pools per host, cache DNS, set tiered timeouts (connect &lt; TTFB &lt; total), use HTTP/2 where targets support it.</span>
+            <span data-lang="zh">50K RPS 跨数千 domain：按 host 复用 keep-alive 池、缓存 DNS、分层超时（connect &lt; TTFB &lt; total）、目标支持时用 HTTP/2。</span>
+          </p>
+        </div>
+
+        <h2><span data-lang="en">Cost model</span><span data-lang="zh">成本模型</span></h2>
+        <p data-lang="en">
+          Always offer a <strong>formula</strong>, not a made-up number:
+        </p>
+        <p data-lang="zh">
+          始终给<strong>公式</strong>而不是拍脑袋的数字：
+        </p>
+        <pre><code>compute_cost   ≈ attempts_per_sec × avg_request_ms / 1000 × worker_cost_per_hour
+storage_cost   ≈ attempt_row_size × attempts × retention_days
+egress_cost    ≈ (request_bytes + response_bytes) × attempts × $/GB
+# Hidden cost:
+# retries + 429s can easily double egress over a baseline month.</code></pre>
+
+        <h2><span data-lang="en">Observability &amp; runbook</span><span data-lang="zh">可观测性与故障排查</span></h2>
+        <ul>
+          <li><span data-lang="en">SLIs: attempt success rate, p95 end-to-end latency, DLQ rate, per-tenant error rate.</span><span data-lang="zh">SLI：attempt 成功率、端到端 p95 延迟、DLQ 率、按租户错误率。</span></li>
+          <li><span data-lang="en">Every attempt row carries <code>trace_id</code> for cross-service joining.</span><span data-lang="zh">每条 attempt 携带 <code>trace_id</code> 便于跨服务关联。</span></li>
+          <li><span data-lang="en">Developer dashboard: search by event_id / endpoint_id, manual replay button, webhook-signature verifier.</span><span data-lang="zh">开发者仪表盘：按 event_id / endpoint_id 搜索、手动回放按钮、签名验证工具。</span></li>
+        </ul>
+
+        <h2><span data-lang="en">Follow-up questions you should be ready for</span><span data-lang="zh">你应该提前准备的追问</span></h2>
+        <ol>
+          <li>
+            <strong><span data-lang="en">"How do you prevent duplicate deliveries?"</span><span data-lang="zh">「如何防止重复投递？」</span></strong>
+            <span data-lang="en">— Server: idempotency_key at ingest, attempt UUID at workers. Client: require receivers to dedup on <code>X-Webhook-Event-Id</code>.</span>
+            <span data-lang="zh">服务端：ingest 处 idempotency_key，worker 处 attempt UUID。客户端：要求按 <code>X-Webhook-Event-Id</code> 去重。</span>
+          </li>
+          <li>
+            <strong><span data-lang="en">"Multi-tenant isolation?"</span><span data-lang="zh">「多租户如何隔离？」</span></strong>
+            <span data-lang="en">— per-tenant rate limits, queue partition per tenant, separate signing keys, audit log, optional dedicated worker pools for Enterprise plans.</span>
+            <span data-lang="zh">每租户限流、每租户队列分区、独立签名密钥、审计日志、企业版可选专用 worker 池。</span>
+          </li>
+          <li>
+            <strong><span data-lang="en">"How do I debug a missing delivery?"</span><span data-lang="zh">「怎么调试遗失投递？」</span></strong>
+            <span data-lang="en">— attempt log has every retry with status/error; trace_id joins ingest + queue + worker; exposed via dashboard + public API.</span>
+            <span data-lang="zh">attempt 日志包含每次重试与状态；trace_id 关联 ingest + 队列 + worker；仪表盘与公开 API 均暴露。</span>
+          </li>
+          <li>
+            <strong><span data-lang="en">"What if a target is down for 6 hours?"</span><span data-lang="zh">「目标 endpoint 下线 6 小时怎么办？」</span></strong>
+            <span data-lang="en">— delayed queue + circuit breaker; alerts to tenant after M consecutive failures; events past deadline → DLQ with manual-replay UI.</span>
+            <span data-lang="zh">延迟队列 + 熔断；连续 M 次失败告警租户；超过 deadline 的事件进 DLQ，提供手动回放 UI。</span>
+          </li>
+          <li>
+            <strong><span data-lang="en">"How to support ordered delivery?"</span><span data-lang="zh">「如何支持顺序投递？」</span></strong>
+            <span data-lang="en">— partition queue by endpoint_id + single-consumer per partition + lease token so retries don't race with fresh attempts. Document that this caps throughput.</span>
+            <span data-lang="zh">按 endpoint_id 分区 + 每分区单一消费者 + lease 防止重试与新 attempt 竞争。必须说明这会限制吞吐。</span>
+          </li>
+        </ol>
+
+        <h2><span data-lang="en">Related study-guide topics</span><span data-lang="zh">相关学习手册专题</span></h2>
+        <ul>
+          <li><a href="../../guide/distributed/partitioning.html"><span data-lang="en">Partitioning &amp; hot-spot strategies</span><span data-lang="zh">分区与热点策略</span></a></li>
+          <li><a href="../../guide/distributed/stream-batch.html"><span data-lang="en">Stream processing &amp; event sourcing</span><span data-lang="zh">流处理与事件溯源</span></a></li>
+          <li><a href="../../guide/classical/rate-limiter.html"><span data-lang="en">Rate limiter deep dive</span><span data-lang="zh">限流器深度剖析</span></a></li>
+        </ul>
+      </article>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>O7. CI/CD with Linear Multi-Step Pipeline — SD-Guide</title>
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../index.html" class="active"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../resources/index.html"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../about/index.html"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a>
+        <span class="sep">›</span>
+        <a href="../index.html"><span data-lang="en">Arena</span><span data-lang="zh">竞技场</span></a>
+        <span class="sep">›</span>
+        <span>O7</span>
+      </div>
+
+      <article class="prose wide">
+        <div class="question-meta" style="margin-bottom:1rem;">
+          <span class="tag company-openai">OpenAI</span>
+          <span class="tag freq-2">★★ Frequent</span>
+          <span class="tag difficulty-medium">Medium-Hard</span>
+          <span class="tag">CDC</span><span class="tag">State Machine</span>
+        </div>
+
+        <h1>
+          <span data-lang="en">O7 · CI/CD with Linear Multi-Step Pipeline</span>
+          <span data-lang="zh">O7 · 线性多步 CI/CD 流水线</span>
+        </h1>
+
+        <div class="callout openai">
+          <h4><span data-lang="en">Verified source</span><span data-lang="zh">经核实出处</span></h4>
+          <p>Prompt: "System Design — CI/CD…simple linear multi-step flow (not a DAG)…store each step as a DB entry…enqueue next step when previous completes" — <a href="https://leetcode.com/discuss" target="_blank" rel="noopener">LeetCode</a>, 2025-11-08. Credibility <strong>C</strong>.</p>
+        </div>
+
+        <p><span data-lang="en">This is "the minimum viable subset of a distributed workflow engine." Avoid presenting it as "just a cron job."</span><span data-lang="zh">这是「分布式工作流引擎的最小子集」。务必避免「写个 cron 就行」的回答。</span></p><h2><span data-lang="en">Architecture — state-driven scheduling</span><span data-lang="zh">状态驱动调度</span></h2>
+<div class="mermaid-container"><pre class="mermaid">
+flowchart LR
+  API[Pipeline API] --> DB[(Step Table)]
+  DB --> EVT[Change Stream / CDC]
+  EVT --> SCH[Stateless Scheduler]
+  SCH --> Q[Task Queue] --> W[Workers]
+  W --> DB
+</pre></div><h2><span data-lang="en">Why CDC is the elegant answer</span><span data-lang="zh">为什么 CDC 是优雅答案</span></h2>
+<p><span data-lang="en">Workers write step status → CDC emits → scheduler discovers next step → enqueue. Avoids polling overhead while giving low latency, and remains stateless.</span><span data-lang="zh">Worker 写 step 状态 → CDC 事件流 → 调度器发现下一步 → 入队。无需轮询，延迟低，且保持无状态。</span></p><h2><span data-lang="en">Trade-offs</span><span data-lang="zh">权衡</span></h2>
+<ul><li><span data-lang="en">Polling: simple but expensive &amp; latency-unstable.</span><span data-lang="zh">轮询：简单但成本高、延迟不稳。</span></li><li><span data-lang="en">Event-driven: better but must handle duplicate events → idempotent consumers.</span><span data-lang="zh">事件驱动：更优但必须处理重复事件 → 消费者幂等。</span></li><li><span data-lang="en">Serial guarantee: one active step per pipeline (DB row lock or <code>lease_id</code>).</span><span data-lang="zh">串行保证：同一 pipeline 任一时刻仅一个 active step（DB 行锁 或 <code>lease_id</code>）。</span></li></ul>
+
+        <h2><span data-lang="en">Related study-guide topics</span><span data-lang="zh">相关学习手册专题</span></h2>
+        <ul><li><a href="../../guide/distributed/stream-batch.html"><span data-lang="en">CDC &amp; stream processing</span><span data-lang="zh">CDC 与流处理</span></a></li></ul>
+      </article>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

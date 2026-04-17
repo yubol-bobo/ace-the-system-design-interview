@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LLM Evaluation — SD-Guide</title>
+  <meta name="description" content="Offline benchmarks (MMLU, GPQA, HELM), LLM-as-judge biases, pairwise Elo arenas, guardrailed online A/B, red teaming, and agent trajectory eval.">
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../../../pages/arena/index.html" data-match="/arena"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../../pages/guide/index.html" class="active" data-match="/guide"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../../pages/resources/index.html" data-match="/resources"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../../pages/about/index.html" data-match="/about"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+
+      <div class="breadcrumb">
+        <a href="../../../pages/guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a>
+        <span>›</span>
+        <span class="crumb-category">LLM Systems<span data-lang="zh" style="display:none">LLM 系统</span></span>
+      </div>
+
+      <header class="page-header">
+        <h1 class="page-title">
+          <span data-lang="en">LLM Evaluation</span>
+          <span data-lang="zh">LLM 评估</span>
+        </h1>
+        <div class="topic-meta">
+          <span class="tag" style="background:var(--openai-glow);border-color:var(--openai)">📚 Chip Huyen DMLS Ch.6 · Gulli Ch.19 · HELM (Liang et al.)</span><span class="tag">MMLU/GPQA</span><span class="tag">LLM-as-judge</span><span class="tag">Arena Elo</span><span class="tag">Red team</span>
+        </div>
+        <p class="page-subtitle">
+          <span data-lang="en">Offline benchmarks (MMLU, GPQA, HELM), LLM-as-judge biases, pairwise Elo arenas, guardrailed online A/B, red teaming, and agent trajectory eval.</span>
+          <span data-lang="zh">离线 benchmark（MMLU、GPQA、HELM）、LLM-as-judge 偏差、配对 Elo arena、带 guardrail 的线上 A/B、红队、agent 轨迹评估。</span>
+        </p>
+      </header>
+
+      <article class="topic-prose">
+        <nav class="topic-toc">
+          <h4><span data-lang="en">On this page</span><span data-lang="zh">本页目录</span></h4>
+          <ol>
+            <li><a href="#s1"><span data-lang="en">Why LLM eval is hard</span><span data-lang="zh">为什么 LLM 评估难</span></a></li>
+            <li><a href="#s2"><span data-lang="en">Offline benchmarks and their limits</span><span data-lang="zh">离线 benchmark 及其局限</span></a></li>
+            <li><a href="#s3"><span data-lang="en">LLM-as-judge and its biases</span><span data-lang="zh">LLM-as-judge 与偏差</span></a></li>
+            <li><a href="#s4"><span data-lang="en">Online eval, A/B, guardrails</span><span data-lang="zh">线上评估、A/B、guardrail</span></a></li>
+            <li><a href="#s5"><span data-lang="en">Regression suites, red teaming, agent eval</span><span data-lang="zh">回归套件、红队、agent 评估</span></a></li>
+            <li><a href="#s6"><span data-lang="en">OpenAI vs Anthropic culture, checklist</span><span data-lang="zh">OpenAI vs Anthropic 文化与清单</span></a></li>
+          </ol>
+        </nav>
+
+        <div data-lang="en">
+
+<h2 id="s1">Why LLM eval is hard</h2>
+<p>Classical ML eval is "compute loss on held-out test set". LLMs break this in three ways:</p>
+<ul>
+  <li><strong>Open-ended outputs</strong>. There is no single correct string — "Paris is the capital of France" and "France's capital is Paris" are both right. Exact-match and BLEU miss this.</li>
+  <li><strong>Behavioral surface is huge</strong>. You care not just about accuracy but helpfulness, harmlessness, instruction-following, tool-use correctness, calibration, and format compliance. Each has its own evaluator.</li>
+  <li><strong>Benchmark contamination</strong>. MMLU, HellaSwag, GSM8K have leaked into training data. Public-benchmark scores are no longer trustworthy for frontier models; you need private holdouts.</li>
+</ul>
+<p>Interview budget numbers: a single MMLU run is 14k questions ≈ $30 on GPT-4-class pricing. A serious release regression run is 100k-1M samples across ~20 benchmarks, costing thousands to tens of thousands of dollars and 4-24 hours.</p>
+<div class="callout tip"><h4>Source cross-reference</h4><p>Chip Huyen's <em>Designing ML Systems</em> Ch.6 covers offline eval taxonomy and slice-based eval. Gulli's <em>Agentic Design Patterns</em> Ch.19 covers agent eval specifically (trajectory analysis, end-task success, failure-mode taxonomy). Also worth reading: HELM (Liang et al.), MT-Bench/Arena-Hard (lmsys), and the BIG-bench paper.</p></div>
+
+<h2 id="s2">Offline benchmarks: MMLU, GPQA, HELM, and their limits</h2>
+<p>Know these by heart:</p>
+<table>
+  <thead><tr><th>Benchmark</th><th>What it measures</th><th>Size</th><th>Ceiling / SOTA</th></tr></thead>
+  <tbody>
+    <tr><td>MMLU</td><td>57 subjects multi-choice</td><td>14k</td><td>~90% (frontier); contaminated</td></tr>
+    <tr><td>GPQA</td><td>PhD-level multi-choice, Google-proof</td><td>448</td><td>~60% (o1); &lt;40% for most</td></tr>
+    <tr><td>HumanEval / MBPP</td><td>Python code synthesis</td><td>164 / 974</td><td>saturated at ~95%; use LiveCodeBench instead</td></tr>
+    <tr><td>GSM8K / MATH</td><td>Math word problems</td><td>8.5k / 12.5k</td><td>&gt;95% on GSM8K; MATH still stretching</td></tr>
+    <tr><td>HELM</td><td>Holistic, multi-metric (accuracy, calibration, robustness, fairness, bias, toxicity, efficiency)</td><td>varies</td><td>research standard</td></tr>
+    <tr><td>SWE-bench / SWE-bench Verified</td><td>Real GitHub issues resolved</td><td>2.3k / 500</td><td>~70% (Claude + agents)</td></tr>
+    <tr><td>Tau-bench, WebArena</td><td>Agent tool-use, browsing</td><td>varies</td><td>active research</td></tr>
+  </tbody>
+</table>
+<p>When a benchmark score is in a press release, <em>assume contamination</em> unless the paper reports a decontamination methodology. Frontier labs now run <strong>private holdouts</strong> (held-out test sets never public) to get trustworthy numbers.</p>
+
+<h2 id="s3">LLM-as-judge and its biases</h2>
+<p>For open-ended outputs, the standard eval is: show two responses to a judge LLM, ask which is better, aggregate pairwise preferences into an Elo score. MT-Bench and Arena-Hard (lmsys.org) do this at scale.</p>
+<p><strong>Known biases:</strong></p>
+<ul>
+  <li><strong>Position bias</strong>. The judge prefers response A over B more often when shown first. Fix: swap positions and average.</li>
+  <li><strong>Verbosity bias</strong>. Longer responses are rated higher even when wrong. Fix: length-normalize or use a length-debiased Elo (lmsys publishes one).</li>
+  <li><strong>Self-preference</strong>. A model judge prefers outputs that sound like its own. Fix: use multiple diverse judges (GPT-4 + Claude + Gemini) and average.</li>
+  <li><strong>Format sycophancy</strong>. Outputs with bullet points and headers get higher scores. Fix: instruct the judge to ignore format.</li>
+</ul>
+<p>Despite biases, LLM-as-judge correlates 0.8+ with human ratings on many tasks — good enough for regression detection, not good enough for novel capability evaluation.</p>
+<div class="callout warn"><h4>Anti-pattern</h4><p>Using GPT-4 as judge to evaluate GPT-4 outputs. Self-preference + shared failure modes. Use a different family of model as judge, or use humans for the critical slice.</p></div>
+
+<h2 id="s4">Online eval, A/B testing, guardrails</h2>
+<p>Offline is a proxy; online is truth. But LLMs make online eval harder: responses are different every time, users can't be blinded, and quality is subjective.</p>
+<h3>Guardrailed A/B</h3>
+<ol>
+  <li>Define <strong>north-star metric</strong> (e.g., task completion rate, user satisfaction thumbs rate).</li>
+  <li>Define <strong>guardrail metrics</strong> that must <em>not</em> regress (latency p95, cost per request, refusal rate, unsafe-output rate, format-compliance rate).</li>
+  <li>Shadow or canary 1%→10%→50% of traffic.</li>
+  <li>If north-star up AND all guardrails flat → ship.</li>
+</ol>
+<h3>Pairwise Elo (Arena)</h3>
+<p>Inside a company, build a battle arena: route 1% of traffic to <em>both</em> the candidate and baseline, show both answers to a panel of internal raters or an LLM judge, aggregate into Elo. This is how lmsys Chatbot Arena scores frontier models; internal versions at OpenAI/Anthropic follow the same pattern.</p>
+<h3>Behavioral sampling</h3>
+<p>Log a stratified random sample of production traffic for human or automated review. Stratify by tenant, prompt category, refusal, and length. 1% of production is usually enough to catch regressions within hours.</p>
+
+<h2 id="s5">Regression suites, red teaming, agent eval</h2>
+<h3>Regression suites</h3>
+<p>Every LLM team maintains a <strong>golden set</strong>: ~1k-10k prompts hand-curated to cover capability buckets (reasoning, math, code, refusals, long-context recall, tool use, multilingual, safety). Run on every model checkpoint. Diff the outputs. Any flip from correct to incorrect on a high-traffic bucket is a ship-block.</p>
+<h3>Red teaming</h3>
+<p>Adversarial eval: humans (or another LLM) try to elicit policy violations. Outputs feed back into the safety RLHF pipeline. Anthropic's Usage Policies and the OpenAI Model Spec both grew from red-team findings. For interviews, mention <em>Constitutional AI</em> (Bai et al.) — Anthropic's method of using a "constitution" (set of written principles) to generate AI-generated feedback for training.</p>
+<h3>Agent eval</h3>
+<p>Agents fail in ways single-turn eval misses: infinite loops, wrong tool chosen, tool called with wrong args, hallucinated citation. You need <strong>trajectory-level eval</strong>:</p>
+<ul>
+  <li>End-task success: did the final state match gold?</li>
+  <li>Step-level rubric: were intermediate tool calls reasonable?</li>
+  <li>Cost/latency profile: tokens and wall-time per task.</li>
+  <li>Failure taxonomy: categorize every failure into a bucket for targeted improvement.</li>
+</ul>
+<div class="mermaid-container"><pre class="mermaid">
+flowchart LR
+  M[New model checkpoint] --&gt; R[Regression suite<br/>~10k prompts]
+  M --&gt; B[Public benchmarks<br/>MMLU/GPQA/SWE-bench]
+  M --&gt; P[Private holdouts]
+  R --&gt; J[LLM-as-judge]
+  R --&gt; H[Human raters<br/>500 samples]
+  J --&gt; D[Dashboard + diff]
+  H --&gt; D
+  D --&gt; G{All guardrails green?}
+  G --&gt;|yes| C[Canary 1%]
+  G --&gt;|no| F[Fix / retrain]
+  C --&gt; O[Online A/B<br/>pairwise Elo]
+</pre></div>
+
+<h2 id="s6">OpenAI vs Anthropic eval culture, checklist</h2>
+<div class="callout openai"><h4>OpenAI-specific</h4><p>OpenAI publishes "Evals" — an open-source framework (github.com/openai/evals) with hundreds of community-contributed eval templates. Their internal process emphasizes model-spec compliance: the Model Spec is a public document that every release is scored against. Ship decisions favor aggregate capability gains even at some behavioral regression, mitigated by post-training.</p></div>
+<div class="callout anthropic"><h4>Anthropic-specific</h4><p>Anthropic's public safety cards (released alongside each Claude version) include detailed eval tables: capability (MMLU, GPQA, agentic), safety (BBQ, refusal-rate, jailbreak robustness), and honesty (TruthfulQA-style probes). They emphasize <em>Constitutional AI</em> and red-teaming with internal and external partners before release. Interview hook: describe how you would reproduce a mini safety card for your model change.</p></div>
+<div class="callout warn"><h4>Anti-patterns</h4>
+<ul>
+  <li><strong>Ship on MMLU +1.5%</strong>. Contamination + narrow capability. Always pair with behavioral evals.</li>
+  <li><strong>Single judge for Elo</strong>. Self-preference. Use a panel.</li>
+  <li><strong>No guardrail metrics in A/B</strong>. You'll regress latency, cost, or safety silently.</li>
+  <li><strong>Evaluating in isolation from product</strong>. Eval prompts should be drawn from real traffic distribution, not synthetic.</li>
+  <li><strong>No failure taxonomy</strong>. Without buckets, improvements don't compound.</li>
+</ul></div>
+<p><strong>Whiteboard checklist:</strong> define north-star + guardrails → offline suite (public + private + golden) → LLM-as-judge with bias fixes → human raters on stratified sample → regression gate → canary with guardrailed A/B → pairwise Elo arena → agent trajectory eval → red-team loop → public eval/safety card.</p>
+
+        </div>
+        <div data-lang="zh">
+
+<h2 id="s1">为什么 LLM 评估难</h2>
+<p>传统 ML 评估是"在留出集上算 loss"。LLM 三个方面打破这点：</p>
+<ul>
+  <li><strong>开放输出</strong>。没有单一正确字符串——"Paris is the capital of France" 和 "France's capital is Paris" 都对。Exact-match 和 BLEU 抓不到。</li>
+  <li><strong>行为面巨大</strong>。除准确率还要 helpfulness、无害、指令遵循、工具调用正确、校准、格式合规。每个都有评估器。</li>
+  <li><strong>Benchmark 污染</strong>。MMLU、HellaSwag、GSM8K 已混入训练数据。前沿模型的公开分不再可信，必须用私有 holdout。</li>
+</ul>
+<p>预算数：单跑 MMLU 1.4 万题 GPT-4 级约 $30。严肃发版回归要 10 万-100 万样本跨 ~20 个 benchmark，数千到数万美元、4-24 小时。</p>
+<div class="callout tip"><h4>参考来源</h4><p>Chip Huyen《Designing ML Systems》第 6 章（离线评估分类与切片评估）；Gulli《Agentic Design Patterns》第 19 章（agent 评估：轨迹分析、端任务成功、失败模式分类）。另读 HELM（Liang et al.）、MT-Bench/Arena-Hard（lmsys）、BIG-bench 论文。</p></div>
+
+<h2 id="s2">离线 benchmark：MMLU、GPQA、HELM 及其局限</h2>
+<p>要背熟：</p>
+<table>
+  <thead><tr><th>Benchmark</th><th>度量</th><th>规模</th><th>上限/SOTA</th></tr></thead>
+  <tbody>
+    <tr><td>MMLU</td><td>57 学科多选</td><td>1.4 万</td><td>~90%（前沿），已污染</td></tr>
+    <tr><td>GPQA</td><td>博士级多选、Google-proof</td><td>448</td><td>~60%（o1），多数 &lt;40%</td></tr>
+    <tr><td>HumanEval / MBPP</td><td>Python 代码合成</td><td>164 / 974</td><td>~95% 饱和，改用 LiveCodeBench</td></tr>
+    <tr><td>GSM8K / MATH</td><td>数学文字题</td><td>8.5k / 12.5k</td><td>GSM8K &gt;95%，MATH 仍有空间</td></tr>
+    <tr><td>HELM</td><td>整体多指标（准确、校准、鲁棒、公平、偏见、毒性、效率）</td><td>变</td><td>研究标准</td></tr>
+    <tr><td>SWE-bench / Verified</td><td>真 GitHub issue 解决</td><td>2.3k / 500</td><td>~70%（Claude + agent）</td></tr>
+    <tr><td>Tau-bench、WebArena</td><td>agent 工具使用、浏览</td><td>变</td><td>活跃研究</td></tr>
+  </tbody>
+</table>
+<p>新闻稿里看到的 benchmark 分，<em>默认已污染</em>——除非论文报告了去污染方法。前沿实验室现在跑<strong>私有 holdout</strong>（从未公开的测试集）拿真数。</p>
+
+<h2 id="s3">LLM-as-judge 及其偏差</h2>
+<p>开放输出评估的标准做法：把两份响应给裁判 LLM，问哪个更好，配对偏好聚合成 Elo。MT-Bench 和 Arena-Hard（lmsys.org）大规模这么做。</p>
+<p><strong>已知偏差：</strong></p>
+<ul>
+  <li><strong>位置偏差</strong>。裁判看到 A 在先时更偏 A。修法：交换位置求平均。</li>
+  <li><strong>长度偏差</strong>。更长响应即使错也评分更高。修法：长度归一化或用 lmsys 公开的长度去偏 Elo。</li>
+  <li><strong>自我偏好</strong>。模型裁判偏好像自己的输出。修法：多样裁判组合（GPT-4 + Claude + Gemini）求均。</li>
+  <li><strong>格式谄媚</strong>。带项目符号和标题的输出分更高。修法：指示裁判忽略格式。</li>
+</ul>
+<p>偏差虽在，LLM-as-judge 在很多任务上与人类评分相关 0.8+——足够抓回归，不足以评估新能力。</p>
+<div class="callout warn"><h4>反模式</h4><p>用 GPT-4 做裁判评 GPT-4 输出。自我偏好 + 共享失败模式。用不同族的模型做裁判，或对关键切片用人评。</p></div>
+
+<h2 id="s4">线上评估、A/B、guardrail</h2>
+<p>离线是代理，线上是真相。但 LLM 线上评估更难：响应每次不同、用户不盲测、质量主观。</p>
+<h3>Guardrail A/B</h3>
+<ol>
+  <li>定义 <strong>north-star 指标</strong>（任务完成率、点赞率）。</li>
+  <li>定义<em>不能</em>退化的 <strong>guardrail 指标</strong>（延迟 p95、每请求成本、拒答率、不安全输出率、格式合规率）。</li>
+  <li>影子或金丝雀 1%→10%→50%。</li>
+  <li>north-star 涨 + guardrail 全平 → 发布。</li>
+</ol>
+<h3>配对 Elo（Arena）</h3>
+<p>公司内部建 battle arena：1% 流量同时路由到候选和基线，两份答案给内部评委或 LLM 裁判看，聚合成 Elo。lmsys Chatbot Arena 给前沿模型打分就这么做；OpenAI/Anthropic 内部版同样模式。</p>
+<h3>行为采样</h3>
+<p>分层随机采样生产流量做人工或自动审查。按租户、prompt 类别、拒答、长度分层。1% 生产流量通常几小时内就能抓回归。</p>
+
+<h2 id="s5">回归套件、红队、agent 评估</h2>
+<h3>回归套件</h3>
+<p>每个 LLM 团队都有<strong>golden set</strong>：1k-10k 条人工精选 prompt 覆盖能力分桶（推理、数学、代码、拒答、长上下文、工具、多语、安全）。每个 checkpoint 跑；diff 输出；高流量桶上任何从对变错是卡发。</p>
+<h3>红队</h3>
+<p>对抗评估：人类（或另一 LLM）试图诱发策略违规。输出反馈到安全 RLHF 管线。Anthropic 使用策略与 OpenAI Model Spec 都源自红队发现。面试可提 <em>Constitutional AI</em>（Bai et al.）——Anthropic 用"宪法"（一组书面原则）生成 AI 反馈用于训练的方法。</p>
+<h3>Agent 评估</h3>
+<p>Agent 失败方式单 turn 评估抓不到：无限循环、选错工具、参数错误、幻觉引用。要<strong>轨迹级评估</strong>：</p>
+<ul>
+  <li>端任务成功：终态是否匹配 gold？</li>
+  <li>步级 rubric：中间工具调用是否合理？</li>
+  <li>成本/延迟画像：每任务 token 和墙上时间。</li>
+  <li>失败分类：每个失败归类便于针对性改进。</li>
+</ul>
+<div class="mermaid-container"><pre class="mermaid">
+flowchart LR
+  M[新模型 checkpoint] --&gt; R[回归套件<br/>~10k prompt]
+  M --&gt; B[公开 benchmark<br/>MMLU/GPQA/SWE-bench]
+  M --&gt; P[私有 holdout]
+  R --&gt; J[LLM-as-judge]
+  R --&gt; H[人类评委<br/>500 样本]
+  J --&gt; D[Dashboard + diff]
+  H --&gt; D
+  D --&gt; G{guardrail 全绿?}
+  G --&gt;|yes| C[金丝雀 1%]
+  G --&gt;|no| F[修复/再训]
+  C --&gt; O[线上 A/B<br/>配对 Elo]
+</pre></div>
+
+<h2 id="s6">OpenAI vs Anthropic 评估文化与清单</h2>
+<div class="callout openai"><h4>OpenAI 细节</h4><p>OpenAI 开源了 "Evals"（github.com/openai/evals），数百社区贡献的评估模板。内部强调对 Model Spec 合规：Model Spec 是公开文档，每次发版都要对照打分。发版决策倾向聚合能力增益即使行为上有些退化、post-training 缓解。</p></div>
+<div class="callout anthropic"><h4>Anthropic 细节</h4><p>Anthropic 发布的安全卡（每个 Claude 版本）含详尽评估表：能力（MMLU、GPQA、agentic）、安全（BBQ、拒答率、越狱鲁棒）、诚实（TruthfulQA 风格）。强调 <em>Constitutional AI</em> 与内外部伙伴红队。面试点：说明你如何为自己的模型变更复现一个迷你安全卡。</p></div>
+<div class="callout warn"><h4>反模式</h4>
+<ul>
+  <li><strong>MMLU +1.5% 就发</strong>。污染 + 能力单一。永远配行为评估。</li>
+  <li><strong>单裁判 Elo</strong>。自我偏好。用 panel。</li>
+  <li><strong>A/B 无 guardrail</strong>。延迟、成本、安全会悄悄退化。</li>
+  <li><strong>评估脱离产品</strong>。评估 prompt 要来自真流量分布，而非合成。</li>
+  <li><strong>无失败分类</strong>。没有桶，改进不叠加。</li>
+</ul></div>
+<p><strong>白板清单：</strong>定义 north-star + guardrail → 离线套件（公开 + 私有 + golden）→ LLM-as-judge 加偏差修正 → 分层样本人工评 → 回归门 → 金丝雀带 guardrail 的 A/B → 配对 Elo arena → agent 轨迹评估 → 红队循环 → 公开评估/安全卡。</p>
+
+        </div>
+      </article>
+
+      <section class="topic-footer-links">
+        <a href="agentic-patterns.html"><span class="label"><span data-lang="en">Previous</span><span data-lang="zh">上一主题</span></span><strong><span data-lang="en">Agentic Patterns</span><span data-lang="zh">Agentic 模式</span></strong></a>
+        <a href="distributed-training.html"><span class="label"><span data-lang="en">Next topic</span><span data-lang="zh">下一主题</span></span><strong><span data-lang="en">Distributed Training</span><span data-lang="zh">分布式训练</span></strong></a>
+        <a href="../../arena/questions/a29-model-serving-platform.html"><span class="label"><span data-lang="en">Arena question</span><span data-lang="zh">真题</span></span><strong><span data-lang="en">A29 · Model Serving Platform</span><span data-lang="zh">A29 · 模型服务平台</span></strong></a>
+        <a href="../classical/rate-limiter.html"><span class="label"><span data-lang="en">Related classical</span><span data-lang="zh">相关经典</span></span><strong><span data-lang="en">Rate Limiter</span><span data-lang="zh">限流器</span></strong></a>
+      </section>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <p>
+        <span data-lang="en">© SD-Guide · Built for OpenAI &amp; Anthropic system design prep. Not affiliated with either company.</span>
+        <span data-lang="zh">© SD-Guide · 为 OpenAI 与 Anthropic 系统设计面试准备。与两家公司无关联。</span>
+      </p>
+    </div>
+  </footer>
+
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

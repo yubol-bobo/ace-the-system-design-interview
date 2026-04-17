@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>A21. Design Claude Chat Service — SD-Guide</title>
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../index.html" class="active"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../resources/index.html"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../about/index.html"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a>
+        <span class="sep">›</span>
+        <a href="../index.html"><span data-lang="en">Arena</span><span data-lang="zh">竞技场</span></a>
+        <span class="sep">›</span>
+        <span>A21</span>
+      </div>
+
+      <article class="prose wide">
+        <div class="question-meta" style="margin-bottom:1rem;">
+          <span class="tag company-anthropic">Anthropic</span>
+          <span class="tag freq-2">★★ Frequent</span>
+          <span class="tag difficulty-hard">Hard</span>
+          <span class="tag">Session</span><span class="tag">Streaming</span>
+        </div>
+
+        <h1>
+          <span data-lang="en">A21 · Design Claude Chat Service</span>
+          <span data-lang="zh">A21 · 设计 Claude Chat 服务</span>
+        </h1>
+
+        <div class="callout anthropic">
+          <h4><span data-lang="en">Verified source</span><span data-lang="zh">经核实出处</span></h4>
+          <p>Prompt: "Design Claude Chat Service." — interviewing.io. Credibility <strong>C/D</strong>.</p>
+        </div>
+
+        <h2><span data-lang="en">Core concerns</span><span data-lang="zh">核心考察</span></h2>
+<ul><li><span data-lang="en">Session management (long-lived conversations with token limits).</span><span data-lang="zh">会话管理（带 token 限制的长对话）。</span></li><li><span data-lang="en">Streaming output over SSE / WebSocket.</span><span data-lang="zh">SSE / WebSocket 流式输出。</span></li><li><span data-lang="en">Token-level billing (metered at worker after tokenization).</span><span data-lang="zh">Token 级计费（tokenization 后按 worker 计）。</span></li><li><span data-lang="en">Log aggregation (conversation + safety annotations for audit).</span><span data-lang="zh">日志聚合（对话 + safety 注释用于审计）。</span></li><li><span data-lang="en">Safety pipeline integration (input filter, output filter, content policy).</span><span data-lang="zh">Safety 管道集成（输入过滤、输出过滤、内容策略）。</span></li></ul><h2><span data-lang="en">Architecture</span><span data-lang="zh">架构</span></h2>
+<div class="mermaid-container"><pre class="mermaid">
+flowchart LR
+  C[Client] --> GW[Gateway]
+  GW --> SESS[Session Service]
+  SESS --> CONV[(Conv Store)]
+  GW --> SAFE[Safety Input Filter]
+  SAFE --> INF[Inference]
+  INF --> SAFE2[Safety Output Filter]
+  SAFE2 --> GW
+  GW --> METER[Usage Metering]
+</pre></div><p><span data-lang="en">See A11 for inference depth and A19 for prompt versioning.</span><span data-lang="zh">推理深度参考 A11，Prompt 版本化参考 A19。</span></p>
+
+        <h2><span data-lang="en">Related study-guide topics</span><span data-lang="zh">相关学习手册专题</span></h2>
+        <ul><li><a href="../../guide/llm/llm-serving.html"><span data-lang="en">LLM serving</span><span data-lang="zh">LLM 推理服务</span></a></li><li><a href="../../guide/safety/safety-engineering.html"><span data-lang="en">Safety</span><span data-lang="zh">安全</span></a></li></ul>
+      </article>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

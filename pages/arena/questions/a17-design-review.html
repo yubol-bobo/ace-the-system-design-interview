@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>A17. Review an Inference API Design for Scale — SD-Guide</title>
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../index.html" class="active"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../resources/index.html"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../about/index.html"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a>
+        <span class="sep">›</span>
+        <a href="../index.html"><span data-lang="en">Arena</span><span data-lang="zh">竞技场</span></a>
+        <span class="sep">›</span>
+        <span>A17</span>
+      </div>
+
+      <article class="prose wide">
+        <div class="question-meta" style="margin-bottom:1rem;">
+          <span class="tag company-anthropic">Anthropic</span>
+          <span class="tag freq-2">★★ Frequent</span>
+          <span class="tag difficulty-hard">Hard</span>
+          <span class="tag">Design Review</span><span class="tag">SRE</span>
+        </div>
+
+        <h1>
+          <span data-lang="en">A17 · Review an Inference API Design for Scale</span>
+          <span data-lang="zh">A17 · 评审他人的推理 API 设计</span>
+        </h1>
+
+        <div class="callout anthropic">
+          <h4><span data-lang="en">Verified source</span><span data-lang="zh">经核实出处</span></h4>
+          <p>Prompt: "You are reviewing another engineer's design doc…critique…SLOs…autoscaling…circuit breakers…canary…audit logs…cost controls." — PracHub, Onsite. Credibility <strong>B</strong>.</p>
+        </div>
+
+        <h2><span data-lang="en">Standard answer structure (use as a checklist)</span><span data-lang="zh">标准答题结构（当清单用）</span></h2>
+<ol><li><span data-lang="en">Fill missing SLOs / capacity assumptions first.</span><span data-lang="zh">先补齐缺失的 SLO / 容量假设。</span></li><li><span data-lang="en">Find single points &amp; failure modes (GPU OOM, hot-swap failure, queue backlog, cross-AZ partition).</span><span data-lang="zh">找单点与故障模式（GPU OOM、热更失败、队列积压、跨 AZ 断链）。</span></li><li><span data-lang="en">Prioritize changes: safety-first (rate limit / circuit breaker / rollback) → efficiency (batch / cache) → cost (SKU pool / valley-fill).</span><span data-lang="zh">改动优先级：保命（限流/熔断/回滚）→ 提效（batch/缓存）→ 降本（SKU 池/填谷）。</span></li></ol><h2><span data-lang="en">Failure-mode catalog</span><span data-lang="zh">故障模式清单</span></h2>
+<ul><li><span data-lang="en"><strong>Overload</strong>: admission control + token-level backpressure.</span><span data-lang="zh"><strong>过载</strong>：准入控制 + token 级背压。</span></li><li><span data-lang="en"><strong>Bad release</strong>: canary + automated rollback on error-budget burn.</span><span data-lang="zh"><strong>坏发布</strong>：canary + 错误预算告警触发自动回滚。</span></li><li><span data-lang="en"><strong>Noisy neighbor</strong>: per-tenant isolation, quota, priority queues.</span><span data-lang="zh"><strong>嘈杂邻居</strong>：按租户隔离、配额、优先级队列。</span></li><li><span data-lang="en"><strong>Data corruption</strong>: immutable inputs, output signing, audit log.</span><span data-lang="zh"><strong>数据污染</strong>：不可变输入、输出签名、审计日志。</span></li></ul><div class="callout anthropic"><h4><span data-lang="en">Tip</span><span data-lang="zh">技巧</span></h4><p><span data-lang="en">Anchor each recommendation to an SLO change (e.g., "this canary policy cuts blast radius from 100% → 1% for bad releases"). Raw advice without SLO framing loses points.</span><span data-lang="zh">每条建议都锚定到 SLO 变化（如「这套 canary 把坏发布的 blast radius 从 100% 降到 1%」）。不绑 SLO 的建议扣分。</span></p></div>
+
+        <h2><span data-lang="en">Related study-guide topics</span><span data-lang="zh">相关学习手册专题</span></h2>
+        <ul><li><a href="../../guide/llm/llm-serving.html"><span data-lang="en">LLM serving</span><span data-lang="zh">LLM 推理服务</span></a></li></ul>
+      </article>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

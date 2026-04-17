@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Study Guide — SD-Guide</title>
+  <meta name="description" content="Deep-dive study notes for OpenAI & Anthropic system design interviews, synthesised from 7 core books.">
+  <link rel="stylesheet" href="../../assets/css/main.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../arena/index.html" data-match="/arena"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="./index.html" class="active" data-match="/guide"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../resources/index.html" data-match="/resources"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../about/index.html" data-match="/about"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+
+      <header class="page-header">
+        <h1 class="page-title">
+          <span data-lang="en">Study Guide</span>
+          <span data-lang="zh">系统学习手册</span>
+        </h1>
+        <p class="page-subtitle">
+          <span data-lang="en">Deep, cross-cutting notes on every major topic that OpenAI and Anthropic interviews draw from — synthesised from DDIA, Alex Xu V1, Chip Huyen's DMLS, Agentic Design Patterns, ByteByteGo, Acing the System Design Interview, and Machine Learning System Design Interview.</span>
+          <span data-lang="zh">把 OpenAI 与 Anthropic 面试涵盖的核心主题做深度、横向对比的学习笔记——系统综合自 DDIA、Alex Xu V1、Chip Huyen《DMLS》、《Agentic Design Patterns》、ByteByteGo、《Acing the System Design Interview》、《Machine Learning System Design Interview》。</span>
+        </p>
+      </header>
+
+      <section class="callout callout-info">
+        <h3><span data-lang="en">How to use this guide</span><span data-lang="zh">如何使用本手册</span></h3>
+        <p>
+          <span data-lang="en">Each topic page is self-contained (1,200–2,500 words) with: principles, trade-offs, concrete numbers, diagrams, and links back to the <a href="../arena/index.html">Arena</a> questions that exercise it. Reading order doesn't matter — start from whatever your weakest area is. Every page cites the original book and chapter so you can dive deeper when needed.</span>
+          <span data-lang="zh">每个主题页自成体系（1,200–2,500 字），包含：原理、权衡、具体数字、图示，以及回链到会考察它的<a href="../arena/index.html">真题 Arena</a>。阅读顺序不限——从最弱的一项切入即可。每页都标注了原书章节，方便深入挖掘。</span>
+        </p>
+      </section>
+
+      <!-- Foundations -->
+      <section class="guide-section">
+        <h2 class="guide-section-title">
+          <span data-lang="en">① Foundations</span>
+          <span data-lang="zh">① 基础功</span>
+        </h2>
+        <p class="guide-section-lead">
+          <span data-lang="en">Before any domain knowledge, you need a repeatable interview framework and the ability to do rapid numeric estimation on a whiteboard. These two skills separate candidates who "know system design" from those who can actually <em>do</em> it under time pressure.</span>
+          <span data-lang="zh">在进入领域知识之前，你需要一个可复用的面试框架与白板上快速估算的能力。这两项技能把「懂系统设计」的人与能在时间压力下<em>真正做出来</em>的人分开。</span>
+        </p>
+        <div class="guide-grid">
+          <a class="guide-card" href="foundations/interview-framework.html">
+            <div class="guide-card-num">01</div>
+            <h3><span data-lang="en">The Interview Framework</span><span data-lang="zh">面试通用框架</span></h3>
+            <p><span data-lang="en">A 45-minute-tested structure: requirements → scale → API → data model → architecture → deep dive → trade-offs. With timing budgets.</span><span data-lang="zh">45 分钟实测结构：需求 → 规模 → API → 数据模型 → 架构 → 深挖 → 权衡。含时间预算。</span></p>
+          </a>
+          <a class="guide-card" href="foundations/estimation.html">
+            <div class="guide-card-num">02</div>
+            <h3><span data-lang="en">Back-of-Envelope Estimation</span><span data-lang="zh">快速估算</span></h3>
+            <p><span data-lang="en">The numbers every senior engineer has memorised: latency constants, storage densities, network bandwidth, LLM token economics.</span><span data-lang="zh">每位资深工程师都该背过的数字：延迟常数、存储密度、网络带宽、LLM token 经济。</span></p>
+          </a>
+        </div>
+      </section>
+
+      <!-- Distributed Systems -->
+      <section class="guide-section">
+        <h2 class="guide-section-title">
+          <span data-lang="en">② Distributed Systems Core</span>
+          <span data-lang="zh">② 分布式系统核心</span>
+        </h2>
+        <p class="guide-section-lead">
+          <span data-lang="en">These six topics underpin every "Design X" question. They're also where interviewers probe most aggressively for depth — being able to cleanly articulate CAP, linearizability vs. serializability, quorum math, and LSM vs. B-tree trade-offs signals senior-level thinking.</span>
+          <span data-lang="zh">这六个主题支撑所有「设计 X」题目，也是面试官最爱深挖之处——把 CAP、可线性化 vs 可串行化、quorum 数学、LSM vs B-tree 说清楚就是资深信号。</span>
+        </p>
+        <div class="guide-grid">
+          <a class="guide-card" href="distributed/replication-consistency.html">
+            <div class="guide-card-num">03</div>
+            <h3><span data-lang="en">Replication &amp; Consistency</span><span data-lang="zh">复制与一致性</span></h3>
+            <p><span data-lang="en">Single-leader, multi-leader, leaderless. CAP vs PACELC. Read-your-writes, monotonic reads, linearizability.</span><span data-lang="zh">单主、多主、无主。CAP vs PACELC。读己之写、单调读、线性一致性。</span></p>
+          </a>
+          <a class="guide-card" href="distributed/partitioning.html">
+            <div class="guide-card-num">04</div>
+            <h3><span data-lang="en">Partitioning &amp; Sharding</span><span data-lang="zh">分区与分片</span></h3>
+            <p><span data-lang="en">Hash vs range. Consistent hashing. Hot-partition mitigation. Rebalancing. Secondary indexes in partitioned DBs.</span><span data-lang="zh">哈希 vs 范围。一致性哈希。热点缓解。再平衡。分区 DB 的二级索引。</span></p>
+          </a>
+          <a class="guide-card" href="distributed/consensus.html">
+            <div class="guide-card-num">05</div>
+            <h3><span data-lang="en">Consensus &amp; Coordination</span><span data-lang="zh">共识与协调</span></h3>
+            <p><span data-lang="en">Paxos / Raft intuition. Leader election. ZooKeeper / etcd patterns. Fencing tokens.</span><span data-lang="zh">Paxos / Raft 直觉。Leader 选举。ZooKeeper / etcd 模式。Fencing token。</span></p>
+          </a>
+          <a class="guide-card" href="distributed/transactions.html">
+            <div class="guide-card-num">06</div>
+            <h3><span data-lang="en">Transactions &amp; Isolation</span><span data-lang="zh">事务与隔离</span></h3>
+            <p><span data-lang="en">ACID. Weak isolation anomalies. Snapshot isolation, SSI. Distributed transactions, Saga, 2PC.</span><span data-lang="zh">ACID。弱隔离异常。快照隔离、SSI。分布式事务、Saga、2PC。</span></p>
+          </a>
+          <a class="guide-card" href="distributed/stream-batch.html">
+            <div class="guide-card-num">07</div>
+            <h3><span data-lang="en">Stream &amp; Batch Processing</span><span data-lang="zh">流处理与批处理</span></h3>
+            <p><span data-lang="en">Kafka. MapReduce. Lambda vs Kappa. Exactly-once. Event time vs processing time.</span><span data-lang="zh">Kafka。MapReduce。Lambda vs Kappa。Exactly-once。事件时间 vs 处理时间。</span></p>
+          </a>
+          <a class="guide-card" href="distributed/storage-engines.html">
+            <div class="guide-card-num">08</div>
+            <h3><span data-lang="en">Storage Engines</span><span data-lang="zh">存储引擎</span></h3>
+            <p><span data-lang="en">B-trees vs LSM trees. Write/read amplification. Column stores. Compaction strategies.</span><span data-lang="zh">B-tree vs LSM tree。读写放大。列存储。Compaction 策略。</span></p>
+          </a>
+        </div>
+      </section>
+
+      <!-- Classical Designs -->
+      <section class="guide-section">
+        <h2 class="guide-section-title">
+          <span data-lang="en">③ Classical System Designs</span>
+          <span data-lang="zh">③ 经典系统设计</span>
+        </h2>
+        <p class="guide-section-lead">
+          <span data-lang="en">Even AI-first companies ask these. OpenAI's Slack, Anthropic's chat service, webhook platforms — the fundamentals compound with the AI layer.</span>
+          <span data-lang="zh">即便是 AI-first 公司也会问这些。OpenAI 的 Slack、Anthropic 的 chat 服务、Webhook 平台——基础积木与 AI 层层叠加。</span>
+        </p>
+        <div class="guide-grid">
+          <a class="guide-card" href="classical/rate-limiter.html">
+            <div class="guide-card-num">09</div>
+            <h3><span data-lang="en">Rate Limiter</span><span data-lang="zh">限流器</span></h3>
+            <p><span data-lang="en">Token bucket, leaky bucket, sliding window. Distributed Redis + Lua. Token-based limiting for LLM APIs.</span><span data-lang="zh">令牌桶、漏桶、滑窗。分布式 Redis+Lua。LLM API 的 token 级限流。</span></p>
+          </a>
+          <a class="guide-card" href="classical/news-feed.html">
+            <div class="guide-card-num">10</div>
+            <h3><span data-lang="en">Feeds, Chat &amp; Notifications</span><span data-lang="zh">Feed、聊天与推送</span></h3>
+            <p><span data-lang="en">Fan-out on write vs read. Slack channels. Push/pull hybrids. Celebrity problem.</span><span data-lang="zh">写扩散 vs 读扩散。Slack channel。Push/pull 混合。明星用户问题。</span></p>
+          </a>
+          <a class="guide-card" href="classical/webhook-platforms.html">
+            <div class="guide-card-num">11</div>
+            <h3><span data-lang="en">Webhook Delivery &amp; Job Queues</span><span data-lang="zh">Webhook 投递与任务队列</span></h3>
+            <p><span data-lang="en">At-least-once delivery, idempotency, retry with backoff, DLQ. Poison-pill isolation.</span><span data-lang="zh">至少一次投递、幂等、指数退避、死信队列。毒丸隔离。</span></p>
+          </a>
+        </div>
+      </section>
+
+      <!-- LLM Systems -->
+      <section class="guide-section">
+        <h2 class="guide-section-title">
+          <span data-lang="en">④ LLM Systems (the core differentiator)</span>
+          <span data-lang="zh">④ LLM 系统（最大差异化）</span>
+        </h2>
+        <p class="guide-section-lead">
+          <span data-lang="en">This is what OpenAI and Anthropic care about most. If you can only go deep on one section of this guide, make it this one. Expect questions about serving internals (KV cache, continuous batching, speculative decoding), RAG, agents, evals, and distributed training.</span>
+          <span data-lang="zh">这是 OpenAI 与 Anthropic 最看重的一块。若只能深入学一节，就选这里。请准备：推理内部（KV cache、continuous batching、speculative decoding）、RAG、Agent、评估与分布式训练。</span>
+        </p>
+        <div class="guide-grid">
+          <a class="guide-card" href="llm/llm-serving.html">
+            <div class="guide-card-num">12</div>
+            <h3><span data-lang="en">LLM Serving &amp; Inference</span><span data-lang="zh">LLM 推理服务</span></h3>
+            <p><span data-lang="en">Prefill vs decode. KV cache &amp; PagedAttention. Continuous batching. Speculative decoding. TTFT vs ITL.</span><span data-lang="zh">Prefill vs decode。KV cache 与 PagedAttention。连续批处理。投机解码。TTFT vs ITL。</span></p>
+          </a>
+          <a class="guide-card" href="llm/rag.html">
+            <div class="guide-card-num">13</div>
+            <h3><span data-lang="en">RAG Architecture</span><span data-lang="zh">RAG 架构</span></h3>
+            <p><span data-lang="en">Chunking strategy, hybrid retrieval, cross-encoder rerank, HyDE, citation grounding, multi-modal.</span><span data-lang="zh">Chunk 策略、混合检索、交叉编码重排、HyDE、引用锚定、多模态。</span></p>
+          </a>
+          <a class="guide-card" href="llm/agentic-patterns.html">
+            <div class="guide-card-num">14</div>
+            <h3><span data-lang="en">Agentic Design Patterns</span><span data-lang="zh">Agent 设计模式</span></h3>
+            <p><span data-lang="en">Tool use, ReAct, planner/executor split, multi-agent orchestration, MCP, memory, reflection.</span><span data-lang="zh">工具调用、ReAct、规划-执行分离、多 agent 编排、MCP、记忆、反思。</span></p>
+          </a>
+          <a class="guide-card" href="llm/llm-evaluation.html">
+            <div class="guide-card-num">15</div>
+            <h3><span data-lang="en">LLM Evaluation</span><span data-lang="zh">LLM 评估</span></h3>
+            <p><span data-lang="en">Offline benchmarks, LLM-as-judge bias, regression suites, online A/B with guardrails, human raters.</span><span data-lang="zh">离线基准、LLM-as-judge 偏差、回归测试、带护栏的在线 A/B、人工标注。</span></p>
+          </a>
+          <a class="guide-card" href="llm/distributed-training.html">
+            <div class="guide-card-num">16</div>
+            <h3><span data-lang="en">Distributed Training</span><span data-lang="zh">分布式训练</span></h3>
+            <p><span data-lang="en">DP, TP, PP, ZeRO/FSDP, 3D parallelism. Checkpointing, gradient accumulation, mixed precision.</span><span data-lang="zh">DP、TP、PP、ZeRO/FSDP、3D 并行。Checkpointing、梯度累积、混合精度。</span></p>
+          </a>
+        </div>
+      </section>
+
+      <!-- ML Systems -->
+      <section class="guide-section">
+        <h2 class="guide-section-title">
+          <span data-lang="en">⑤ ML System Design</span>
+          <span data-lang="zh">⑤ ML 系统设计</span>
+        </h2>
+        <p class="guide-section-lead">
+          <span data-lang="en">Classical ML is still part of the loop — especially ranking, recommendation, and moderation. Chip Huyen's <em>Designing ML Systems</em> is the backbone of this section.</span>
+          <span data-lang="zh">经典 ML 依然重要——尤其是排序、推荐与审核。本节以 Chip Huyen《Designing ML Systems》为主干。</span>
+        </p>
+        <div class="guide-grid">
+          <a class="guide-card" href="ml/ml-lifecycle.html">
+            <div class="guide-card-num">17</div>
+            <h3><span data-lang="en">ML Lifecycle &amp; Platform</span><span data-lang="zh">ML 生命周期与平台</span></h3>
+            <p><span data-lang="en">Feature store, training pipeline, model registry, serving, shadow mode, canary.</span><span data-lang="zh">特征平台、训练流水线、模型注册表、服务化、shadow、灰度。</span></p>
+          </a>
+          <a class="guide-card" href="ml/drift-monitoring.html">
+            <div class="guide-card-num">18</div>
+            <h3><span data-lang="en">Drift Detection &amp; Monitoring</span><span data-lang="zh">漂移检测与监控</span></h3>
+            <p><span data-lang="en">Data/label/concept drift. PSI, KS, KL. Monitoring stack (Arize, WhyLabs). LLM-specific drift.</span><span data-lang="zh">数据/标签/概念漂移。PSI、KS、KL。监控栈（Arize、WhyLabs）。LLM 专属漂移。</span></p>
+          </a>
+          <a class="guide-card" href="ml/recommenders.html">
+            <div class="guide-card-num">19</div>
+            <h3><span data-lang="en">Recommenders &amp; Ranking</span><span data-lang="zh">推荐与排序</span></h3>
+            <p><span data-lang="en">Candidate generation, retrieval, ranking. Two-tower, wide &amp; deep. Embedding-based recall. LLM-assisted ranking.</span><span data-lang="zh">候选生成、召回、排序。双塔、Wide&amp;Deep。基于 embedding 的召回。LLM 协助排序。</span></p>
+          </a>
+        </div>
+      </section>
+
+      <!-- Safety -->
+      <section class="guide-section">
+        <h2 class="guide-section-title">
+          <span data-lang="en">⑥ Safety &amp; Alignment Engineering</span>
+          <span data-lang="zh">⑥ 安全与对齐工程</span>
+        </h2>
+        <p class="guide-section-lead">
+          <span data-lang="en">Unique to Anthropic and increasingly to OpenAI — expect at least one question here. Constitutional AI, jailbreak defence, red-teaming infrastructure, and content moderation pipelines.</span>
+          <span data-lang="zh">Anthropic 独有，OpenAI 也越来越重视——至少一题会出现在这里。宪法式 AI、越狱防御、红队基建、内容审核流水线。</span>
+        </p>
+        <div class="guide-grid">
+          <a class="guide-card" href="safety/safety-engineering.html">
+            <div class="guide-card-num">20</div>
+            <h3><span data-lang="en">Safety Engineering</span><span data-lang="zh">安全工程</span></h3>
+            <p><span data-lang="en">Layered defences: prompt-level, model-level, output-level. Red-team platforms. Harm taxonomies. RLHF/DPO/CAI.</span><span data-lang="zh">分层防御：prompt 级、模型级、输出级。红队平台。Harm 分类。RLHF/DPO/CAI。</span></p>
+          </a>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <p>
+        <span data-lang="en">© SD-Guide · Built for OpenAI &amp; Anthropic system design prep. Not affiliated with either company.</span>
+        <span data-lang="zh">© SD-Guide · 为 OpenAI 与 Anthropic 系统设计面试准备。与两家公司无关联。</span>
+      </p>
+    </div>
+  </footer>
+
+  <script src="../../assets/js/app.js"></script>
+</body>
+</html>

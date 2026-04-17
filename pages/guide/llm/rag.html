@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Retrieval-Augmented Generation — SD-Guide</title>
+  <meta name="description" content="Chunking, hybrid BM25+dense retrieval, cross-encoder rerank, HyDE, citations, and multi-modal RAG — the production patterns behind enterprise-grade knowledge bots.">
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../../../pages/arena/index.html" data-match="/arena"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../../pages/guide/index.html" class="active" data-match="/guide"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../../pages/resources/index.html" data-match="/resources"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../../pages/about/index.html" data-match="/about"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+
+      <div class="breadcrumb">
+        <a href="../../../pages/guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a>
+        <span>›</span>
+        <span class="crumb-category">LLM Systems<span data-lang="zh" style="display:none">LLM 系统</span></span>
+      </div>
+
+      <header class="page-header">
+        <h1 class="page-title">
+          <span data-lang="en">Retrieval-Augmented Generation</span>
+          <span data-lang="zh">检索增强生成 (RAG)</span>
+        </h1>
+        <div class="topic-meta">
+          <span class="tag" style="background:var(--openai-glow);border-color:var(--openai)">📚 Gulli Ch.14 · RAG paper (Lewis 2020) · HyDE (Gao 2022)</span><span class="tag">Hybrid retrieval</span><span class="tag">Reranking</span><span class="tag">HyDE</span><span class="tag">Contextual retrieval</span>
+        </div>
+        <p class="page-subtitle">
+          <span data-lang="en">Chunking, hybrid BM25+dense retrieval, cross-encoder rerank, HyDE, citations, and multi-modal RAG — the production patterns behind enterprise-grade knowledge bots.</span>
+          <span data-lang="zh">切块、BM25+dense 混合检索、交叉编码器重排、HyDE、引用、多模态 RAG——企业级知识助手的生产模式。</span>
+        </p>
+      </header>
+
+      <article class="topic-prose">
+        <nav class="topic-toc">
+          <h4><span data-lang="en">On this page</span><span data-lang="zh">本页目录</span></h4>
+          <ol>
+            <li><a href="#s1"><span data-lang="en">What RAG is and when to use it</span><span data-lang="zh">RAG 是什么、何时用</span></a></li>
+            <li><a href="#s2"><span data-lang="en">Chunking: the part everyone gets wrong</span><span data-lang="zh">切块：最容易做错的地方</span></a></li>
+            <li><a href="#s3"><span data-lang="en">Hybrid retrieval + reranking</span><span data-lang="zh">混合检索 + 重排</span></a></li>
+            <li><a href="#s4"><span data-lang="en">Query-side tricks: HyDE, decomposition, multi-hop</span><span data-lang="zh">Query 端技巧：HyDE、分解、多跳</span></a></li>
+            <li><a href="#s5"><span data-lang="en">Grounding, citations, and multi-modal</span><span data-lang="zh">grounding、引用、多模态</span></a></li>
+            <li><a href="#s6"><span data-lang="en">Evaluation and interview checklist</span><span data-lang="zh">评估与面试清单</span></a></li>
+          </ol>
+        </nav>
+
+        <div data-lang="en">
+
+<h2 id="s1">What RAG is and when to use it</h2>
+<p>Retrieval-Augmented Generation (RAG) grounds an LLM's answer in documents it did not see at training. The canonical interview framing: "given a corpus of N million docs, answer questions with citations, under 500ms, without finetuning the model".</p>
+<p>Use RAG when you need: (1) up-to-date knowledge (the model's training cutoff is stale); (2) private knowledge (your wiki, Slack, customer tickets); (3) auditable citations; (4) long-tail factual precision where hallucination is unacceptable. Don't use RAG for reasoning-only tasks or when the answer is in the model's parameters anyway (simple arithmetic, general summarization).</p>
+<p>Interview numbers: a typical enterprise corpus is 1M–100M chunks of ~500 tokens each. Embeddings at 1024-dim fp16 = 2 KB/chunk, so 100M chunks = 200 GB — fits in a single-box Milvus/Qdrant with RAM overprovisioning. End-to-end budget: 50ms retrieval, 100ms rerank, 300ms generation with streaming first-token.</p>
+<div class="callout tip"><h4>Source cross-reference</h4><p>Gulli's <em>Agentic Design Patterns</em> Ch.14 (Knowledge Retrieval) is the canonical catalog. Read the original RAG paper (Lewis et al. 2020), Contriever/ColBERT for retrieval, and HyDE (Gao et al. 2022) for query-side tricks.</p></div>
+
+<h2 id="s2">Chunking: the part everyone gets wrong</h2>
+<p>Chunking is the single biggest quality lever — worse chunking beats better embeddings. Three strategies:</p>
+<ul>
+  <li><strong>Fixed-size</strong> (256/512/1024 tokens with 10–20% overlap). Dead simple. Works fine for narrative text; terrible for code and structured docs.</li>
+  <li><strong>Semantic</strong> (chunk at sentence/paragraph boundaries; cluster adjacent sentences by embedding distance). Best quality; more compute.</li>
+  <li><strong>Structural</strong> (split at markdown headers, code function boundaries, HTML sections). The right answer for technical documentation, code, and wikis.</li>
+  <li><strong>Sliding window with "parent doc" retrieval</strong>: store small chunks for retrieval, return the full parent section at generation time. Best of both.</li>
+</ul>
+<p>Number rule: optimize chunk size to match the expected answer granularity. FAQ-style → 200 tokens. Dense technical docs → 500–800. Conversations → by turn.</p>
+<div class="callout warn"><h4>Anti-pattern</h4><p>One chunk size for all corpora. A single 512-token chunk cuts PDF tables in half and destroys code. Always inspect chunks by eye on 20 random documents before deploying.</p></div>
+
+<h2 id="s3">Hybrid retrieval + reranking</h2>
+<p>Production RAG almost always uses <strong>hybrid retrieval</strong>:</p>
+<ol>
+  <li><strong>BM25 / keyword</strong> (Elasticsearch, OpenSearch). Catches exact matches — SKUs, error codes, names. Vector search misses these.</li>
+  <li><strong>Dense</strong> (embedding similarity, e.g., cosine over bge-large, text-embedding-3-small). Catches semantic matches.</li>
+  <li><strong>Reciprocal Rank Fusion (RRF)</strong> merges the two ranked lists: <code>score(d) = Σ 1/(k + rank_i(d))</code> with k=60 typical. Beats either alone by 5–15% on retrieval benchmarks.</li>
+</ol>
+<p>Then <strong>rerank</strong> with a cross-encoder (e.g., Cohere rerank, BGE-reranker, Jina). Cross-encoders score each (query, doc) pair jointly — 100× slower than bi-encoders but 10–20% NDCG lift. Pattern: retrieve 50 candidates hybrid → rerank top 50 → keep top 5 for the LLM.</p>
+<div class="mermaid-container"><pre class="mermaid">
+flowchart LR
+  Q[User query] --&gt; QE[Query encoder]
+  Q --&gt; QR[Query rewriter<br/>HyDE / decomp]
+  QR --&gt; BM[BM25 index]
+  QE --&gt; VX[Vector index<br/>HNSW]
+  BM --&gt; RRF[RRF merge]
+  VX --&gt; RRF
+  RRF --&gt; XR[Cross-encoder rerank]
+  XR --&gt; CTX[Top-5 chunks]
+  CTX --&gt; LLM[LLM + citations]
+  LLM --&gt; A[Answer + refs]
+</pre></div>
+
+<h2 id="s4">Query-side tricks: HyDE, decomposition, multi-hop</h2>
+<h3>HyDE (Hypothetical Document Embeddings)</h3>
+<p>A user query "what did we decide about paid leave?" embeds poorly because it's a question, but docs are statements. HyDE: ask the LLM to <em>draft</em> a fake answer, then embed that. The fake doc embedding matches real doc embeddings much better. Empirically +10–15% retrieval recall at a cost of one LLM call.</p>
+<h3>Query decomposition</h3>
+<p>Multi-part queries ("compare our Q3 revenue to Anthropic's Q3 revenue") embed poorly. Have the LLM split into sub-queries, retrieve for each, union the context. Standard with tool-using agents; pairs with the planner/executor pattern (see the agentic-patterns page).</p>
+<h3>Multi-hop</h3>
+<p>"Who is the CTO of the company that acquired Figma?" requires two retrievals. Solutions: (a) LLM planner executes hop 1, then hop 2; (b) GraphRAG builds an entity graph up front so multi-hop is a graph traversal; (c) fine-tuned retriever like Self-RAG that knows when to retrieve more.</p>
+
+<h2 id="s5">Grounding, citations, and multi-modal</h2>
+<h3>Citation-grounded generation</h3>
+<p>Prompt the LLM to cite source IDs inline: <code>[doc_id:chunk_id]</code>. Post-process to verify every citation actually exists. For Anthropic-style interviews, explicitly discuss how you would <em>measure</em> grounding: train a separate NLI model to check if each output claim is entailed by the cited passage (this is what FActScore and the Bespoke-Minicheck tools do).</p>
+<h3>Long-context vs RAG</h3>
+<p>Claude 3 Opus has 200k context; Gemini 1.5 Pro has 1M. Doesn't RAG become obsolete? No — 1M-token prompts cost $3+ per query at fp16 pricing, dwarfing retrieval cost. Also, "needle in haystack" recall degrades past ~100k tokens. Long context <em>complements</em> RAG: retrieve coarse to fit 100k tokens, let the model sift.</p>
+<h3>Multi-modal RAG</h3>
+<p>PDFs contain tables, charts, figures. Two approaches: (1) OCR + layout parsing (LayoutLMv3, Unstructured.io), embed text per table/figure; (2) vision-language embeddings (CLIP, SigLIP, ColPali) — embed page images directly. ColPali shows that indexing page images with a late-interaction VLM beats OCR-pipelines on visual-heavy corpora.</p>
+<div class="callout openai"><h4>OpenAI-specific</h4><p>OpenAI's Assistants / File Search product builds RAG for you: auto-chunking (800 tokens, 400 overlap), hybrid retrieval, auto-reranking. Good for MVP, but you lose control of chunk strategy and eval — bring your own pipeline for production.</p></div>
+<div class="callout anthropic"><h4>Anthropic-specific</h4><p>Anthropic's "Contextual Retrieval" technique (public engineering blog) prepends a chunk-specific one-sentence context to each chunk <em>before</em> embedding. Example: "From the 2023 10-K, section on liquidity: [original chunk]". Reported 49% reduction in retrieval failures when combined with BM25 + rerank. This is the interview bait: cite it.</p></div>
+
+<h2 id="s6">Evaluation and interview checklist</h2>
+<p>You can't improve RAG without offline eval. Minimum viable eval harness:</p>
+<ul>
+  <li><strong>Retrieval metrics</strong>: hit@k, recall@k, MRR on a labeled set of 200 (query, gold-chunk) pairs.</li>
+  <li><strong>Grounding metrics</strong>: faithfulness (does answer only use retrieved context?), citation precision.</li>
+  <li><strong>End-to-end</strong>: LLM-as-judge on answer quality, calibrated against 50 human-rated golds. See the <a href="llm-evaluation.html">evaluation</a> page.</li>
+  <li><strong>Online</strong>: thumbs up/down, regret rate, follow-up-question rate.</li>
+</ul>
+<div class="callout warn"><h4>Anti-patterns</h4>
+<ul>
+  <li>No eval set. You're flying blind; every "improvement" is vibes.</li>
+  <li>Vector-only retrieval. You will miss exact-match queries. Always hybrid.</li>
+  <li>Top-k = 20 stuffed into the prompt. Cross-encoder rerank to top-5 or you dilute the LLM.</li>
+  <li>One global index for multi-tenant data. Permission leaks become compliance incidents.</li>
+  <li>Ignoring freshness. Index at write time or hourly; daily rebuilds mean stale answers.</li>
+</ul></div>
+<p><strong>Whiteboard checklist:</strong> corpus size and shape → chunking strategy → embedding model → hybrid index (BM25 + HNSW) → query rewrite (HyDE / decomp) → cross-encoder rerank → citation-grounded generation → eval harness → freshness pipeline → per-tenant permissions.</p>
+
+        </div>
+        <div data-lang="zh">
+
+<h2 id="s1">RAG 是什么、何时用</h2>
+<p>检索增强生成（RAG）让 LLM 基于训练时未见的文档作答。经典面试表述："给定 N 百万文档的语料，带引用回答问题，500ms 内，不微调模型"。</p>
+<p>何时用 RAG：(1) 需要最新知识（模型训练截止）；(2) 私有知识（你的 wiki、Slack、工单）；(3) 需可审计的引用；(4) 长尾事实精准、无法容忍幻觉。不要用 RAG 做纯推理任务或答案本就在模型参数里的事（简单算术、泛摘要）。</p>
+<p>面试数：企业典型语料 100 万-1 亿段、每段约 500 token。1024 维 fp16 embedding = 2 KB/段，1 亿段 = 200 GB——单机 Milvus/Qdrant 加内存足够。端到端预算：检索 50ms、重排 100ms、生成 300ms 首 token 流式。</p>
+<div class="callout tip"><h4>参考来源</h4><p>Gulli《Agentic Design Patterns》第 14 章（Knowledge Retrieval）是标准目录。读原始 RAG 论文（Lewis et al. 2020）、Contriever/ColBERT、HyDE（Gao et al. 2022）。</p></div>
+
+<h2 id="s2">切块：最容易做错的地方</h2>
+<p>切块是质量最大杠杆——切得差再好的 embedding 也救不回来。三种策略：</p>
+<ul>
+  <li><strong>定长</strong>（256/512/1024 token、10-20% 重叠）。极简。叙事文本 OK；代码和结构化文档差。</li>
+  <li><strong>语义</strong>（按句/段分，再按 embedding 距离聚合相邻句）。质量最好、更费算力。</li>
+  <li><strong>结构化</strong>（按 markdown 标题、函数边界、HTML 段）。技术文档、代码、wiki 的正解。</li>
+  <li><strong>滑窗 + "父文档"检索</strong>：小块用于检索、生成时返回整段父节。两全。</li>
+</ul>
+<p>数字规则：按预期答案颗粒度调块大小。FAQ 200 token；密集技术 500-800；对话按轮。</p>
+<div class="callout warn"><h4>反模式</h4><p>一个块大小适配所有语料。一刀 512 token 把 PDF 表切一半、把代码切坏。上线前必须手看 20 份随机文档的切块结果。</p></div>
+
+<h2 id="s3">混合检索 + 重排</h2>
+<p>生产 RAG 几乎总用<strong>混合检索</strong>：</p>
+<ol>
+  <li><strong>BM25 / 关键词</strong>（Elasticsearch、OpenSearch）。抓精确匹配——SKU、错误码、人名。向量搜会错过。</li>
+  <li><strong>Dense</strong>（embedding 相似度，例如 bge-large、text-embedding-3-small 的余弦）。抓语义。</li>
+  <li><strong>RRF 倒数排名融合</strong>：<code>score(d) = Σ 1/(k + rank_i(d))</code>、k 典型 60。比单用任一种在检索 benchmark 上好 5-15%。</li>
+</ol>
+<p>然后<strong>交叉编码器重排</strong>（Cohere rerank、BGE-reranker、Jina）。对 (query, doc) 对联合打分——比双塔慢 100 倍但 NDCG 高 10-20%。流程：hybrid 召 50 → 重排 top 50 → 给 LLM top 5。</p>
+<div class="mermaid-container"><pre class="mermaid">
+flowchart LR
+  Q[用户查询] --&gt; QE[Query encoder]
+  Q --&gt; QR[Query 重写<br/>HyDE / 分解]
+  QR --&gt; BM[BM25 索引]
+  QE --&gt; VX[向量索引<br/>HNSW]
+  BM --&gt; RRF[RRF 合并]
+  VX --&gt; RRF
+  RRF --&gt; XR[交叉编码器重排]
+  XR --&gt; CTX[Top-5 chunk]
+  CTX --&gt; LLM[LLM + 引用]
+  LLM --&gt; A[答案 + refs]
+</pre></div>
+
+<h2 id="s4">Query 端技巧：HyDE、分解、多跳</h2>
+<h3>HyDE（Hypothetical Document Embeddings）</h3>
+<p>用户问句"关于带薪休假我们定了什么？"embed 效果差，因为是问句、文档是陈述句。HyDE：让 LLM <em>起草</em>一段假答案再 embed。假文档的 embedding 能更好匹配真文档。实测召回 +10-15%，代价一次 LLM 调用。</p>
+<h3>查询分解</h3>
+<p>"比较我们 Q3 和 Anthropic Q3 收入"这种多要素查询 embed 差。让 LLM 拆子查询分别检索再合并上下文。工具型 agent 标准做法；配合 planner/executor 模式（见 agentic-patterns 页）。</p>
+<h3>多跳</h3>
+<p>"收购 Figma 的公司的 CTO 是谁？"需要两次检索。方案：(a) LLM 规划器先跳 1 再跳 2；(b) GraphRAG 预先建实体图、多跳即图遍历；(c) 微调的 Self-RAG 自知何时继续检索。</p>
+
+<h2 id="s5">grounding、引用、多模态</h2>
+<h3>引用-grounded 生成</h3>
+<p>Prompt 要求 LLM 行内标 <code>[doc_id:chunk_id]</code>。后处理验证每个引用都真实存在。对 Anthropic 风格面试要说明如何<em>度量</em> grounding：训一个 NLI 模型检查输出声明是否被引用段落蕴含（FActScore、Bespoke-Minicheck 做此事）。</p>
+<h3>长上下文 vs RAG</h3>
+<p>Claude 3 Opus 20 万 token；Gemini 1.5 Pro 100 万。RAG 过时了？没有——100 万 token prompt 按 fp16 价每次 $3+，远超检索成本；"大海捞针"召回在 ~10 万 token 后衰减。长上下文<em>补充</em> RAG：粗召 10 万 token 让模型筛。</p>
+<h3>多模态 RAG</h3>
+<p>PDF 里有表、图、图片。两路：(1) OCR + 版面解析（LayoutLMv3、Unstructured.io），按表/图单独 embed 文本；(2) 视觉-语言 embedding（CLIP、SigLIP、ColPali）直接 embed 页图。ColPali 在视觉密集语料上用 late-interaction VLM 索引页图优于 OCR pipeline。</p>
+<div class="callout openai"><h4>OpenAI 细节</h4><p>OpenAI 的 Assistants/File Search 内置 RAG：自动切块（800 token、400 重叠）、混合检索、自动重排。MVP 合适；生产要失去切块和评估控制，还得自己搭。</p></div>
+<div class="callout anthropic"><h4>Anthropic 细节</h4><p>Anthropic 的 "Contextual Retrieval"（公开工程博客）在 embed 前为每个 chunk 拼一句 chunk 专属的上下文。例如："来自 2023 10-K 流动性章节：[原 chunk]"。配合 BM25 + rerank 后检索失败率减 49%。面试可引用。</p></div>
+
+<h2 id="s6">评估与面试清单</h2>
+<p>没离线评估就改不动 RAG。最小评估框架：</p>
+<ul>
+  <li><strong>检索指标</strong>：200 条 (query, gold chunk) 的 hit@k、recall@k、MRR。</li>
+  <li><strong>grounding 指标</strong>：忠实度（答案只用检索内容？）、引用准确率。</li>
+  <li><strong>端到端</strong>：LLM-as-judge 评答案质量，与 50 条人类 gold 校准。见<a href="llm-evaluation.html">评估</a>页。</li>
+  <li><strong>线上</strong>：点赞/点踩、后悔率、追问率。</li>
+</ul>
+<div class="callout warn"><h4>反模式</h4>
+<ul>
+  <li>没评估集。盲飞、所有"改进"都是感觉。</li>
+  <li>只向量检索。漏精确匹配查询。永远混合。</li>
+  <li>top-k=20 塞进 prompt。必须 cross-encoder 重排到 top-5，否则稀释 LLM。</li>
+  <li>多租户共用一索引。权限泄漏 = 合规事故。</li>
+  <li>忽略新鲜度。写时索引或小时级；每日重建 = 答案过期。</li>
+</ul></div>
+<p><strong>白板清单：</strong>语料规模与形态 → 切块策略 → embedding 模型 → 混合索引（BM25 + HNSW）→ 查询重写（HyDE / 分解）→ 交叉编码器重排 → 引用-grounded 生成 → 评估框架 → 新鲜度管线 → 按租户权限。</p>
+
+        </div>
+      </article>
+
+      <section class="topic-footer-links">
+        <a href="../../arena/questions/o18-vector-database.html"><span class="label"><span data-lang="en">Arena question</span><span data-lang="zh">真题</span></span><strong><span data-lang="en">O18 · Vector Database</span><span data-lang="zh">O18 · 向量数据库</span></strong></a>
+        <a href="../../arena/questions/o16-llm-enterprise-search.html"><span class="label"><span data-lang="en">Arena question</span><span data-lang="zh">真题</span></span><strong><span data-lang="en">O16 · LLM Enterprise Search</span><span data-lang="zh">O16 · LLM 企业搜索</span></strong></a>
+        <a href="llm-serving.html"><span class="label"><span data-lang="en">Previous</span><span data-lang="zh">上一主题</span></span><strong><span data-lang="en">LLM Serving</span><span data-lang="zh">LLM 推理</span></strong></a>
+        <a href="agentic-patterns.html"><span class="label"><span data-lang="en">Next topic</span><span data-lang="zh">下一主题</span></span><strong><span data-lang="en">Agentic Patterns</span><span data-lang="zh">Agentic 模式</span></strong></a>
+      </section>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <p>
+        <span data-lang="en">© SD-Guide · Built for OpenAI &amp; Anthropic system design prep. Not affiliated with either company.</span>
+        <span data-lang="zh">© SD-Guide · 为 OpenAI 与 Anthropic 系统设计面试准备。与两家公司无关联。</span>
+      </p>
+    </div>
+  </footer>
+
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>A19. Prompt Playground / Experiment Platform — SD-Guide</title>
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../index.html" class="active"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../resources/index.html"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../about/index.html"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a>
+        <span class="sep">›</span>
+        <a href="../index.html"><span data-lang="en">Arena</span><span data-lang="zh">竞技场</span></a>
+        <span class="sep">›</span>
+        <span>A19</span>
+      </div>
+
+      <article class="prose wide">
+        <div class="question-meta" style="margin-bottom:1rem;">
+          <span class="tag company-anthropic">Anthropic</span>
+          <span class="tag freq-2">★★ Frequent</span>
+          <span class="tag difficulty-medium">Medium</span>
+          <span class="tag">Experimentation</span><span class="tag">Prompt Cache</span>
+        </div>
+
+        <h1>
+          <span data-lang="en">A19 · Prompt Playground / Experiment Platform</span>
+          <span data-lang="zh">A19 · Prompt 实验平台</span>
+        </h1>
+
+        <div class="callout anthropic">
+          <h4><span data-lang="en">Verified source</span><span data-lang="zh">经核实出处</span></h4>
+          <p>Prompt: "Design a prompt playground…compare outputs…collaborate…prompt versioning…experiment management…evaluation…context too large" — PracHub, Onsite 2026-02. Credibility <strong>B</strong>.</p>
+        </div>
+
+        <h2><span data-lang="en">Treat it as an experiment platform (not a UI wrapper)</span><span data-lang="zh">当作实验平台（而非 UI 包装）</span></h2>
+<div class="mermaid-container"><pre class="mermaid">
+flowchart LR
+  UI[Web UI] --> API[Playground API]
+  API --> V[(Prompt Versions)]
+  API --> RUN[Run Orchestrator]
+  RUN --> LLM[Model API]
+  RUN --> E[(Eval Results)]
+  API --> COL[Collaboration / ACL]
+</pre></div><h2><span data-lang="en">Four product-workflow questions you must answer</span><span data-lang="zh">必须回答的 4 个产品工作流问题</span></h2>
+<ol><li><span data-lang="en"><strong>Reproducibility per experiment</strong>: pin model version, params, context, tool versions, dataset version.</span><span data-lang="zh"><strong>每次实验可复现</strong>：固定模型版本、参数、上下文、工具版本、数据集版本。</span></li><li><span data-lang="en"><strong>Comparison</strong>: side-by-side view + automated metrics (accuracy, preference, toxicity).</span><span data-lang="zh"><strong>对比</strong>：并排视图 + 自动指标（准确率、偏好、毒性）。</span></li><li><span data-lang="en"><strong>Permissions</strong>: workspace, share links, audit log.</span><span data-lang="zh"><strong>权限</strong>：workspace、分享链接、审计日志。</span></li><li><span data-lang="en"><strong>Oversize context</strong>: reference external docs (RAG), chunk prompt, or use prompt caching for repeated prefixes.</span><span data-lang="zh"><strong>超大上下文</strong>：引用外部文档（RAG）、分块 prompt、重复前缀用 prompt cache。</span></li></ol><h2><span data-lang="en">Prompt caching gotcha</span><span data-lang="zh">Prompt caching 陷阱</span></h2>
+<ul><li><span data-lang="en">Anthropic&apos;s prompt caching has 5-min default TTL (extensible to 1 hour at cost).</span><span data-lang="zh">Anthropic 的 prompt cache 默认 5 分钟 TTL（付费可扩展到 1 小时）。</span></li><li><span data-lang="en">In a playground, cache the <em>system prompt + background material</em> prefix to cut cost; cache key MUST include workspace / tenant to prevent cross-tenant leaks.</span><span data-lang="zh">playground 中缓存 <em>system prompt + 背景材料</em>前缀以降本；cache key <strong>必须</strong>包含 workspace/tenant 防止跨租户泄漏。</span></li></ul>
+
+        <h2><span data-lang="en">Related study-guide topics</span><span data-lang="zh">相关学习手册专题</span></h2>
+        <ul><li><a href="../../guide/llm/llm-evaluation.html"><span data-lang="en">LLM eval</span><span data-lang="zh">LLM 评估</span></a></li><li><a href="../../guide/llm/rag.html"><span data-lang="en">RAG</span><span data-lang="zh">RAG</span></a></li></ul>
+      </article>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

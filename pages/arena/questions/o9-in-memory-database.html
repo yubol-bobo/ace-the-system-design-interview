@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>O9. Design an In-Memory Database — SD-Guide</title>
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../index.html" class="active"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../resources/index.html"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../about/index.html"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a>
+        <span class="sep">›</span>
+        <a href="../index.html"><span data-lang="en">Arena</span><span data-lang="zh">竞技场</span></a>
+        <span class="sep">›</span>
+        <span>O9</span>
+      </div>
+
+      <article class="prose wide">
+        <div class="question-meta" style="margin-bottom:1rem;">
+          <span class="tag company-openai">OpenAI</span>
+          <span class="tag freq-3">★★★ Frequent</span>
+          <span class="tag difficulty-hard">Hard</span>
+          <span class="tag">KV</span><span class="tag">WAL</span><span class="tag">Snapshot</span>
+        </div>
+
+        <h1>
+          <span data-lang="en">O9 · Design an In-Memory Database</span>
+          <span data-lang="zh">O9 · 设计内存数据库</span>
+        </h1>
+
+        <div class="callout openai">
+          <h4><span data-lang="en">Verified source</span><span data-lang="zh">经核实出处</span></h4>
+          <p>Prompt: "Design an in-memory database." — <a href="https://igotanoffer.com/" target="_blank" rel="noopener">IGotAnOffer</a> (also Glassdoor, StaffEngPrep, PracHub). Credibility <strong>B / D</strong> (curated + interview-coach).</p>
+        </div>
+
+        <h2><span data-lang="en">Scope control (critical)</span><span data-lang="zh">范围控制（关键）</span></h2>
+<p><span data-lang="en">Start with <strong>SET / GET / DEL + TTL + prefix scan</strong>. Evolve to persistence (AOF / snapshot), sharding, replication. Follow-ups may add GROUP BY, ORDER BY.</span><span data-lang="zh">从 <strong>SET/GET/DEL + TTL + 前缀扫描</strong>开始。演进：持久化（AOF/snapshot）、分片、复制。追问可加 GROUP BY、ORDER BY。</span></p><h2><span data-lang="en">Core architecture</span><span data-lang="zh">核心架构</span></h2>
+<div class="mermaid-container"><pre class="mermaid">
+flowchart LR
+  C[Client] --> API[KV API]
+  API --> MEM[(Memtable)]
+  API --> WAL[(Write-Ahead Log)]
+  MEM --> SNAP[Snapshot]
+</pre></div><h2><span data-lang="en">API</span><span data-lang="zh">API 设计</span></h2>
+<pre><code>PUT    /kv/{key}     body { value, ttl_seconds? }
+GET    /kv/{key}
+DELETE /kv/{key}
+GET    /scan?prefix=&amp;limit=&amp;cursor=</code></pre><h2><span data-lang="en">Internals</span><span data-lang="zh">内部实现</span></h2>
+<ul><li><span data-lang="en"><strong>Sharding</strong>: consistent hash or modulo per shard; RWLock within a shard.</span><span data-lang="zh"><strong>分片</strong>：一致性哈希或取模；shard 内 RWLock。</span></li><li><span data-lang="en"><strong>TTL</strong>: min-heap or timing wheel; background reaper + lazy delete.</span><span data-lang="zh"><strong>TTL</strong>：小根堆或 timing wheel；后台清理 + 懒删。</span></li><li><span data-lang="en"><strong>Persistence</strong>: append-only WAL + periodic snapshot; recover = load snapshot + replay WAL.</span><span data-lang="zh"><strong>持久化</strong>：追加 WAL + 周期 snapshot；恢复 = 加载 snapshot + 重放 WAL。</span></li></ul><h2><span data-lang="en">Trade-offs</span><span data-lang="zh">权衡</span></h2>
+<ul><li><span data-lang="en">Single leader = simple consistency. Multi-replica needs replication protocol (Raft / quorum), with obvious write-latency cost.</span><span data-lang="zh">单主：一致性简单。多副本需要复制协议（Raft / quorum），写延迟代价明显。</span></li><li><span data-lang="en">Read-from-replica possible but requires explicit stale-read policy.</span><span data-lang="zh">副本读可行但需明确的陈旧读策略。</span></li></ul><div class="callout tip"><h4><span data-lang="en">How to level up the answer</span><span data-lang="zh">如何把答案做出高度</span></h4><p><span data-lang="en">Mention Redis's actual design choices (single-threaded per shard, AOF+RDB combined, PSYNC for replication) to anchor it in production reality — interviewers love this signal.</span><span data-lang="zh">提 Redis 的真实选型（每 shard 单线程、AOF+RDB 组合、PSYNC 复制）——这是面试官喜欢的工程现实信号。</span></p></div>
+
+        <h2><span data-lang="en">Related study-guide topics</span><span data-lang="zh">相关学习手册专题</span></h2>
+        <ul><li><a href="../../guide/distributed/storage-engines.html"><span data-lang="en">Storage engines</span><span data-lang="zh">存储引擎</span></a></li><li><a href="../../guide/distributed/replication-consistency.html"><span data-lang="en">Replication</span><span data-lang="zh">复制</span></a></li></ul>
+      </article>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>
