@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>O34. Design Image Generation Serving (DALL-E) - SD-Guide</title>
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../index.html" class="active"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../resources/index.html"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../about/index.html"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a>
+        <span class="sep">›</span>
+        <a href="../index.html"><span data-lang="en">Arena</span><span data-lang="zh">竞技场</span></a>
+        <span class="sep">›</span>
+        <span>O34</span>
+      </div>
+
+      <article class="prose wide">
+        <div class="question-meta" style="margin-bottom:1rem;">
+          <span class="tag company-openai">OpenAI</span>
+          <span class="tag freq-2">★★ Frequent</span>
+          <span class="tag difficulty-hard">Hard</span>
+          <span class="tag">Diffusion</span><span class="tag">GPU</span><span class="tag">CDN</span>
+        </div>
+
+        <h1>
+          <span data-lang="en">O34 · Design Image Generation Serving (DALL-E)</span>
+          <span data-lang="zh">O34 · 设计图像生成服务（DALL-E）</span>
+        </h1>
+
+        <div class="callout openai">
+          <h4><span data-lang="en">Verified source</span><span data-lang="zh">经核实出处</span></h4>
+          <p>OpenAI DALL-E public product. Asked at onsites per 一亩三分地 2024. Credibility <strong>B</strong>.</p>
+        </div>
+
+<h2><span data-lang="en">Architecture</span><span data-lang="zh">架构</span></h2>
+<div class="mermaid-container"><pre class="mermaid">
+flowchart LR
+  Req --> GW
+  GW --> MOD[Text Moderation]
+  MOD --> SCHED[GPU Scheduler]
+  SCHED --> DIFF[Diffusion fleet]
+  DIFF --> UP[Upscaler]
+  UP --> NSFW[Image NSFW Filter]
+  NSFW --> BLOB[(Blob / CDN)]
+  GW --> URL[(Return signed URL)]
+</pre></div>
+<h2><span data-lang="en">Key decisions</span><span data-lang="zh">关键决策</span></h2>
+<ul><li><span data-lang="en">**Async with polling or SSE**: 10-30 s generations too long for synchronous.</span><span data-lang="zh">**异步 + 轮询/SSE**：10-30 s 对同步太长。</span></li><li><span data-lang="en">**Batch multiple prompts per GPU step** to amortise diffusion overhead.</span><span data-lang="zh">**同 GPU 批量多 prompt** 摊销 diffusion 固定开销。</span></li><li><span data-lang="en">**Two-stage filter**: moderate prompt before generation + classifier on output image.</span><span data-lang="zh">**两阶段过滤**：生成前审核 prompt + 对输出图做分类器检查。</span></li><li><span data-lang="en">**Signed URLs via CDN**: users never hit GPU tier for downloads; TTL limits leakage.</span><span data-lang="zh">**CDN 签名 URL**：下载不打回 GPU；TTL 限泄漏。</span></li></ul>
+<h2><span data-lang="en">Follow-ups</span><span data-lang="zh">追问</span></h2>
+<ul><li><span data-lang="en">Latency vs quality? expose steps/guidance params with documented cost tiers.</span><span data-lang="zh">延迟 vs 质量？暴露 steps/guidance 参数并标成本档位。</span></li><li><span data-lang="en">Abuse prevention? per-account rate limits, fingerprint dedup against banlist.</span><span data-lang="zh">防滥用？账号级限流，指纹与黑名单比对。</span></li></ul>
+
+        <h2><span data-lang="en">Related study-guide topics</span><span data-lang="zh">相关学习手册专题</span></h2>
+        <ul><li><a href="../../guide/ml/diffusion-serving.html"><span data-lang="en">Diffusion serving</span><span data-lang="zh">扩散模型服务</span></a></li></ul>
+      </article>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>G24. Design Android Push Notifications (FCM) - SD-Guide</title>
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../index.html" class="active"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../resources/index.html"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../about/index.html"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a>
+        <span class="sep">›</span>
+        <a href="../index.html"><span data-lang="en">Arena</span><span data-lang="zh">竞技场</span></a>
+        <span class="sep">›</span>
+        <span>G24</span>
+      </div>
+
+      <article class="prose wide">
+        <div class="question-meta" style="margin-bottom:1rem;">
+          <span class="tag company-google">Google</span>
+          <span class="tag freq-2">★★ Frequent</span>
+          <span class="tag difficulty-medium">Medium</span>
+          <span class="tag">Push</span><span class="tag">Fanout</span><span class="tag">Device</span>
+        </div>
+
+        <h1>
+          <span data-lang="en">G24 · Design Android Push Notifications (FCM)</span>
+          <span data-lang="zh">G24 · 设计 Android 推送（FCM）</span>
+        </h1>
+
+        <div class="callout google">
+          <h4><span data-lang="en">Verified source</span><span data-lang="zh">经核实出处</span></h4>
+          <p>FCM is public (<a href="https://firebase.google.com/docs/cloud-messaging" target="_blank" rel="noopener">docs</a>). Credibility <strong>A</strong>.</p>
+        </div>
+
+<h2><span data-lang="en">Key decisions</span><span data-lang="zh">关键决策</span></h2>
+<ul><li><span data-lang="en">**Persistent device connection** to FCM; device authenticated by registration token.</span><span data-lang="zh">**设备常连 FCM**，用注册 token 认证。</span></li><li><span data-lang="en">**Priority classes**: high (immediate) vs normal (batched for battery).</span><span data-lang="zh">**优先级**：high 即时；normal 按电量批处理。</span></li><li><span data-lang="en">**Fanout sharding**: topic message explodes into per-device tasks; idempotent retry.</span><span data-lang="zh">**Fanout 分片**：topic 消息展开为设备级任务；幂等重试。</span></li><li><span data-lang="en">**QoS**: at-least-once; collapse key dedups stale notifications.</span><span data-lang="zh">**QoS**：at-least-once；collapse key 去陈旧。</span></li></ul>
+<h2><span data-lang="en">Follow-ups</span><span data-lang="zh">追问</span></h2>
+<ul><li><span data-lang="en">Device offline for days? store-and-forward up to 28 days per FCM policy.</span><span data-lang="zh">设备离线数日？FCM 策略下最长存转 28 天。</span></li></ul>
+
+        <h2><span data-lang="en">Related study-guide topics</span><span data-lang="zh">相关学习手册专题</span></h2>
+        <ul><li><a href="../../guide/classical/push-systems.html"><span data-lang="en">Push notifications</span><span data-lang="zh">推送系统</span></a></li></ul>
+      </article>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

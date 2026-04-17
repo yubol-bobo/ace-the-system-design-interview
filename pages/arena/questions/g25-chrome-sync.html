@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>G25. Design Chrome Sync - SD-Guide</title>
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../index.html" class="active"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../resources/index.html"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../about/index.html"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a>
+        <span class="sep">›</span>
+        <a href="../index.html"><span data-lang="en">Arena</span><span data-lang="zh">竞技场</span></a>
+        <span class="sep">›</span>
+        <span>G25</span>
+      </div>
+
+      <article class="prose wide">
+        <div class="question-meta" style="margin-bottom:1rem;">
+          <span class="tag company-google">Google</span>
+          <span class="tag freq-2">★★ Frequent</span>
+          <span class="tag difficulty-medium">Medium</span>
+          <span class="tag">Sync</span><span class="tag">Encryption</span><span class="tag">Conflict</span>
+        </div>
+
+        <h1>
+          <span data-lang="en">G25 · Design Chrome Sync</span>
+          <span data-lang="zh">G25 · 设计 Chrome Sync</span>
+        </h1>
+
+        <div class="callout google">
+          <h4><span data-lang="en">Verified source</span><span data-lang="zh">经核实出处</span></h4>
+          <p>Chrome Sync is public Google product with published architecture. Credibility <strong>A</strong>.</p>
+        </div>
+
+<h2><span data-lang="en">Key decisions</span><span data-lang="zh">关键决策</span></h2>
+<ul><li><span data-lang="en">**Per-datatype CRDTs**: bookmarks are tree CRDT; passwords are LWW with device priority.</span><span data-lang="zh">**按数据类型选 CRDT**：书签用树 CRDT；密码用 LWW + 设备优先级。</span></li><li><span data-lang="en">**Client-side encryption**: passphrase-derived key; server stores ciphertext only.</span><span data-lang="zh">**客户端加密**：passphrase 派生密钥；服务端仅存密文。</span></li><li><span data-lang="en">**Per-device change log** with vector clocks for ordering.</span><span data-lang="zh">**按设备变更日志**，用向量时钟定序。</span></li><li><span data-lang="en">**Throttle**: update rate limits per device to prevent thundering herd.</span><span data-lang="zh">**限频**：按设备限速防雷暴。</span></li></ul>
+<h2><span data-lang="en">Follow-ups</span><span data-lang="zh">追问</span></h2>
+<ul><li><span data-lang="en">Account recovery w/ e2e? recovery key printed at setup; server can't help.</span><span data-lang="zh">端到端下账户恢复？设置时导出 recovery key；服务端无能为力。</span></li></ul>
+
+        <h2><span data-lang="en">Related study-guide topics</span><span data-lang="zh">相关学习手册专题</span></h2>
+        <ul><li><a href="../../guide/classical/realtime-sync.html"><span data-lang="en">Realtime sync</span><span data-lang="zh">实时同步</span></a></li></ul>
+      </article>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>A39. Design an Evals Platform for Alignment Research - SD-Guide</title>
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../index.html" class="active"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../resources/index.html"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../about/index.html"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a>
+        <span class="sep">›</span>
+        <a href="../index.html"><span data-lang="en">Arena</span><span data-lang="zh">竞技场</span></a>
+        <span class="sep">›</span>
+        <span>A39</span>
+      </div>
+
+      <article class="prose wide">
+        <div class="question-meta" style="margin-bottom:1rem;">
+          <span class="tag company-anthropic">Anthropic</span>
+          <span class="tag freq-2">★★ Frequent</span>
+          <span class="tag difficulty-medium">Medium</span>
+          <span class="tag">Evals</span><span class="tag">Alignment</span><span class="tag">Red-Team</span>
+        </div>
+
+        <h1>
+          <span data-lang="en">A39 · Design an Evals Platform for Alignment Research</span>
+          <span data-lang="zh">A39 · 为对齐研究设计评估平台</span>
+        </h1>
+
+        <div class="callout anthropic">
+          <h4><span data-lang="en">Verified source</span><span data-lang="zh">经核实出处</span></h4>
+          <p>Similar to OpenAI O30 but specialised for safety research. Anthropic publishes eval work. Credibility <strong>B</strong>.</p>
+        </div>
+
+<h2><span data-lang="en">Key decisions</span><span data-lang="zh">关键决策</span></h2>
+<ul><li><span data-lang="en">**Safety-first gating**: a checkpoint cannot promote past ASL-N until its safety evals pass; capability evals are secondary.</span><span data-lang="zh">**安全优先门控**：未通过 ASL-N 安全 eval 的 checkpoint 不得晋级；能力评估其次。</span></li><li><span data-lang="en">**Adversarial evals are append-only**: red-team findings become fixed evals so the model doesn't forget lessons.</span><span data-lang="zh">**对抗评估 append-only**：红队结果转为固定 eval，避免模型遗忘。</span></li><li><span data-lang="en">**Human-in-loop arbitration** for ambiguous cases; inter-annotator agreement tracked.</span><span data-lang="zh">**人工仲裁**处理歧义样本；跟踪标注一致性。</span></li><li><span data-lang="en">**Replayability**: artefact store contains prompts, completions, grader versions for audit.</span><span data-lang="zh">**可复现**：artefact 存 prompt、completion、grader 版本，供审计。</span></li></ul>
+<h2><span data-lang="en">Follow-ups</span><span data-lang="zh">追问</span></h2>
+<ul><li><span data-lang="en">LLM-as-judge calibration? pin to frozen judge model; human spot-check 1%.</span><span data-lang="zh">LLM-as-judge 校准？固定 judge 版本；人工抽查 1%。</span></li></ul>
+
+        <h2><span data-lang="en">Related study-guide topics</span><span data-lang="zh">相关学习手册专题</span></h2>
+        <ul><li><a href="../../guide/safety/evals.html"><span data-lang="en">Safety evals</span><span data-lang="zh">安全评估</span></a></li></ul>
+      </article>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

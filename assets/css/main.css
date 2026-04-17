@@ -24,6 +24,14 @@
   --anthropic: #d97757;
   --anthropic-glow: rgba(217, 119, 87, 0.15);
 
+  /* Google blue accent */
+  --google: #4285f4;
+  --google-glow: rgba(66, 133, 244, 0.15);
+
+  /* xAI monochrome accent (subtle silver/cyan) */
+  --xai: #9aa0a6;
+  --xai-glow: rgba(154, 160, 166, 0.15);
+
   /* Generic accents */
   --accent: #8b8ef7;
   --accent-hover: #a0a3ff;
@@ -493,6 +501,18 @@ body::before {
   color: var(--anthropic);
 }
 
+.tag.company-google {
+  background: rgba(66, 133, 244, 0.12);
+  border-color: rgba(66, 133, 244, 0.4);
+  color: var(--google);
+}
+
+.tag.company-xai {
+  background: rgba(154, 160, 166, 0.12);
+  border-color: rgba(154, 160, 166, 0.4);
+  color: var(--xai);
+}
+
 .tag.freq-3, .tag.freq-4 {
   background: rgba(251, 191, 36, 0.1);
   border-color: rgba(251, 191, 36, 0.35);
@@ -603,6 +623,8 @@ body::before {
 
 .question-card.company-openai:hover { border-color: var(--openai); }
 .question-card.company-anthropic:hover { border-color: var(--anthropic); }
+.question-card.company-google:hover { border-color: var(--google); }
+.question-card.company-xai:hover { border-color: var(--xai); }
 
 .question-header {
   display: flex;
@@ -821,6 +843,8 @@ body::before {
 
 .callout.openai { border-left-color: var(--openai); }
 .callout.anthropic { border-left-color: var(--anthropic); }
+.callout.google { border-left-color: var(--google); }
+.callout.xai { border-left-color: var(--xai); }
 .callout.warn { border-left-color: var(--warn); }
 .callout.tip { border-left-color: var(--success); }
 
@@ -834,6 +858,8 @@ body::before {
 
 .callout.openai h4 { color: var(--openai); }
 .callout.anthropic h4 { color: var(--anthropic); }
+.callout.google h4 { color: var(--google); }
+.callout.xai h4 { color: var(--xai); }
 .callout.warn h4 { color: var(--warn); }
 .callout.tip h4 { color: var(--success); }
 

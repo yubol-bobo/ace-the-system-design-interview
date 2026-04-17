@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>G12. Design YouTube Recommendations - SD-Guide</title>
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../index.html" class="active"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../resources/index.html"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../about/index.html"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a>
+        <span class="sep">›</span>
+        <a href="../index.html"><span data-lang="en">Arena</span><span data-lang="zh">竞技场</span></a>
+        <span class="sep">›</span>
+        <span>G12</span>
+      </div>
+
+      <article class="prose wide">
+        <div class="question-meta" style="margin-bottom:1rem;">
+          <span class="tag company-google">Google</span>
+          <span class="tag freq-2">★★ Frequent</span>
+          <span class="tag difficulty-hard">Hard</span>
+          <span class="tag">Recsys</span><span class="tag">Two-Tower</span><span class="tag">Ranking</span>
+        </div>
+
+        <h1>
+          <span data-lang="en">G12 · Design YouTube Recommendations</span>
+          <span data-lang="zh">G12 · 设计 YouTube 推荐</span>
+        </h1>
+
+        <div class="callout google">
+          <h4><span data-lang="en">Verified source</span><span data-lang="zh">经核实出处</span></h4>
+          <p>YouTube two-tower recommender is public (Covington 2016). Credibility <strong>A</strong>.</p>
+        </div>
+
+<h2><span data-lang="en">Key decisions</span><span data-lang="zh">关键决策</span></h2>
+<ul><li><span data-lang="en">**Candidate generation**: two-tower dense embedding, ANN (ScaNN) returns top-K in ms.</span><span data-lang="zh">**召回**：two-tower 嵌入 + ANN（ScaNN）毫秒级取 top-K。</span></li><li><span data-lang="en">**Ranking**: multi-task deep model — click + watch-time + satisfaction; weighted objective.</span><span data-lang="zh">**排序**：多任务深度模型——点击 + 观看时长 + 满意度；加权目标。</span></li><li><span data-lang="en">**Freshness branch**: boost videos < 24 h; cold-start uses metadata / channel priors.</span><span data-lang="zh">**新鲜度分支**：< 24 h 视频加权；冷启用元数据/频道先验。</span></li><li><span data-lang="en">**Diversity reranker**: MMR to avoid 5 videos from same channel.</span><span data-lang="zh">**多样性 re-rank**：MMR 避免同频道连发 5 条。</span></li></ul>
+<h2><span data-lang="en">Follow-ups</span><span data-lang="zh">追问</span></h2>
+<ul><li><span data-lang="en">A/B infra? interleaving for sensitive metrics; separate serving shard.</span><span data-lang="zh">A/B 基础设施？敏感指标用 interleaving；独立服务 shard。</span></li></ul>
+
+        <h2><span data-lang="en">Related study-guide topics</span><span data-lang="zh">相关学习手册专题</span></h2>
+        <ul><li><a href="../../guide/ml/recsys.html"><span data-lang="en">Recommender systems</span><span data-lang="zh">推荐系统</span></a></li></ul>
+      </article>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

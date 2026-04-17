@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>O31. Design Prompt / Model Cache - SD-Guide</title>
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../index.html" class="active"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../resources/index.html"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../about/index.html"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a>
+        <span class="sep">›</span>
+        <a href="../index.html"><span data-lang="en">Arena</span><span data-lang="zh">竞技场</span></a>
+        <span class="sep">›</span>
+        <span>O31</span>
+      </div>
+
+      <article class="prose wide">
+        <div class="question-meta" style="margin-bottom:1rem;">
+          <span class="tag company-openai">OpenAI</span>
+          <span class="tag freq-3">★★★ Frequent</span>
+          <span class="tag difficulty-medium">Medium</span>
+          <span class="tag">KV Cache</span><span class="tag">Prefix</span><span class="tag">Hit Rate</span>
+        </div>
+
+        <h1>
+          <span data-lang="en">O31 · Design Prompt / Model Cache</span>
+          <span data-lang="zh">O31 · 设计 Prompt / 模型缓存</span>
+        </h1>
+
+        <div class="callout openai">
+          <h4><span data-lang="en">Verified source</span><span data-lang="zh">经核实出处</span></h4>
+          <p>OpenAI prompt caching launched 2024-10 at 50% discount (<a href="https://platform.openai.com/docs/guides/prompt-caching" target="_blank" rel="noopener">docs</a>). Asked at onsites thereafter. Credibility <strong>A</strong>.</p>
+        </div>
+
+<h2><span data-lang="en">Architecture</span><span data-lang="zh">架构</span></h2>
+<div class="mermaid-container"><pre class="mermaid">
+flowchart LR
+  Req --> H[Prefix Hasher - first N tokens]
+  H --> R[Router by prefix hash]
+  R --> Node1[GPU Node - KV cache pool]
+  R --> Node2[GPU Node - KV cache pool]
+  Node1 --> Gen
+  Node2 --> Gen
+</pre></div>
+<h2><span data-lang="en">Key decisions</span><span data-lang="zh">关键决策</span></h2>
+<ul><li><span data-lang="en">**Tokenise before hashing**: cache key = hash of first 1024 tokens, aligned to block boundary.</span><span data-lang="zh">**先分词再哈希**：key = 前 1024 token 的 hash，对齐 block 边界。</span></li><li><span data-lang="en">**Consistent-hash routing** keeps same prefix on same GPU, maximising reuse.</span><span data-lang="zh">**一致性哈希路由**让相同前缀落同一 GPU，最大化复用。</span></li><li><span data-lang="en">**Eviction = LRU with pinning** for hot system prompts; pool sized to hold top-K.</span><span data-lang="zh">**LRU 驱逐 + 固定热 system prompt**；池容纳 top-K。</span></li><li><span data-lang="en">**Billing**: cache hits discounted; surfaced in response headers.</span><span data-lang="zh">**计费**：命中打折；响应头披露。</span></li></ul>
+<h2><span data-lang="en">Follow-ups</span><span data-lang="zh">追问</span></h2>
+<ul><li><span data-lang="en">Side-channel attack by prefix? tenant-isolated prefix namespace.</span><span data-lang="zh">前缀侧信道？按租户隔离前缀命名空间。</span></li><li><span data-lang="en">Cross model-version consistency? key includes model version hash.</span><span data-lang="zh">跨版本一致？key 带模型版本 hash。</span></li></ul>
+
+        <h2><span data-lang="en">Related study-guide topics</span><span data-lang="zh">相关学习手册专题</span></h2>
+        <ul><li><a href="../../guide/llm/llm-serving.html"><span data-lang="en">LLM serving</span><span data-lang="zh">LLM 推理服务</span></a></li></ul>
+      </article>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

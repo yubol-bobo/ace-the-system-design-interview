@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>G3. Design NotebookLM - SD-Guide</title>
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../index.html" class="active"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../resources/index.html"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../about/index.html"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a>
+        <span class="sep">›</span>
+        <a href="../index.html"><span data-lang="en">Arena</span><span data-lang="zh">竞技场</span></a>
+        <span class="sep">›</span>
+        <span>G3</span>
+      </div>
+
+      <article class="prose wide">
+        <div class="question-meta" style="margin-bottom:1rem;">
+          <span class="tag company-google">Google</span>
+          <span class="tag freq-2">★★ Frequent</span>
+          <span class="tag difficulty-hard">Hard</span>
+          <span class="tag">RAG</span><span class="tag">Long Context</span><span class="tag">NotebookLM</span>
+        </div>
+
+        <h1>
+          <span data-lang="en">G3 · Design NotebookLM</span>
+          <span data-lang="zh">G3 · 设计 NotebookLM</span>
+        </h1>
+
+        <div class="callout google">
+          <h4><span data-lang="en">Verified source</span><span data-lang="zh">经核实出处</span></h4>
+          <p>NotebookLM is a Google public product (<a href="https://notebooklm.google/" target="_blank" rel="noopener">notebooklm.google</a>). Interview reports on Blind 2025. Credibility <strong>B</strong>.</p>
+        </div>
+
+<h2><span data-lang="en">Key decisions</span><span data-lang="zh">关键决策</span></h2>
+<ul><li><span data-lang="en">**Hybrid strategy**: small notebooks fit full context (Gemini 2 M); large use chunked RAG.</span><span data-lang="zh">**混合策略**：小 notebook 直接塞全文；大的用 chunk-RAG。</span></li><li><span data-lang="en">**Forced citation** to spans: model emits offsets; UI renders inline click-through.</span><span data-lang="zh">**强制引用到片段**：模型输出偏移；UI 内联点击跳转。</span></li><li><span data-lang="en">**Audio overview**: a separate TTS pipeline generates 2-speaker podcasts.</span><span data-lang="zh">**音频概览**：独立 TTS 流水线生成双主持播客。</span></li><li><span data-lang="en">**Source-only grounding**: off-source claims disabled by system prompt + classifier.</span><span data-lang="zh">**仅引用源**：系统提示 + 分类器阻止脱源。</span></li></ul>
+<h2><span data-lang="en">Follow-ups</span><span data-lang="zh">追问</span></h2>
+<ul><li><span data-lang="en">Privacy? per-notebook tenancy, no training on user data.</span><span data-lang="zh">隐私？每 notebook 租户隔离；不用于训练。</span></li></ul>
+
+        <h2><span data-lang="en">Related study-guide topics</span><span data-lang="zh">相关学习手册专题</span></h2>
+        <ul><li><a href="../../guide/llm/rag.html"><span data-lang="en">RAG patterns</span><span data-lang="zh">RAG 模式</span></a></li></ul>
+      </article>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

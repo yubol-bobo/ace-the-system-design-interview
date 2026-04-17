@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>G1. Design Gemini API Serving - SD-Guide</title>
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../index.html" class="active"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../resources/index.html"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../about/index.html"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a>
+        <span class="sep">›</span>
+        <a href="../index.html"><span data-lang="en">Arena</span><span data-lang="zh">竞技场</span></a>
+        <span class="sep">›</span>
+        <span>G1</span>
+      </div>
+
+      <article class="prose wide">
+        <div class="question-meta" style="margin-bottom:1rem;">
+          <span class="tag company-google">Google</span>
+          <span class="tag freq-2">★★ Frequent</span>
+          <span class="tag difficulty-hard">Hard</span>
+          <span class="tag">LLM Serving</span><span class="tag">TPU</span><span class="tag">Multimodal</span>
+        </div>
+
+        <h1>
+          <span data-lang="en">G1 · Design Gemini API Serving</span>
+          <span data-lang="zh">G1 · 设计 Gemini API 推理服务</span>
+        </h1>
+
+        <div class="callout google">
+          <h4><span data-lang="en">Verified source</span><span data-lang="zh">经核实出处</span></h4>
+          <p>Gemini is a public Google product (<a href="https://ai.google.dev/" target="_blank" rel="noopener">ai.google.dev</a>). Asked at Google L5/L6 AI-team onsites. Credibility <strong>A</strong>.</p>
+        </div>
+
+<h2><span data-lang="en">Architecture</span><span data-lang="zh">架构</span></h2>
+<div class="mermaid-container"><pre class="mermaid">
+flowchart LR
+  Client --> GW[Global GW - auth, rate limit]
+  GW --> ROUTE[Region router]
+  ROUTE --> TPU1[TPU pod - US]
+  ROUTE --> TPU2[TPU pod - EU]
+  ROUTE --> CACHE[Prefix cache]
+  TPU1 --> MM[Multimodal preproc]
+  MM --> MODEL[Gemini model]
+</pre></div>
+<h2><span data-lang="en">Key decisions</span><span data-lang="zh">关键决策</span></h2>
+<ul><li><span data-lang="en">**TPU pods over GPU**: Google's first-party hardware; higher FLOPs/$ for large-context models.</span><span data-lang="zh">**用 TPU pod**：Google 自研硬件；大上下文下 FLOPs/$ 更优。</span></li><li><span data-lang="en">**Long-context sharding**: 2 M tokens needs ring-attention / chunk-wise KV sharding across TPU cores.</span><span data-lang="zh">**长上下文分片**：2 M token 需 ring-attention / 按 chunk 在 TPU core 分片 KV。</span></li><li><span data-lang="en">**Multimodal preprocessing**: image/video tokenised on edge (Vertex AI pipeline) to amortise TPU time.</span><span data-lang="zh">**多模态预处理**：图像/视频在边缘分词（Vertex AI），摊销 TPU 用时。</span></li><li><span data-lang="en">**Region affinity for data residency** (EU, US, Asia) same as O38.</span><span data-lang="zh">**按数据驻留区域亲和**（EU/US/Asia），与 O38 类同。</span></li></ul>
+<h2><span data-lang="en">Follow-ups</span><span data-lang="zh">追问</span></h2>
+<ul><li><span data-lang="en">Latency for 2M-token prompt? context caching + disaggregated prefill.</span><span data-lang="zh">2M 上下文延迟？context caching + 预填分离。</span></li></ul>
+
+        <h2><span data-lang="en">Related study-guide topics</span><span data-lang="zh">相关学习手册专题</span></h2>
+        <ul><li><a href="../../guide/llm/llm-serving.html"><span data-lang="en">LLM serving</span><span data-lang="zh">LLM 推理服务</span></a></li></ul>
+      </article>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

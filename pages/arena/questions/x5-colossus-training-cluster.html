@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>X5. Design Training Orchestration for 100k+ GPU Colossus - SD-Guide</title>
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../index.html" class="active"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../resources/index.html"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../about/index.html"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a>
+        <span class="sep">›</span>
+        <a href="../index.html"><span data-lang="en">Arena</span><span data-lang="zh">竞技场</span></a>
+        <span class="sep">›</span>
+        <span>X5</span>
+      </div>
+
+      <article class="prose wide">
+        <div class="question-meta" style="margin-bottom:1rem;">
+          <span class="tag company-xai">xAI</span>
+          <span class="tag freq-2">★★ Frequent</span>
+          <span class="tag difficulty-hard">Hard</span>
+          <span class="tag">Distributed Training</span><span class="tag">GPU</span><span class="tag">Fault Tolerance</span>
+        </div>
+
+        <h1>
+          <span data-lang="en">X5 · Design Training Orchestration for 100k+ GPU Colossus</span>
+          <span data-lang="zh">X5 · 设计 10 万卡 Colossus 的训练编排</span>
+        </h1>
+
+        <div class="callout xai">
+          <h4><span data-lang="en">Verified source</span><span data-lang="zh">经核实出处</span></h4>
+          <p>xAI publicly built Colossus (Memphis supercluster) in 2024-25; scale reported in xAI blog + WSJ + multiple engineer podcasts. Credibility <strong>B</strong>.</p>
+        </div>
+
+<h2><span data-lang="en">Problem</span><span data-lang="zh">问题</span></h2>
+<p><span data-lang="en">Colossus has 100k+ H100 GPUs (scaling toward 1M). At that scale, an individual GPU fails every few minutes and a node fails every hour. Design a training orchestrator that maintains high MFU (model FLOPs utilization) despite constant hardware churn.</span><span data-lang="zh">Colossus 拥有 10 万+ H100（目标 100 万）。这个规模下，单张 GPU 每几分钟故障一次，整节点每小时故障一次。设计训练编排器，在持续的硬件抖动下维持高 MFU。</span></p>
+<h2><span data-lang="en">Architecture</span><span data-lang="zh">架构</span></h2>
+<div class="mermaid-container"><pre class="mermaid">
+flowchart TB
+  SC[Scheduler] --> TP[Topology-aware placement]
+  TP --> PG[Pipeline + tensor parallel groups]
+  PG --> NODE1[Node 1..N]
+  NODE1 --> MON[Health monitor]
+  MON -->|fail| REC[Reconfig + hot-spare swap]
+  REC --> CKPT[Checkpoint manager]
+  CKPT --> S3[(Object store)]
+  REC --> PG
+</pre></div>
+<h2><span data-lang="en">Key decisions</span><span data-lang="zh">关键决策</span></h2>
+<ul><li><span data-lang="en">3D parallelism (tensor × pipeline × data) with topology-aware placement — tensor parallel within NVLink island, pipeline across InfiniBand fabric.</span><span data-lang="zh">3D 并行（张量 × 流水线 × 数据），拓扑感知放置——张量并行限制在同一 NVLink island 内，流水线跨 InfiniBand fabric。</span></li><li><span data-lang="en">Hot-spare pool of ~5% idle GPUs that can be swapped in when a node fails, avoiding full-job restart.</span><span data-lang="zh">保留约 5% 空闲 GPU 的热备池，节点故障时替换进入，避免整作业重启。</span></li><li><span data-lang="en">Asynchronous checkpointing every 15 minutes to NVMe tier, then staged to object store — blocks training for <5 seconds.</span><span data-lang="zh">每 15 分钟异步检查点到 NVMe 层，再分阶段落到对象存储——阻塞训练小于 5 秒。</span></li><li><span data-lang="en">Silent data corruption detection via periodic gradient norm sanity checks + cross-replica hash comparison.</span><span data-lang="zh">通过周期性的梯度范数完整性校验 + 跨副本哈希对比，检测静默数据损坏。</span></li><li><span data-lang="en">Cooling and power at 100k scale is a first-class system constraint — scheduler must de-rate jobs under thermal events.</span><span data-lang="zh">10 万卡规模下冷却和供电是一类系统约束——热事件下调度器必须降配作业。</span></li></ul>
+<h2><span data-lang="en">Follow-ups</span><span data-lang="zh">追问</span></h2>
+<ul><li><span data-lang="en">What's the math for checkpoint size at 400B params? How fast can you restore?</span><span data-lang="zh">4000 亿参数的检查点有多大？恢复要多久？</span></li><li><span data-lang="en">How do you debug a run where loss diverges at step 50k?</span><span data-lang="zh">50000 步时 loss 发散，如何排查？</span></li></ul>
+<h2><span data-lang="en">Credibility note</span><span data-lang="zh">可信度说明</span></h2>
+<div class="callout warn"><h4><span data-lang="en">Watch-out</span><span data-lang="zh">注意</span></h4><p><span data-lang="en">Scale numbers are public; internal orchestration details are not. Answer above follows Megatron-LM / NVIDIA NeMo / DeepSpeed patterns that the xAI team is known to use.</span><span data-lang="zh">规模数字公开；内部编排细节未公开。上述回答遵循 Megatron-LM / NVIDIA NeMo / DeepSpeed 的模式——已知 xAI 团队会使用。</span></p></div>
+
+        <h2><span data-lang="en">Related study-guide topics</span><span data-lang="zh">相关学习手册专题</span></h2>
+        <ul><li><a href="./a37-training-checkpoint.html"><span data-lang="en">Training Checkpoint Service (A37)</span><span data-lang="zh">训练检查点服务（A37）</span></a></li><li><a href="./o27-fine-tuning-platform.html"><span data-lang="en">Fine-Tuning Platform (O27)</span><span data-lang="zh">微调平台（O27）</span></a></li></ul>
+      </article>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

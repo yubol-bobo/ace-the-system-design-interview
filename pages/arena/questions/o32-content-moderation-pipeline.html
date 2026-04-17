@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>O32. Design a Content Moderation Pipeline - SD-Guide</title>
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../index.html" class="active"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../resources/index.html"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../about/index.html"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a>
+        <span class="sep">›</span>
+        <a href="../index.html"><span data-lang="en">Arena</span><span data-lang="zh">竞技场</span></a>
+        <span class="sep">›</span>
+        <span>O32</span>
+      </div>
+
+      <article class="prose wide">
+        <div class="question-meta" style="margin-bottom:1rem;">
+          <span class="tag company-openai">OpenAI</span>
+          <span class="tag freq-2">★★ Frequent</span>
+          <span class="tag difficulty-hard">Hard</span>
+          <span class="tag">Moderation</span><span class="tag">Safety</span><span class="tag">Classifier</span>
+        </div>
+
+        <h1>
+          <span data-lang="en">O32 · Design a Content Moderation Pipeline</span>
+          <span data-lang="zh">O32 · 设计内容审核流水线</span>
+        </h1>
+
+        <div class="callout openai">
+          <h4><span data-lang="en">Verified source</span><span data-lang="zh">经核实出处</span></h4>
+          <p>OpenAI Moderation API (<a href="https://platform.openai.com/docs/guides/moderation" target="_blank" rel="noopener">docs</a>). Interview reports confirm design questions. Credibility <strong>A</strong>.</p>
+        </div>
+
+<h2><span data-lang="en">Architecture</span><span data-lang="zh">架构</span></h2>
+<div class="mermaid-container"><pre class="mermaid">
+flowchart LR
+  Req --> IN[Input Moderation]
+  IN -->|block| Reject
+  IN -->|allow| LLM
+  LLM --> OUT[Output Moderation]
+  OUT -->|block| Scrub
+  OUT -->|flag| Q[Review Queue]
+  OUT --> Deliver
+  Q --> Human
+  Human --> LBL[(Labels DB)]
+  LBL --> Trainer
+</pre></div>
+<h2><span data-lang="en">Key decisions</span><span data-lang="zh">关键决策</span></h2>
+<ul><li><span data-lang="en">**Two-sided moderation**: both prompts and completions scored, jailbreaks can craft benign prompts that elicit harmful outputs.</span><span data-lang="zh">**双侧审核**：prompt 与 completion 都要评分——越狱可能用无害 prompt 引出有害输出。</span></li><li><span data-lang="en">**Classifier ensemble** (fast small model -> deep model on edge cases).</span><span data-lang="zh">**分类器集成**：轻量初筛 + 重型复核边缘样本。</span></li><li><span data-lang="en">**Policy categories as structured schema**, not binary; per-category thresholds.</span><span data-lang="zh">**策略类别即结构化 schema**，非二分；每类独立阈值。</span></li><li><span data-lang="en">**Shadow eval in prod**: 1% traffic scored by canary classifier.</span><span data-lang="zh">**线上 shadow eval**：1% 流量由 canary 评分。</span></li></ul>
+<h2><span data-lang="en">Follow-ups</span><span data-lang="zh">追问</span></h2>
+<ul><li><span data-lang="en">Multilingual? per-language thresholds + translation pivot classifier.</span><span data-lang="zh">多语言？按语言阈值 + 英文枢纽分类器。</span></li><li><span data-lang="en">Latency budget? input ≤ 30 ms p99; output runs concurrently with generation.</span><span data-lang="zh">延迟？入站 ≤ 30 ms p99；出站与生成并行。</span></li></ul>
+
+        <h2><span data-lang="en">Related study-guide topics</span><span data-lang="zh">相关学习手册专题</span></h2>
+        <ul><li><a href="../../guide/safety/moderation.html"><span data-lang="en">Moderation systems</span><span data-lang="zh">内容审核系统</span></a></li></ul>
+      </article>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

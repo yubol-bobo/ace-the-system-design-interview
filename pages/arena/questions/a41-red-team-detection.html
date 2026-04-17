@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>A41. Design a Red-Team Detection System - SD-Guide</title>
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../index.html" class="active"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../resources/index.html"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../about/index.html"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a>
+        <span class="sep">›</span>
+        <a href="../index.html"><span data-lang="en">Arena</span><span data-lang="zh">竞技场</span></a>
+        <span class="sep">›</span>
+        <span>A41</span>
+      </div>
+
+      <article class="prose wide">
+        <div class="question-meta" style="margin-bottom:1rem;">
+          <span class="tag company-anthropic">Anthropic</span>
+          <span class="tag freq-2">★★ Frequent</span>
+          <span class="tag difficulty-hard">Hard</span>
+          <span class="tag">Red Team</span><span class="tag">Detection</span><span class="tag">Adversarial</span>
+        </div>
+
+        <h1>
+          <span data-lang="en">A41 · Design a Red-Team Detection System</span>
+          <span data-lang="zh">A41 · 设计红队攻击检测系统</span>
+        </h1>
+
+        <div class="callout anthropic">
+          <h4><span data-lang="en">Verified source</span><span data-lang="zh">经核实出处</span></h4>
+          <p>Discussed in Anthropic safety blog posts. Interview reports 2025. Credibility <strong>B</strong>.</p>
+        </div>
+
+<h2><span data-lang="en">Architecture</span><span data-lang="zh">架构</span></h2>
+<div class="mermaid-container"><pre class="mermaid">
+flowchart LR
+  Prompt --> CLF[Online classifier]
+  CLF --> FLAG[Flag store]
+  FLAG --> CLUS[Offline clustering]
+  CLUS --> ANAL[Attack pattern DB]
+  ANAL --> SHIELD[Feed into shield retraining]
+  ANAL --> OPS[Safety team dashboard]
+</pre></div>
+<h2><span data-lang="en">Key decisions</span><span data-lang="zh">关键决策</span></h2>
+<ul><li><span data-lang="en">**Two-timescale detection**: online per-request classifier (fast) + offline embedding clustering (finds campaigns).</span><span data-lang="zh">**两时间尺度**：在线单请求分类器（快）+ 离线嵌入聚类（发现攻势）。</span></li><li><span data-lang="en">**Cross-account signal**: same attack pattern on 100 accounts -> campaign; 1 account rare -> noise.</span><span data-lang="zh">**跨账号信号**：同模式攻击 100 账号 -> 攻势；单账号 -> 噪音。</span></li><li><span data-lang="en">**Minimal data retention**: prompts hashed/embedded for analytics; raw text purged per policy.</span><span data-lang="zh">**最小留存**：prompt 做哈希/嵌入；原文按策略清理。</span></li><li><span data-lang="en">**Closed feedback loop**: confirmed attacks become training signal for shield models.</span><span data-lang="zh">**闭环反馈**：确认攻击回流到 shield 模型训练。</span></li></ul>
+<h2><span data-lang="en">Follow-ups</span><span data-lang="zh">追问</span></h2>
+<ul><li><span data-lang="en">False positives? review queue; auto re-enable after decay.</span><span data-lang="zh">误报？复核队列；冷却后自动解除。</span></li><li><span data-lang="en">Coordinated attacks? shared threat intel between orgs with privacy preservation.</span><span data-lang="zh">协同攻击？跨组织共享威胁情报 + 保隐私。</span></li></ul>
+
+        <h2><span data-lang="en">Related study-guide topics</span><span data-lang="zh">相关学习手册专题</span></h2>
+        <ul><li><a href="../../guide/safety/red-team.html"><span data-lang="en">Red-teaming</span><span data-lang="zh">红队测试</span></a></li></ul>
+      </article>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

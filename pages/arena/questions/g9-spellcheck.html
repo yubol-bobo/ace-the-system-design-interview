@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>G9. Design Google Spell-Check - SD-Guide</title>
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../index.html" class="active"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../resources/index.html"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../about/index.html"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a>
+        <span class="sep">›</span>
+        <a href="../index.html"><span data-lang="en">Arena</span><span data-lang="zh">竞技场</span></a>
+        <span class="sep">›</span>
+        <span>G9</span>
+      </div>
+
+      <article class="prose wide">
+        <div class="question-meta" style="margin-bottom:1rem;">
+          <span class="tag company-google">Google</span>
+          <span class="tag freq-2">★★ Frequent</span>
+          <span class="tag difficulty-medium">Medium</span>
+          <span class="tag">Spellcheck</span><span class="tag">Edit Distance</span><span class="tag">Noisy Channel</span>
+        </div>
+
+        <h1>
+          <span data-lang="en">G9 · Design Google Spell-Check</span>
+          <span data-lang="zh">G9 · 设计 Google 拼写纠错</span>
+        </h1>
+
+        <div class="callout google">
+          <h4><span data-lang="en">Verified source</span><span data-lang="zh">经核实出处</span></h4>
+          <p>Norvig-style spell correct; Google interview classic. Credibility <strong>A</strong>.</p>
+        </div>
+
+<h2><span data-lang="en">Key decisions</span><span data-lang="zh">关键决策</span></h2>
+<ul><li><span data-lang="en">**Noisy channel**: P(intended|typed) ∝ P(typed|intended) * P(intended).</span><span data-lang="zh">**噪声通道模型**：P(意图|输入) ∝ P(输入|意图) * P(意图)。</span></li><li><span data-lang="en">**BK-tree / symspell** for fast edit-distance candidate retrieval.</span><span data-lang="zh">**BK-tree / symspell** 快速候选检索。</span></li><li><span data-lang="en">**Context-aware reranker**: LLM/classifier scores candidates given sentence context.</span><span data-lang="zh">**上下文 re-rank**：LLM/分类器按句子上下文打分。</span></li><li><span data-lang="en">**Did-you-mean vs auto-correct**: gentle nudge at mid confidence.</span><span data-lang="zh">**Did-you-mean vs 自动纠正**：中等置信度时提示而非强纠。</span></li></ul>
+<h2><span data-lang="en">Follow-ups</span><span data-lang="zh">追问</span></h2>
+<ul><li><span data-lang="en">Multilingual? per-language models; detect language first.</span><span data-lang="zh">多语言？先检测语言；每语言独立模型。</span></li></ul>
+
+        <h2><span data-lang="en">Related study-guide topics</span><span data-lang="zh">相关学习手册专题</span></h2>
+        <ul><li><a href="../../guide/classical/spellcheck.html"><span data-lang="en">Spellcheck</span><span data-lang="zh">拼写纠错</span></a></li></ul>
+      </article>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

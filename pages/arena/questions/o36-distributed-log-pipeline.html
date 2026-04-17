@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>O36. Design a Distributed Log / Trace Pipeline - SD-Guide</title>
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../index.html" class="active"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../resources/index.html"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../about/index.html"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a>
+        <span class="sep">›</span>
+        <a href="../index.html"><span data-lang="en">Arena</span><span data-lang="zh">竞技场</span></a>
+        <span class="sep">›</span>
+        <span>O36</span>
+      </div>
+
+      <article class="prose wide">
+        <div class="question-meta" style="margin-bottom:1rem;">
+          <span class="tag company-openai">OpenAI</span>
+          <span class="tag freq-2">★★ Frequent</span>
+          <span class="tag difficulty-medium">Medium</span>
+          <span class="tag">Logs</span><span class="tag">Tracing</span><span class="tag">Sampling</span>
+        </div>
+
+        <h1>
+          <span data-lang="en">O36 · Design a Distributed Log / Trace Pipeline</span>
+          <span data-lang="zh">O36 · 设计分布式日志 / 链路追踪流水线</span>
+        </h1>
+
+        <div class="callout openai">
+          <h4><span data-lang="en">Verified source</span><span data-lang="zh">经核实出处</span></h4>
+          <p>Classic observability problem adapted at OpenAI onsites (一亩三分地, 2025). Credibility <strong>B</strong>.</p>
+        </div>
+
+<h2><span data-lang="en">Architecture</span><span data-lang="zh">架构</span></h2>
+<div class="mermaid-container"><pre class="mermaid">
+flowchart LR
+  APP[Apps / agents] --> COL[OTEL Collector]
+  COL --> BUS[(Kafka)]
+  BUS --> HOT[(Hot store - 7d)]
+  BUS --> COLD[(Cold S3/Parquet - 1y)]
+  HOT --> SEARCH[Search UI]
+  COLD --> LAKE[Lakehouse queries]
+  BUS --> SAMP[Adaptive sampler]
+</pre></div>
+<h2><span data-lang="en">Key decisions</span><span data-lang="zh">关键决策</span></h2>
+<ul><li><span data-lang="en">**Tail-based sampling** for traces: keep errors/slow, drop normal; dramatic cost reduction.</span><span data-lang="zh">**Trace tail-based 采样**：保留错误/慢请求，丢正常；成本大降。</span></li><li><span data-lang="en">**Tiered retention**: 7d hot (search), 1y cold (Parquet on object store).</span><span data-lang="zh">**分级保留**：7 天热（搜索）、1 年冷（对象存储 Parquet）。</span></li><li><span data-lang="en">**Schema-aware columnar storage** for low-cost slice-dice (GPU_id, model_id).</span><span data-lang="zh">**结构化列存**低成本切片。</span></li><li><span data-lang="en">**Cardinality guards**: enforce per-label unique-value cap; reject metrics with user_id in labels.</span><span data-lang="zh">**基数守护**：每 label 唯一值上限；禁止 user_id 进标签。</span></li></ul>
+<h2><span data-lang="en">Follow-ups</span><span data-lang="zh">追问</span></h2>
+<ul><li><span data-lang="en">Semantics? at-least-once + idempotent sinks.</span><span data-lang="zh">语义？at-least-once + 幂等 sink。</span></li><li><span data-lang="en">Query latency on 1y data? partitioned Parquet + predicate pushdown.</span><span data-lang="zh">1 年数据查询？Parquet 分区 + 谓词下推。</span></li></ul>
+
+        <h2><span data-lang="en">Related study-guide topics</span><span data-lang="zh">相关学习手册专题</span></h2>
+        <ul><li><a href="../../guide/distributed/observability.html"><span data-lang="en">Observability</span><span data-lang="zh">可观测性</span></a></li></ul>
+      </article>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

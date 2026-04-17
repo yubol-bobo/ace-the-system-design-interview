@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>O33. Design an Autocomplete Service (Codex/Copilot-like) - SD-Guide</title>
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../index.html" class="active"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../resources/index.html"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../about/index.html"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a>
+        <span class="sep">›</span>
+        <a href="../index.html"><span data-lang="en">Arena</span><span data-lang="zh">竞技场</span></a>
+        <span class="sep">›</span>
+        <span>O33</span>
+      </div>
+
+      <article class="prose wide">
+        <div class="question-meta" style="margin-bottom:1rem;">
+          <span class="tag company-openai">OpenAI</span>
+          <span class="tag freq-2">★★ Frequent</span>
+          <span class="tag difficulty-hard">Hard</span>
+          <span class="tag">Autocomplete</span><span class="tag">Latency</span><span class="tag">Speculative</span>
+        </div>
+
+        <h1>
+          <span data-lang="en">O33 · Design an Autocomplete Service (Codex/Copilot-like)</span>
+          <span data-lang="zh">O33 · 设计自动补全服务（类 Codex/Copilot）</span>
+        </h1>
+
+        <div class="callout openai">
+          <h4><span data-lang="en">Verified source</span><span data-lang="zh">经核实出处</span></h4>
+          <p>Asked at OpenAI onsite (Codex team), confirmed on Blind 2025. Credibility <strong>B</strong>.</p>
+        </div>
+
+<h2><span data-lang="en">Architecture</span><span data-lang="zh">架构</span></h2>
+<div class="mermaid-container"><pre class="mermaid">
+flowchart LR
+  IDE --> GW[Low-latency GW]
+  GW --> CTX[Context Builder - file + repo RAG]
+  CTX --> CACHE[Prefix Cache]
+  CACHE --> MODEL[Inference - small fast model]
+  MODEL --> GW
+  GW --> IDE
+</pre></div>
+<h2><span data-lang="en">Key decisions</span><span data-lang="zh">关键决策</span></h2>
+<ul><li><span data-lang="en">**Cancellation first-class**: 80-90% of completions cancelled before returning; abort generation on disconnect.</span><span data-lang="zh">**取消是一等公民**：80-90% 请求在返回前被取消；断连即中止。</span></li><li><span data-lang="en">**Speculative decoding** with tiny draft + large verifier; 2-3x speedup for ~15% extra GPU.</span><span data-lang="zh">**投机解码**：小 draft + 大 verifier；约 15% GPU 换 2-3x 速度。</span></li><li><span data-lang="en">**Bounded context**: FIM (fill-in-the-middle) with top-K RAG chunks; 4k cap to keep TTFT low.</span><span data-lang="zh">**有界上下文**：FIM + top-K RAG chunk；上下文硬限 4k token 以压 TTFT。</span></li><li><span data-lang="en">**Privacy mode**: retention off, prompts not logged; org-level opt-out.</span><span data-lang="zh">**隐私模式**：关闭保留；prompt 不落盘；组织级 opt-out。</span></li></ul>
+<h2><span data-lang="en">Follow-ups</span><span data-lang="zh">追问</span></h2>
+<ul><li><span data-lang="en">How to bias towards acceptance? monitor per-user acceptance rate, gate risky completions.</span><span data-lang="zh">如何提高接受率？监控用户接受率，门控高风险补全。</span></li><li><span data-lang="en">Non-English codebases? multilingual tokeniser, eval per-language.</span><span data-lang="zh">非英文代码？多语 tokenizer，按语言评估。</span></li></ul>
+
+        <h2><span data-lang="en">Related study-guide topics</span><span data-lang="zh">相关学习手册专题</span></h2>
+        <ul><li><a href="../../guide/llm/llm-serving.html"><span data-lang="en">LLM serving</span><span data-lang="zh">LLM 推理服务</span></a></li></ul>
+      </article>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

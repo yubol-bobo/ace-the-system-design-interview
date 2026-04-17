@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>G15. Design Google Maps Routing & ETA - SD-Guide</title>
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../index.html" class="active"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../resources/index.html"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../about/index.html"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a>
+        <span class="sep">›</span>
+        <a href="../index.html"><span data-lang="en">Arena</span><span data-lang="zh">竞技场</span></a>
+        <span class="sep">›</span>
+        <span>G15</span>
+      </div>
+
+      <article class="prose wide">
+        <div class="question-meta" style="margin-bottom:1rem;">
+          <span class="tag company-google">Google</span>
+          <span class="tag freq-2">★★ Frequent</span>
+          <span class="tag difficulty-hard">Hard</span>
+          <span class="tag">Routing</span><span class="tag">ETA</span><span class="tag">Dijkstra</span>
+        </div>
+
+        <h1>
+          <span data-lang="en">G15 · Design Google Maps Routing & ETA</span>
+          <span data-lang="zh">G15 · 设计 Google Maps 路线与 ETA</span>
+        </h1>
+
+        <div class="callout google">
+          <h4><span data-lang="en">Verified source</span><span data-lang="zh">经核实出处</span></h4>
+          <p>Maps routing is public research (contraction hierarchies, etc.). Credibility <strong>A</strong>.</p>
+        </div>
+
+<h2><span data-lang="en">Key decisions</span><span data-lang="zh">关键决策</span></h2>
+<ul><li><span data-lang="en">**Contraction Hierarchies**: precompute shortcuts so runtime Dijkstra is 100x faster.</span><span data-lang="zh">**收缩层次（CH）**：预计算捷径，使运行时 Dijkstra 快 100x。</span></li><li><span data-lang="en">**Live traffic layer**: edge weights updated every 60 s from fleet probes + user reports.</span><span data-lang="zh">**实时路况**：边权每 60 s 由车队/用户上报更新。</span></li><li><span data-lang="en">**Learned ETA**: GNN/GBM predicts travel time from features.</span><span data-lang="zh">**学习式 ETA**：GNN/梯度提升由特征预测行驶时间。</span></li><li><span data-lang="en">**Caching**: popular OD-pairs cached per hour bucket.</span><span data-lang="zh">**缓存**：热门 OD 对按小时桶缓存。</span></li></ul>
+<h2><span data-lang="en">Follow-ups</span><span data-lang="zh">追问</span></h2>
+<ul><li><span data-lang="en">Multi-modal? separate graph per mode; union at transfer nodes.</span><span data-lang="zh">多模态？每模式独立图；换乘节点合并。</span></li></ul>
+
+        <h2><span data-lang="en">Related study-guide topics</span><span data-lang="zh">相关学习手册专题</span></h2>
+        <ul><li><a href="../../guide/classical/geo-services.html"><span data-lang="en">Geo services</span><span data-lang="zh">地理服务</span></a></li></ul>
+      </article>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

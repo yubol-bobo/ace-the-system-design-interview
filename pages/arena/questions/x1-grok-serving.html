@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>X1. Design Grok's Inference Serving Stack - SD-Guide</title>
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../index.html" class="active"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../resources/index.html"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../about/index.html"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a>
+        <span class="sep">›</span>
+        <a href="../index.html"><span data-lang="en">Arena</span><span data-lang="zh">竞技场</span></a>
+        <span class="sep">›</span>
+        <span>X1</span>
+      </div>
+
+      <article class="prose wide">
+        <div class="question-meta" style="margin-bottom:1rem;">
+          <span class="tag company-xai">xAI</span>
+          <span class="tag freq-2">★★ Frequent</span>
+          <span class="tag difficulty-hard">Hard</span>
+          <span class="tag">LLM Serving</span><span class="tag">Inference</span><span class="tag">GPU</span>
+        </div>
+
+        <h1>
+          <span data-lang="en">X1 · Design Grok's Inference Serving Stack</span>
+          <span data-lang="zh">X1 · 设计 Grok 的推理服务栈</span>
+        </h1>
+
+        <div class="callout xai">
+          <h4><span data-lang="en">Verified source</span><span data-lang="zh">经核实出处</span></h4>
+          <p>xAI engineering blog + multiple posts on Colossus + Elon/Igor podcast interviews (2024-25). Credibility <strong>C</strong>.</p>
+        </div>
+
+<h2><span data-lang="en">Problem</span><span data-lang="zh">问题</span></h2>
+<p><span data-lang="en">Grok is embedded directly in X (formerly Twitter) and exposed via grok.com. Traffic is bursty (news events), global, and cost-sensitive given xAI's funding runway. Design the serving stack from API gateway → routing → inference → streaming.</span><span data-lang="zh">Grok 直接嵌入在 X（原 Twitter）和 grok.com 中。流量具有突发性（新闻事件）、全球分布，且由于 xAI 融资周期需要严格控制成本。设计从 API 网关 → 路由 → 推理 → 流式输出 的整套栈。</span></p>
+<h2><span data-lang="en">Architecture</span><span data-lang="zh">架构</span></h2>
+<div class="mermaid-container"><pre class="mermaid">
+flowchart LR
+  X[X clients / grok.com] --> GW[Global gateway]
+  GW --> R[Region router]
+  R --> Q[Token-aware queue]
+  Q --> S[Grok inference pods]
+  S --> KV[(KV cache)]
+  S --> STR[SSE stream back]
+  S --> TEL[Telemetry & cost]
+</pre></div>
+<h2><span data-lang="en">Key decisions</span><span data-lang="zh">关键决策</span></h2>
+<ul><li><span data-lang="en">Continuous batching with token-aware scheduling (a la vLLM) to maximize GPU utilization on H100/H200 clusters.</span><span data-lang="zh">采用 token 感知的持续批处理（类似 vLLM），在 H100/H200 集群上最大化 GPU 利用率。</span></li><li><span data-lang="en">Separate prefill and decode pools — prefill is compute-bound, decode is memory-bandwidth-bound; mixing them hurts both.</span><span data-lang="zh">将 prefill 与 decode 池分离——prefill 受算力限制、decode 受显存带宽限制；混合部署会双重拖累。</span></li><li><span data-lang="en">KV-cache offload to high-bandwidth CPU memory for long conversations; recompute when evicted.</span><span data-lang="zh">长对话的 KV cache 卸载到高带宽 CPU 内存；被驱逐时重新计算。</span></li><li><span data-lang="en">Speculative decoding with a small draft Grok to 2-3x decode throughput.</span><span data-lang="zh">用小型 Grok draft 模型做推测解码，将 decode 吞吐提升 2-3 倍。</span></li><li><span data-lang="en">Multi-region active-active; route to nearest healthy region, failover on GPU outage.</span><span data-lang="zh">多区域 active-active；路由到最近健康区域，GPU 故障时切换。</span></li></ul>
+<h2><span data-lang="en">Follow-ups</span><span data-lang="zh">追问</span></h2>
+<ul><li><span data-lang="en">How do you handle a 10x traffic spike during a breaking-news event?</span><span data-lang="zh">突发新闻期间流量 10x 暴涨如何处理？</span></li><li><span data-lang="en">Cost model: $/1M tokens when GPUs are $3/hr — show the math.</span><span data-lang="zh">成本模型：GPU 3 美元/小时时，每百万 token 成本是多少？列式推导。</span></li></ul>
+<h2><span data-lang="en">Credibility note</span><span data-lang="zh">可信度说明</span></h2>
+<div class="callout warn"><h4><span data-lang="en">Watch-out</span><span data-lang="zh">注意</span></h4><p><span data-lang="en">xAI has not published detailed serving numbers. Answers based on vLLM/SGLang community best practice + Grok's public behavior (streaming speed observable on grok.com).</span><span data-lang="zh">xAI 未公开详细的服务指标。答案基于 vLLM/SGLang 社区最佳实践 + 从 grok.com 可观察到的 Grok 流式速度。</span></p></div>
+
+        <h2><span data-lang="en">Related study-guide topics</span><span data-lang="zh">相关学习手册专题</span></h2>
+        <ul><li><a href="../../guide/llm/llm-serving.html"><span data-lang="en">LLM Serving Guide</span><span data-lang="zh">LLM 服务手册</span></a></li><li><a href="./o12-chatgpt-100m.html"><span data-lang="en">ChatGPT at 100M (O12)</span><span data-lang="zh">ChatGPT 亿级规模（O12）</span></a></li></ul>
+      </article>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

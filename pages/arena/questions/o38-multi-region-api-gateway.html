@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>O38. Design a Multi-Region API Gateway - SD-Guide</title>
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../index.html" class="active"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../resources/index.html"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../about/index.html"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a>
+        <span class="sep">›</span>
+        <a href="../index.html"><span data-lang="en">Arena</span><span data-lang="zh">竞技场</span></a>
+        <span class="sep">›</span>
+        <span>O38</span>
+      </div>
+
+      <article class="prose wide">
+        <div class="question-meta" style="margin-bottom:1rem;">
+          <span class="tag company-openai">OpenAI</span>
+          <span class="tag freq-2">★★ Frequent</span>
+          <span class="tag difficulty-medium">Medium</span>
+          <span class="tag">Gateway</span><span class="tag">Multi-Region</span><span class="tag">Failover</span>
+        </div>
+
+        <h1>
+          <span data-lang="en">O38 · Design a Multi-Region API Gateway</span>
+          <span data-lang="zh">O38 · 设计多区域 API 网关</span>
+        </h1>
+
+        <div class="callout openai">
+          <h4><span data-lang="en">Verified source</span><span data-lang="zh">经核实出处</span></h4>
+          <p>Classic SD question extended at OpenAI onsites. Credibility <strong>B</strong>.</p>
+        </div>
+
+<h2><span data-lang="en">Architecture</span><span data-lang="zh">架构</span></h2>
+<div class="mermaid-container"><pre class="mermaid">
+flowchart LR
+  Client --> DNS[GeoDNS / Anycast]
+  DNS --> EDGE[Edge PoP - TLS, auth, rate]
+  EDGE --> RG1[Region US]
+  EDGE --> RG2[Region EU]
+  EDGE --> RG3[Region APAC]
+  EDGE --> CFG[(Config plane)]
+</pre></div>
+<h2><span data-lang="en">Key decisions</span><span data-lang="zh">关键决策</span></h2>
+<ul><li><span data-lang="en">**Anycast + Edge TLS**: user hits nearest PoP; gateway terminates TLS, forwards to nearest region.</span><span data-lang="zh">**Anycast + Edge TLS**：最近 PoP 终结 TLS，再转发到最近区域。</span></li><li><span data-lang="en">**Auth at edge** with short-lived JWT; JWT carries org_id to drive routing + rate-limit shard key.</span><span data-lang="zh">**边缘鉴权**：短期 JWT 携带 org_id，作为路由/限流 shard key。</span></li><li><span data-lang="en">**Rate limit: token bucket in Redis** per-region + async global reconciliation.</span><span data-lang="zh">**限流：区域级 Redis token bucket** + 全局异步对账。</span></li><li><span data-lang="en">**Automated failover**: health probes; DNS TTL 30s; fail-open reads, fail-closed writes.</span><span data-lang="zh">**自动切换**：健康探测；DNS TTL 30s；读 fail-open、写 fail-closed。</span></li></ul>
+<h2><span data-lang="en">Follow-ups</span><span data-lang="zh">追问</span></h2>
+<ul><li><span data-lang="en">Data residency? EU requests pinned via routing header + policy.</span><span data-lang="zh">数据驻留？通过路由头 + 策略将 EU 请求固定。</span></li><li><span data-lang="en">Risky changes? canary at 1% of one region, weighted rollout.</span><span data-lang="zh">风险变更？单区 1% 金丝雀，按权重放量。</span></li></ul>
+
+        <h2><span data-lang="en">Related study-guide topics</span><span data-lang="zh">相关学习手册专题</span></h2>
+        <ul><li><a href="../../guide/distributed/multi-region.html"><span data-lang="en">Multi-region architecture</span><span data-lang="zh">多区域架构</span></a></li></ul>
+      </article>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

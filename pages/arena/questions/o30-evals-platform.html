@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>O30. Design an Evals Platform - SD-Guide</title>
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../index.html" class="active"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../resources/index.html"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../about/index.html"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a>
+        <span class="sep">›</span>
+        <a href="../index.html"><span data-lang="en">Arena</span><span data-lang="zh">竞技场</span></a>
+        <span class="sep">›</span>
+        <span>O30</span>
+      </div>
+
+      <article class="prose wide">
+        <div class="question-meta" style="margin-bottom:1rem;">
+          <span class="tag company-openai">OpenAI</span>
+          <span class="tag freq-2">★★ Frequent</span>
+          <span class="tag difficulty-medium">Medium</span>
+          <span class="tag">Evals</span><span class="tag">Benchmark</span><span class="tag">Regression</span>
+        </div>
+
+        <h1>
+          <span data-lang="en">O30 · Design an Evals Platform</span>
+          <span data-lang="zh">O30 · 设计评估平台</span>
+        </h1>
+
+        <div class="callout openai">
+          <h4><span data-lang="en">Verified source</span><span data-lang="zh">经核实出处</span></h4>
+          <p>OpenAI Evals is open source (<a href="https://github.com/openai/evals" target="_blank" rel="noopener">github.com/openai/evals</a>). Asked at onsites. Credibility <strong>A</strong>.</p>
+        </div>
+
+<h2><span data-lang="en">Architecture</span><span data-lang="zh">架构</span></h2>
+<div class="mermaid-container"><pre class="mermaid">
+flowchart LR
+  Authors --> REG[Eval Registry]
+  REG --> RUN[Run Orchestrator]
+  RUN --> INF[Target model endpoint]
+  RUN --> GR[Grader - rule / LLM]
+  GR --> DB[(Results DB)]
+  DB --> UI[Compare UI]
+  DB --> ALERT[Regression alert]
+</pre></div>
+<h2><span data-lang="en">Key decisions</span><span data-lang="zh">关键决策</span></h2>
+<ul><li><span data-lang="en">**Eval as code + data**: YAML descriptor + JSONL dataset + pluggable grader class.</span><span data-lang="zh">**eval 即代码 + 数据**：YAML + JSONL + 可插拔 grader。</span></li><li><span data-lang="en">**Deterministic replay**: same seed + model + prompt gives byte-identical result; stored as artefact.</span><span data-lang="zh">**可复现**：同 seed + 模型 + prompt -> 字节一致；作为制品存档。</span></li><li><span data-lang="en">**LLM-as-judge** with calibration set; fall back to rule-based if judge drifts.</span><span data-lang="zh">**LLM-as-judge** + 校准集；漂移时回退规则。</span></li><li><span data-lang="en">**Regression gate in CI**: release blocked if any eval drops > threshold vs baseline.</span><span data-lang="zh">**CI 回归 gate**：任何 eval 下降超阈则阻断发布。</span></li></ul>
+<h2><span data-lang="en">Follow-ups</span><span data-lang="zh">追问</span></h2>
+<ul><li><span data-lang="en">Non-determinism? sample N, report mean ± stderr.</span><span data-lang="zh">非确定？采样 N 次，报均值±标准误。</span></li><li><span data-lang="en">Cost control? smoke-test subset before full run.</span><span data-lang="zh">成本？先 smoke test 子集。</span></li></ul>
+
+        <h2><span data-lang="en">Related study-guide topics</span><span data-lang="zh">相关学习手册专题</span></h2>
+        <ul><li><a href="../../guide/ml/eval-infra.html"><span data-lang="en">Eval infrastructure</span><span data-lang="zh">评估基础设施</span></a></li></ul>
+      </article>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

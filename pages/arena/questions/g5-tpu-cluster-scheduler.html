@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>G5. Design a TPU Cluster Scheduler - SD-Guide</title>
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../index.html" class="active"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../resources/index.html"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../about/index.html"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a>
+        <span class="sep">›</span>
+        <a href="../index.html"><span data-lang="en">Arena</span><span data-lang="zh">竞技场</span></a>
+        <span class="sep">›</span>
+        <span>G5</span>
+      </div>
+
+      <article class="prose wide">
+        <div class="question-meta" style="margin-bottom:1rem;">
+          <span class="tag company-google">Google</span>
+          <span class="tag freq-2">★★ Frequent</span>
+          <span class="tag difficulty-hard">Hard</span>
+          <span class="tag">TPU</span><span class="tag">Scheduler</span><span class="tag">Borg</span>
+        </div>
+
+        <h1>
+          <span data-lang="en">G5 · Design a TPU Cluster Scheduler</span>
+          <span data-lang="zh">G5 · 设计 TPU 集群调度器</span>
+        </h1>
+
+        <div class="callout google">
+          <h4><span data-lang="en">Verified source</span><span data-lang="zh">经核实出处</span></h4>
+          <p>Inspired by Google Borg / Omega papers. Internal TPU scheduling asked at infra onsites. Credibility <strong>B</strong>.</p>
+        </div>
+
+<h2><span data-lang="en">Key decisions</span><span data-lang="zh">关键决策</span></h2>
+<ul><li><span data-lang="en">**Topology-aware placement**: 3D torus — prefer contiguous slices to minimise cross-slice all-reduce.</span><span data-lang="zh">**拓扑感知放置**：3D torus——优先连续切片，减少跨切片 all-reduce。</span></li><li><span data-lang="en">**Gang scheduling**: 512-chip job either fully allocates or waits; partial runs waste interconnect.</span><span data-lang="zh">**Gang scheduling**：512 芯片任务要么整体分配要么等；部分运行浪费互联。</span></li><li><span data-lang="en">**Two-level scheduler** (a la Omega): optimistic cluster snapshot + CAS on master.</span><span data-lang="zh">**两级调度器**（仿 Omega）：乐观快照 + master CAS。</span></li><li><span data-lang="en">**Preemption budget**: jobs class-tagged; lower class preempted first.</span><span data-lang="zh">**抢占预算**：任务按 class 打标；低 class 先被抢。</span></li></ul>
+<h2><span data-lang="en">Follow-ups</span><span data-lang="zh">追问</span></h2>
+<ul><li><span data-lang="en">Utilisation target? 90%+ via bin-packing + preemption; hold 5% for DR.</span><span data-lang="zh">利用率目标？90%+（装箱 + 抢占）；留 5% 给灾备。</span></li></ul>
+
+        <h2><span data-lang="en">Related study-guide topics</span><span data-lang="zh">相关学习手册专题</span></h2>
+        <ul><li><a href="../../guide/distributed/scheduling.html"><span data-lang="en">Scheduling</span><span data-lang="zh">调度</span></a></li></ul>
+      </article>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>A35. Design the MCP Server Registry - SD-Guide</title>
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../index.html" class="active"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../resources/index.html"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../about/index.html"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a>
+        <span class="sep">›</span>
+        <a href="../index.html"><span data-lang="en">Arena</span><span data-lang="zh">竞技场</span></a>
+        <span class="sep">›</span>
+        <span>A35</span>
+      </div>
+
+      <article class="prose wide">
+        <div class="question-meta" style="margin-bottom:1rem;">
+          <span class="tag company-anthropic">Anthropic</span>
+          <span class="tag freq-2">★★ Frequent</span>
+          <span class="tag difficulty-medium">Medium</span>
+          <span class="tag">MCP</span><span class="tag">Registry</span><span class="tag">Discovery</span>
+        </div>
+
+        <h1>
+          <span data-lang="en">A35 · Design the MCP Server Registry</span>
+          <span data-lang="zh">A35 · 设计 MCP 服务注册中心</span>
+        </h1>
+
+        <div class="callout anthropic">
+          <h4><span data-lang="en">Verified source</span><span data-lang="zh">经核实出处</span></h4>
+          <p>Model Context Protocol is Anthropic-backed (<a href="https://modelcontextprotocol.io/" target="_blank" rel="noopener">MCP spec</a>). Registry design asked at onsites. Credibility <strong>A</strong>.</p>
+        </div>
+
+<h2><span data-lang="en">Architecture</span><span data-lang="zh">架构</span></h2>
+<div class="mermaid-container"><pre class="mermaid">
+flowchart LR
+  Dev --> Pub[Publish - signed manifest]
+  Pub --> REV[Security review]
+  REV --> REG[(Registry)]
+  REG --> BROWSE[Catalogue UI / API]
+  Client --> BROWSE
+  BROWSE --> INST[Install to user scope]
+  INST --> AGENT[Agent with tool exposed]
+</pre></div>
+<h2><span data-lang="en">Key decisions</span><span data-lang="zh">关键决策</span></h2>
+<ul><li><span data-lang="en">**Signed manifests**: publisher key binds server to identity; client verifies signature on install.</span><span data-lang="zh">**签名 manifest**：发布者私钥绑定身份；客户端安装时验签。</span></li><li><span data-lang="en">**Scoped permissions** declared in manifest (file access, network, shell); user consent before install.</span><span data-lang="zh">**manifest 声明权限**（文件/网络/shell）；安装前用户同意。</span></li><li><span data-lang="en">**Security review tier**: verified badge for audited servers; warning for unreviewed.</span><span data-lang="zh">**安全审核分层**：已审核带徽章；未审核显示警告。</span></li><li><span data-lang="en">**Version pinning & signed update channel** to prevent supply-chain attacks.</span><span data-lang="zh">**版本固定 + 签名升级通道**防供应链攻击。</span></li></ul>
+<h2><span data-lang="en">Follow-ups</span><span data-lang="zh">追问</span></h2>
+<ul><li><span data-lang="en">Search / ranking? full-text + usage popularity + security tier weighting.</span><span data-lang="zh">搜索排序？全文 + 使用热度 + 安全层级加权。</span></li><li><span data-lang="en">Runtime isolation? sandbox per MCP server; see O37.</span><span data-lang="zh">运行时隔离？每 MCP server 沙箱（见 O37）。</span></li></ul>
+
+        <h2><span data-lang="en">Related study-guide topics</span><span data-lang="zh">相关学习手册专题</span></h2>
+        <ul><li><a href="../../guide/llm/mcp.html"><span data-lang="en">Model Context Protocol</span><span data-lang="zh">MCP 协议</span></a></li></ul>
+      </article>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

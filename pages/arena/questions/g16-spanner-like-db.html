@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>G16. Design a Globally Consistent DB (Spanner-like) - SD-Guide</title>
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../index.html" class="active"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../resources/index.html"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../about/index.html"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a>
+        <span class="sep">›</span>
+        <a href="../index.html"><span data-lang="en">Arena</span><span data-lang="zh">竞技场</span></a>
+        <span class="sep">›</span>
+        <span>G16</span>
+      </div>
+
+      <article class="prose wide">
+        <div class="question-meta" style="margin-bottom:1rem;">
+          <span class="tag company-google">Google</span>
+          <span class="tag freq-2">★★ Frequent</span>
+          <span class="tag difficulty-hard">Hard</span>
+          <span class="tag">Spanner</span><span class="tag">External Consistency</span><span class="tag">TrueTime</span>
+        </div>
+
+        <h1>
+          <span data-lang="en">G16 · Design a Globally Consistent DB (Spanner-like)</span>
+          <span data-lang="zh">G16 · 设计全球一致 DB（Spanner 风格）</span>
+        </h1>
+
+        <div class="callout google">
+          <h4><span data-lang="en">Verified source</span><span data-lang="zh">经核实出处</span></h4>
+          <p>Spanner paper (OSDI 2012). Classic Google interview. Credibility <strong>A</strong>.</p>
+        </div>
+
+<h2><span data-lang="en">Key decisions</span><span data-lang="zh">关键决策</span></h2>
+<ul><li><span data-lang="en">**TrueTime**: GPS + atomic clocks give bounded uncertainty; commit waits past uncertainty for external consistency.</span><span data-lang="zh">**TrueTime**：GPS + 原子钟给出有界不确定；commit 等待不确定度保外部一致。</span></li><li><span data-lang="en">**Paxos groups per shard**; 2PC coordinator for cross-shard txns.</span><span data-lang="zh">**每 shard 一 Paxos 组**；跨 shard 事务用 2PC 协调者。</span></li><li><span data-lang="en">**Read-only txns** use past timestamp; lock-free, globally consistent.</span><span data-lang="zh">**只读事务**用过去时间戳；免锁且全局一致。</span></li><li><span data-lang="en">**Schema leases + follower reads** for low-latency reads.</span><span data-lang="zh">**Schema 租约 + follower 读**降低读延迟。</span></li></ul>
+<h2><span data-lang="en">Follow-ups</span><span data-lang="zh">追问</span></h2>
+<ul><li><span data-lang="en">Without TrueTime? CockroachDB's HLC + uncertainty windows.</span><span data-lang="zh">没有 TrueTime？CockroachDB 的 HLC + 不确定窗口。</span></li></ul>
+
+        <h2><span data-lang="en">Related study-guide topics</span><span data-lang="zh">相关学习手册专题</span></h2>
+        <ul><li><a href="../../guide/distributed/consensus.html"><span data-lang="en">Consensus &amp; consistency</span><span data-lang="zh">共识与一致性</span></a></li></ul>
+      </article>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

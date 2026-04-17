@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>X3. Design the X Firehose Ingestion for Grok Training - SD-Guide</title>
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../index.html" class="active"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../resources/index.html"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../about/index.html"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a>
+        <span class="sep">›</span>
+        <a href="../index.html"><span data-lang="en">Arena</span><span data-lang="zh">竞技场</span></a>
+        <span class="sep">›</span>
+        <span>X3</span>
+      </div>
+
+      <article class="prose wide">
+        <div class="question-meta" style="margin-bottom:1rem;">
+          <span class="tag company-xai">xAI</span>
+          <span class="tag freq-2">★★ Frequent</span>
+          <span class="tag difficulty-hard">Hard</span>
+          <span class="tag">Streaming</span><span class="tag">Kafka</span><span class="tag">Data Pipeline</span>
+        </div>
+
+        <h1>
+          <span data-lang="en">X3 · Design the X Firehose Ingestion for Grok Training</span>
+          <span data-lang="zh">X3 · 设计供 Grok 训练使用的 X 全量 Firehose 摄入</span>
+        </h1>
+
+        <div class="callout xai">
+          <h4><span data-lang="en">Verified source</span><span data-lang="zh">经核实出处</span></h4>
+          <p>xAI has exclusive access to X's full firehose (stated publicly by Elon). This question mirrors classic Twitter streaming-ingestion interview questions. Credibility <strong>B</strong>.</p>
+        </div>
+
+<h2><span data-lang="en">Problem</span><span data-lang="zh">问题</span></h2>
+<p><span data-lang="en">X produces ~500M posts/day (not counting likes, reposts, views). xAI needs to ingest this firehose for (1) Grok training corpus and (2) real-time features in Grok answers. Design the pipeline end to end.</span><span data-lang="zh">X 每天产生约 5 亿条帖子（不含点赞、转发、浏览）。xAI 需要摄入 firehose 用于（1）Grok 训练语料；（2）Grok 回答的实时特征。端到端设计这条流水线。</span></p>
+<h2><span data-lang="en">Architecture</span><span data-lang="zh">架构</span></h2>
+<div class="mermaid-container"><pre class="mermaid">
+flowchart LR
+  X[X services] --> K[Kafka firehose]
+  K --> EN[Enrichment]
+  EN --> F1[Training sink: Parquet/S3]
+  EN --> F2[Real-time index]
+  EN --> F3[Safety filter queue]
+  F2 --> RS[Realtime serving for Grok]
+  F3 --> MOD[Moderation + opt-out removal]
+</pre></div>
+<h2><span data-lang="en">Key decisions</span><span data-lang="zh">关键决策</span></h2>
+<ul><li><span data-lang="en">Kafka with partition-by-user_id for ordering; replication factor 3 across DCs.</span><span data-lang="zh">Kafka 按 user_id 分区保证有序；跨数据中心副本因子 3。</span></li><li><span data-lang="en">Enrichment adds language detect, topic classification, author credibility score — done as Flink/Spark streaming job.</span><span data-lang="zh">Enrichment 增加语言检测、主题分类、作者可信度评分——用 Flink/Spark 流作业实现。</span></li><li><span data-lang="en">Training sink writes hourly Parquet partitioned by date/lang — feeds nightly training data refresh.</span><span data-lang="zh">训练 sink 按日期/语言分区每小时落盘 Parquet——用于每夜训练数据刷新。</span></li><li><span data-lang="en">Respect X users' data opt-outs via tombstones pushed through the same pipeline.</span><span data-lang="zh">通过同一条流水线下发 tombstone，尊重 X 用户的数据退出设置。</span></li><li><span data-lang="en">PII scrubbing before any data leaves the secure X VPC into xAI training clusters.</span><span data-lang="zh">数据离开 X 安全 VPC 进入 xAI 训练集群前完成 PII 清洗。</span></li></ul>
+<h2><span data-lang="en">Follow-ups</span><span data-lang="zh">追问</span></h2>
+<ul><li><span data-lang="en">Backfill: how to reprocess 6 months of history when you add a new enrichment field?</span><span data-lang="zh">回填：新增一个 enrichment 字段时如何重放 6 个月的历史？</span></li><li><span data-lang="en">Dedup: retweets and quote-posts duplicate content — how do you dedup at training time?</span><span data-lang="zh">去重：转发和引用会重复内容——训练时如何去重？</span></li></ul>
+
+        <h2><span data-lang="en">Related study-guide topics</span><span data-lang="zh">相关学习手册专题</span></h2>
+        <ul><li><a href="./o36-distributed-log-pipeline.html"><span data-lang="en">Distributed Log Pipeline (O36)</span><span data-lang="zh">分布式日志流水线（O36）</span></a></li></ul>
+      </article>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

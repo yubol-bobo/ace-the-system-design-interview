@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>O29. Design a Realtime Voice Backend (OpenAI Realtime API) - SD-Guide</title>
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../index.html" class="active"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../resources/index.html"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../about/index.html"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a>
+        <span class="sep">›</span>
+        <a href="../index.html"><span data-lang="en">Arena</span><span data-lang="zh">竞技场</span></a>
+        <span class="sep">›</span>
+        <span>O29</span>
+      </div>
+
+      <article class="prose wide">
+        <div class="question-meta" style="margin-bottom:1rem;">
+          <span class="tag company-openai">OpenAI</span>
+          <span class="tag freq-2">★★ Frequent</span>
+          <span class="tag difficulty-hard">Hard</span>
+          <span class="tag">WebRTC</span><span class="tag">Streaming</span><span class="tag">Voice</span>
+        </div>
+
+        <h1>
+          <span data-lang="en">O29 · Design a Realtime Voice Backend (OpenAI Realtime API)</span>
+          <span data-lang="zh">O29 · 设计实时语音后端（OpenAI Realtime API）</span>
+        </h1>
+
+        <div class="callout openai">
+          <h4><span data-lang="en">Verified source</span><span data-lang="zh">经核实出处</span></h4>
+          <p>OpenAI Realtime API (<a href="https://platform.openai.com/docs/guides/realtime" target="_blank" rel="noopener">docs</a>) launched 2024-10. Blind 2024-Q4 reports. Credibility <strong>A</strong>.</p>
+        </div>
+
+<h2><span data-lang="en">Architecture</span><span data-lang="zh">架构</span></h2>
+<div class="mermaid-container"><pre class="mermaid">
+flowchart LR
+  C[Client] <--WebRTC/WS--> GW[Edge Gateway]
+  GW --> VAD[VAD / barge-in]
+  VAD --> ASR[Streaming ASR]
+  ASR --> LLM[Streaming LLM]
+  LLM --> TTS[Streaming TTS]
+  TTS --> GW
+  GW <--> SESS[(Session State)]
+</pre></div>
+<h2><span data-lang="en">Key decisions</span><span data-lang="zh">关键决策</span></h2>
+<ul><li><span data-lang="en">**WebRTC for audio**: UDP-based, handles jitter; WS fallback for restrictive networks.</span><span data-lang="zh">**音频走 WebRTC**：UDP 抗抖动；受限网络回退 WS。</span></li><li><span data-lang="en">**Barge-in**: server VAD on user channel; cancel LLM generation + TTS on user speech.</span><span data-lang="zh">**打断检测**：服务端 VAD；说话即取消 LLM 生成与 TTS 播放。</span></li><li><span data-lang="en">**Streaming at every stage**: ASR partials every 100 ms; LLM pipes tokens into TTS.</span><span data-lang="zh">**全链路流式**：ASR 每 100 ms 出 partial；LLM 直接喂 TTS。</span></li><li><span data-lang="en">**Session affinity**: sticky routing to same GPU for KV cache; replay last N turns on reroute.</span><span data-lang="zh">**会话亲和**：粘性 GPU 路由复用 KV cache；迁移时重放最近 N 轮。</span></li></ul>
+<h2><span data-lang="en">Follow-ups</span><span data-lang="zh">追问</span></h2>
+<ul><li><span data-lang="en">First-audio budget < 300 ms? ASR 150 + LLM TTFT 80 + TTS 40 + network 30.</span><span data-lang="zh">首音 300 ms 预算？ASR 150 + LLM TTFT 80 + TTS 40 + 网络 30。</span></li><li><span data-lang="en">Network blip? jitter buffer + seq reassembly; tolerate 1 s gap.</span><span data-lang="zh">网络抖动？jitter buffer + 序号重组；容忍 1 s 断流。</span></li></ul>
+
+        <h2><span data-lang="en">Related study-guide topics</span><span data-lang="zh">相关学习手册专题</span></h2>
+        <ul><li><a href="../../guide/llm/llm-serving.html"><span data-lang="en">LLM serving</span><span data-lang="zh">LLM 推理服务</span></a></li></ul>
+      </article>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

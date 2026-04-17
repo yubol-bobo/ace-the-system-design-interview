@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>O26. Design OpenAI Assistants / Threads API - SD-Guide</title>
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../index.html" class="active"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../resources/index.html"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../about/index.html"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a>
+        <span class="sep">›</span>
+        <a href="../index.html"><span data-lang="en">Arena</span><span data-lang="zh">竞技场</span></a>
+        <span class="sep">›</span>
+        <span>O26</span>
+      </div>
+
+      <article class="prose wide">
+        <div class="question-meta" style="margin-bottom:1rem;">
+          <span class="tag company-openai">OpenAI</span>
+          <span class="tag freq-2">★★ Frequent</span>
+          <span class="tag difficulty-hard">Hard</span>
+          <span class="tag">Stateful Agent</span><span class="tag">Tools</span><span class="tag">Memory</span>
+        </div>
+
+        <h1>
+          <span data-lang="en">O26 · Design OpenAI Assistants / Threads API</span>
+          <span data-lang="zh">O26 · 设计 OpenAI Assistants / Threads API</span>
+        </h1>
+
+        <div class="callout openai">
+          <h4><span data-lang="en">Verified source</span><span data-lang="zh">经核实出处</span></h4>
+          <p>OpenAI public product (<a href="https://platform.openai.com/docs/assistants/overview" target="_blank" rel="noopener">Assistants docs</a>). Asked at OpenAI onsites per Blind. Credibility <strong>A</strong>.</p>
+        </div>
+
+<h2><span data-lang="en">Architecture</span><span data-lang="zh">架构</span></h2>
+<div class="mermaid-container"><pre class="mermaid">
+flowchart TB
+  C[Client] --> API[Assistants API]
+  API --> ORCH[Run Orchestrator]
+  ORCH --> MEM[(Thread / Message Store)]
+  ORCH --> LLM[Inference]
+  ORCH --> TOOLS[Tool Dispatcher]
+  TOOLS --> VS[File / Vector search]
+  TOOLS --> CI[Code Interpreter Sandbox]
+  ORCH --> S[SSE Stream Gateway]
+  S --> C
+</pre></div>
+<h2><span data-lang="en">Key decisions</span><span data-lang="zh">关键决策</span></h2>
+<ul><li><span data-lang="en">**Run as a state machine**: queued to in_progress to requires_action (tool call) to in_progress to completed/failed/cancelled.</span><span data-lang="zh">**Run 视为状态机**：queued → in_progress → requires_action（工具调用）→ in_progress → completed|failed|cancelled。</span></li><li><span data-lang="en">**Thread = ordered append-only log** of messages + file ids; forking via thread.copy().</span><span data-lang="zh">**Thread = 有序 append-only 日志** + 文件 id；通过 thread.copy 分叉。</span></li><li><span data-lang="en">**Tool-call loop** on server side: model emits tool_calls, orchestrator executes or awaits submission, feeds observation back.</span><span data-lang="zh">**服务端工具循环**：模型输出 tool_calls，编排执行或等待提交，将观察回灌。</span></li><li><span data-lang="en">**Memory scaling**: long threads compacted via windowed summarisation + RAG over full log.</span><span data-lang="zh">**长上下文**：长 thread 做窗口摘要 + 对完整日志 RAG 检索。</span></li></ul>
+<h2><span data-lang="en">API surface</span><span data-lang="zh">API 界面</span></h2>
+<pre><code>POST /threads
+POST /threads/{id}/messages
+POST /threads/{id}/runs
+GET  /threads/{id}/runs/{run_id}/events   (SSE)
+POST /threads/{id}/runs/{run_id}/submit_tool_outputs</code></pre>
+<h2><span data-lang="en">Follow-ups</span><span data-lang="zh">追问</span></h2>
+<ul><li><span data-lang="en">Concurrent runs on same thread? serialise per-thread; second returns 409.</span><span data-lang="zh">同 thread 并发 run？串行化；第二个 409。</span></li><li><span data-lang="en">Cancel mid-tool-call? set run.status=cancelling; sandbox honours SIGTERM.</span><span data-lang="zh">中途取消？置 cancelling；沙箱响应 SIGTERM。</span></li></ul>
+
+        <h2><span data-lang="en">Related study-guide topics</span><span data-lang="zh">相关学习手册专题</span></h2>
+        <ul><li><a href="../../guide/llm/agent-patterns.html"><span data-lang="en">Agent patterns</span><span data-lang="zh">智能体模式</span></a></li><li><a href="../../guide/llm/memory.html"><span data-lang="en">Agent memory</span><span data-lang="zh">智能体记忆</span></a></li></ul>
+      </article>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>G6. Design Google Web Crawler - SD-Guide</title>
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../index.html" class="active"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../resources/index.html"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../about/index.html"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a>
+        <span class="sep">›</span>
+        <a href="../index.html"><span data-lang="en">Arena</span><span data-lang="zh">竞技场</span></a>
+        <span class="sep">›</span>
+        <span>G6</span>
+      </div>
+
+      <article class="prose wide">
+        <div class="question-meta" style="margin-bottom:1rem;">
+          <span class="tag company-google">Google</span>
+          <span class="tag freq-3">★★★ Frequent</span>
+          <span class="tag difficulty-hard">Hard</span>
+          <span class="tag">Crawler</span><span class="tag">BFS</span><span class="tag">Politeness</span>
+        </div>
+
+        <h1>
+          <span data-lang="en">G6 · Design Google Web Crawler</span>
+          <span data-lang="zh">G6 · 设计 Google 网络爬虫</span>
+        </h1>
+
+        <div class="callout google">
+          <h4><span data-lang="en">Verified source</span><span data-lang="zh">经核实出处</span></h4>
+          <p>Classic Google SD interview question; confirmed on Glassdoor, LeetCode Discuss for Google onsites. Credibility <strong>A</strong>.</p>
+        </div>
+
+<h2><span data-lang="en">Architecture</span><span data-lang="zh">架构</span></h2>
+<div class="mermaid-container"><pre class="mermaid">
+flowchart LR
+  Seed --> FR[Frontier - BFS queue]
+  FR --> POL[Politeness gate - per host]
+  POL --> FETCH[Fetcher pool]
+  FETCH --> ROB[Robots check]
+  FETCH --> DL[Downloader]
+  DL --> DEDUP[Dup detector - simhash]
+  DEDUP --> INDEX[Indexer]
+  INDEX --> FR_NEW[New URLs]
+  FR_NEW --> FR
+</pre></div>
+<h2><span data-lang="en">Key decisions</span><span data-lang="zh">关键决策</span></h2>
+<ul><li><span data-lang="en">**Frontier per-host bucket**: per-host queue throttled to politeness delay.</span><span data-lang="zh">**按域分桶的 frontier**：每域限流至礼貌延迟。</span></li><li><span data-lang="en">**Re-crawl priority** by PageRank + historical update frequency.</span><span data-lang="zh">**重爬优先级**按 PageRank + 历史更新频率。</span></li><li><span data-lang="en">**SimHash near-duplicate detection** dedups mirror/boilerplate pages.</span><span data-lang="zh">**SimHash 近似去重**处理镜像/模板页。</span></li><li><span data-lang="en">**Distributed frontier**: consistent-hash URL to crawler node; avoids cross-cluster duplicates.</span><span data-lang="zh">**分布式 frontier**：URL 一致性哈希到节点；避免集群重复抓取。</span></li></ul>
+<h2><span data-lang="en">Follow-ups</span><span data-lang="zh">追问</span></h2>
+<ul><li><span data-lang="en">JS-heavy sites? dedicated headless renderer tier, cached.</span><span data-lang="zh">JS 重站？专用无头渲染层，带缓存。</span></li><li><span data-lang="en">Frontier persistence? LSM store (like Bigtable).</span><span data-lang="zh">frontier 持久？LSM 存储（如 Bigtable）。</span></li></ul>
+
+        <h2><span data-lang="en">Related study-guide topics</span><span data-lang="zh">相关学习手册专题</span></h2>
+        <ul><li><a href="../../guide/classical/web-crawler.html"><span data-lang="en">Web crawler</span><span data-lang="zh">网络爬虫</span></a></li></ul>
+      </article>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

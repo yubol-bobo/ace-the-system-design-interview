@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>A37. Design a Training Checkpoint Service - SD-Guide</title>
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../index.html" class="active"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../resources/index.html"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../about/index.html"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a>
+        <span class="sep">›</span>
+        <a href="../index.html"><span data-lang="en">Arena</span><span data-lang="zh">竞技场</span></a>
+        <span class="sep">›</span>
+        <span>A37</span>
+      </div>
+
+      <article class="prose wide">
+        <div class="question-meta" style="margin-bottom:1rem;">
+          <span class="tag company-anthropic">Anthropic</span>
+          <span class="tag freq-2">★★ Frequent</span>
+          <span class="tag difficulty-hard">Hard</span>
+          <span class="tag">Checkpoint</span><span class="tag">Distributed Training</span><span class="tag">Storage</span>
+        </div>
+
+        <h1>
+          <span data-lang="en">A37 · Design a Training Checkpoint Service</span>
+          <span data-lang="zh">A37 · 设计训练 Checkpoint 服务</span>
+        </h1>
+
+        <div class="callout anthropic">
+          <h4><span data-lang="en">Verified source</span><span data-lang="zh">经核实出处</span></h4>
+          <p>Discussed in frontier-lab training blogs (Anthropic, OpenAI, Meta). Onsite reports confirm. Credibility <strong>B</strong>.</p>
+        </div>
+
+<h2><span data-lang="en">Architecture</span><span data-lang="zh">架构</span></h2>
+<div class="mermaid-container"><pre class="mermaid">
+flowchart LR
+  Trainer[GPU worker] --> SNAP[In-GPU snapshot]
+  SNAP --> SHARD[Shard & compress]
+  SHARD --> UPL[Async uploader]
+  UPL --> OBJ[(Object store)]
+  Master --> PLAN[Checkpoint plan]
+  PLAN --> UPL
+</pre></div>
+<h2><span data-lang="en">Key decisions</span><span data-lang="zh">关键决策</span></h2>
+<ul><li><span data-lang="en">**Snapshot to GPU RAM then async upload**: training resumes within 1-2 s; upload runs in background.</span><span data-lang="zh">**快照 -> GPU 内存 -> 异步上传**：训练 1-2 s 内可恢复；上传后台跑。</span></li><li><span data-lang="en">**Per-rank sharded writes** to object store: 10 k parallel PUTs with content-addressable keys.</span><span data-lang="zh">**按 rank 分片写**到对象存储：10 k 并行 PUT，内容寻址 key。</span></li><li><span data-lang="en">**Incremental/delta checkpoints** for optimiser state; full checkpoint every M steps.</span><span data-lang="zh">**增量/delta checkpoint**（优化器状态）；每 M 步全量。</span></li><li><span data-lang="en">**Fail-fast on corruption**: manifest includes SHA per shard; restore validates before load.</span><span data-lang="zh">**坏数据快失败**：manifest 记录每 shard SHA；恢复前校验。</span></li></ul>
+<h2><span data-lang="en">Follow-ups</span><span data-lang="zh">追问</span></h2>
+<ul><li><span data-lang="en">Cross-region DR? async replicate manifests + hot regions.</span><span data-lang="zh">跨区灾备？manifest 异步复制 + 热区域。</span></li><li><span data-lang="en">Recovery time at 10k GPUs? parallel restore, limited by object-store read throughput.</span><span data-lang="zh">万卡恢复时间？并行恢复，受对象存储读吞吐限制。</span></li></ul>
+
+        <h2><span data-lang="en">Related study-guide topics</span><span data-lang="zh">相关学习手册专题</span></h2>
+        <ul><li><a href="../../guide/ml/training-infra.html"><span data-lang="en">Training infra</span><span data-lang="zh">训练基础设施</span></a></li></ul>
+      </article>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>O35. Design Usage Metering & Billing for LLM API - SD-Guide</title>
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../index.html" class="active"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../resources/index.html"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../about/index.html"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a>
+        <span class="sep">›</span>
+        <a href="../index.html"><span data-lang="en">Arena</span><span data-lang="zh">竞技场</span></a>
+        <span class="sep">›</span>
+        <span>O35</span>
+      </div>
+
+      <article class="prose wide">
+        <div class="question-meta" style="margin-bottom:1rem;">
+          <span class="tag company-openai">OpenAI</span>
+          <span class="tag freq-2">★★ Frequent</span>
+          <span class="tag difficulty-medium">Medium</span>
+          <span class="tag">Metering</span><span class="tag">Billing</span><span class="tag">Exactly-Once</span>
+        </div>
+
+        <h1>
+          <span data-lang="en">O35 · Design Usage Metering & Billing for LLM API</span>
+          <span data-lang="zh">O35 · 设计 LLM API 的用量计量与计费</span>
+        </h1>
+
+        <div class="callout openai">
+          <h4><span data-lang="en">Verified source</span><span data-lang="zh">经核实出处</span></h4>
+          <p>Cross-referenced in multiple onsite reports (Blind, 1Point3Acres). Credibility <strong>B</strong>.</p>
+        </div>
+
+<h2><span data-lang="en">Architecture</span><span data-lang="zh">架构</span></h2>
+<div class="mermaid-container"><pre class="mermaid">
+flowchart LR
+  API --> EV[Usage Event - request_id, tokens]
+  EV --> STREAM[(Durable log - Kafka)]
+  STREAM --> AGG[Streaming Aggregator]
+  AGG --> LIVE[(Hot counters - Redis)]
+  AGG --> WH[(Warehouse)]
+  LIVE --> RL[Rate limiter]
+  WH --> BILL[Billing reconciliation]
+  BILL --> INV[Invoice service]
+</pre></div>
+<h2><span data-lang="en">Key decisions</span><span data-lang="zh">关键决策</span></h2>
+<ul><li><span data-lang="en">**Dual-ledger**: fast Redis counters for rate-limit enforcement + durable Kafka log for audit billing.</span><span data-lang="zh">**双账本**：Redis 热计数用于限流 + Kafka 持久日志用于审计计费。</span></li><li><span data-lang="en">**Idempotent events keyed on request_id**; reconciliation job rebuilds ledger.</span><span data-lang="zh">**事件以 request_id 幂等**；对账任务从日志重建账本。</span></li><li><span data-lang="en">**Streaming responses**: meter emits incremental tokens; final event has final count.</span><span data-lang="zh">**流式响应**：边生成边报增量 token；最后一个事件带最终计数。</span></li><li><span data-lang="en">**Time-bucket reconciliation**: hourly snapshots detect drift.</span><span data-lang="zh">**时间分桶对账**：小时快照检测偏差。</span></li></ul>
+<h2><span data-lang="en">Follow-ups</span><span data-lang="zh">追问</span></h2>
+<ul><li><span data-lang="en">Retries? dedup by request_id in aggregator.</span><span data-lang="zh">重试？聚合器按 request_id 去重。</span></li><li><span data-lang="en">Multi-region? region-local counters + daily cross-region merge.</span><span data-lang="zh">多区？区域本地计数 + 日级跨区合并。</span></li></ul>
+
+        <h2><span data-lang="en">Related study-guide topics</span><span data-lang="zh">相关学习手册专题</span></h2>
+        <ul><li><a href="../../guide/classical/metering.html"><span data-lang="en">Metering systems</span><span data-lang="zh">计量系统</span></a></li></ul>
+      </article>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

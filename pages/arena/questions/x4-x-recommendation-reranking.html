@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>X4. Design X For-You Re-ranking with Grok - SD-Guide</title>
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../index.html" class="active"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../resources/index.html"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../about/index.html"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a>
+        <span class="sep">›</span>
+        <a href="../index.html"><span data-lang="en">Arena</span><span data-lang="zh">竞技场</span></a>
+        <span class="sep">›</span>
+        <span>X4</span>
+      </div>
+
+      <article class="prose wide">
+        <div class="question-meta" style="margin-bottom:1rem;">
+          <span class="tag company-xai">xAI</span>
+          <span class="tag freq-1">★ Emerging</span>
+          <span class="tag difficulty-medium">Medium</span>
+          <span class="tag">Ranking</span><span class="tag">RecSys</span><span class="tag">LLM</span>
+        </div>
+
+        <h1>
+          <span data-lang="en">X4 · Design X For-You Re-ranking with Grok</span>
+          <span data-lang="zh">X4 · 设计用 Grok 重排序 X 的 For-You 信息流</span>
+        </h1>
+
+        <div class="callout xai">
+          <h4><span data-lang="en">Verified source</span><span data-lang="zh">经核实出处</span></h4>
+          <p>X's ranking algo is open-sourced (github.com/twitter/the-algorithm). xAI has stated Grok will increasingly power ranking. Credibility <strong>B</strong>.</p>
+        </div>
+
+<h2><span data-lang="en">Problem</span><span data-lang="zh">问题</span></h2>
+<p><span data-lang="en">X has ~200M DAU and each user refreshes their For-You timeline many times per day. Candidate generation produces ~1500 posts per request; final ranking must score and return top 20. Design an LLM-in-the-loop re-ranker that adds Grok-based relevance without exceeding a 100ms latency budget.</span><span data-lang="zh">X 日活约 2 亿，每个用户每天多次刷新 For-You。候选生成约每次 1500 条，最终排序输出 Top 20。设计一个 LLM in-the-loop 重排器，在 100ms 延迟预算内加入 Grok 相关性信号。</span></p>
+<h2><span data-lang="en">Architecture</span><span data-lang="zh">架构</span></h2>
+<div class="mermaid-container"><pre class="mermaid">
+flowchart LR
+  U[User opens X] --> CG[Candidate generator ~1500]
+  CG --> L1[Lightweight tower model, top 200]
+  L1 --> L2[Grok-mini embedding re-rank, top 50]
+  L2 --> L3[Heavy Grok scorer, top 20]
+  L3 --> TL[For-You timeline]
+</pre></div>
+<h2><span data-lang="en">Key decisions</span><span data-lang="zh">关键决策</span></h2>
+<ul><li><span data-lang="en">Three-stage funnel: classic model → small LLM embedding → heavy LLM. LLMs only run on shrinking candidate sets.</span><span data-lang="zh">三级漏斗：经典模型 → 小 LLM embedding → 重型 LLM。LLM 只作用于逐级缩小的候选集。</span></li><li><span data-lang="en">Precompute post embeddings at ingest time; re-rank is a dot product, not a forward pass.</span><span data-lang="zh">在摄入时预先计算帖子 embedding；重排是点积而非一次前向推理。</span></li><li><span data-lang="en">User intent vector updated from last 10 interactions — gives personalization without full profile scan.</span><span data-lang="zh">用户意图向量基于最近 10 次互动更新——在不扫描完整画像的情况下实现个性化。</span></li><li><span data-lang="en">Only the final top-20 heavy-scoring stage invokes full Grok; this is the tight latency loop.</span><span data-lang="zh">只有最后 Top 20 的重型打分阶段调用完整 Grok；这是严格的延迟热点。</span></li><li><span data-lang="en">Offline eval: A/B test against current heuristic stack measuring dwell time and report rate, not just CTR.</span><span data-lang="zh">离线评估：对比现有启发式栈做 A/B，关注停留时长和举报率，而不仅是点击率。</span></li></ul>
+<h2><span data-lang="en">Follow-ups</span><span data-lang="zh">追问</span></h2>
+<ul><li><span data-lang="en">What metrics besides CTR? (Dwell, like-after-read, reports, diversity, political balance.)</span><span data-lang="zh">除了 CTR 还看什么？（停留、阅后点赞、举报、多样性、政治平衡度。）</span></li><li><span data-lang="en">Cold-start: how do you rank for a user with 3 interactions?</span><span data-lang="zh">冷启动：只有 3 次互动的用户如何排序？</span></li></ul>
+
+        <h2><span data-lang="en">Related study-guide topics</span><span data-lang="zh">相关学习手册专题</span></h2>
+        <ul><li><a href="../../guide/ml/ranking.html"><span data-lang="en">Ranking Systems Guide</span><span data-lang="zh">排序系统手册</span></a></li></ul>
+      </article>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

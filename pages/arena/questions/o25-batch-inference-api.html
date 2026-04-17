@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>O25. Design OpenAI Batch Inference API - SD-Guide</title>
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../index.html" class="active"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../resources/index.html"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../about/index.html"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a>
+        <span class="sep">›</span>
+        <a href="../index.html"><span data-lang="en">Arena</span><span data-lang="zh">竞技场</span></a>
+        <span class="sep">›</span>
+        <span>O25</span>
+      </div>
+
+      <article class="prose wide">
+        <div class="question-meta" style="margin-bottom:1rem;">
+          <span class="tag company-openai">OpenAI</span>
+          <span class="tag freq-3">★★★ Frequent</span>
+          <span class="tag difficulty-hard">Hard</span>
+          <span class="tag">Batch</span><span class="tag">LLM Inference</span><span class="tag">SLA</span>
+        </div>
+
+        <h1>
+          <span data-lang="en">O25 · Design OpenAI Batch Inference API</span>
+          <span data-lang="zh">O25 · 设计 OpenAI 批量推理 API</span>
+        </h1>
+
+        <div class="callout openai">
+          <h4><span data-lang="en">Verified source</span><span data-lang="zh">经核实出处</span></h4>
+          <p>OpenAI public product (<a href="https://platform.openai.com/docs/guides/batch" target="_blank" rel="noopener">Batch API docs</a>). Interview reports on Blind/LeetCode ask candidates to design it end-to-end. Credibility <strong>A</strong>.</p>
+        </div>
+
+<h2><span data-lang="en">Architecture</span><span data-lang="zh">架构</span></h2>
+<div class="mermaid-container"><pre class="mermaid">
+flowchart LR
+  U[User] -->|upload JSONL| S3[(Blob store)]
+  U -->|POST /batches| API
+  API --> Q[(Batch queue)]
+  SCHED[Scheduler] --> Q
+  SCHED -->|fills idle GPU| GPU[Inference fleet]
+  GPU -->|write outputs| S3
+  SCHED --> META[(Batch metadata DB)]
+  U -->|poll /batches/id| API
+</pre></div>
+<h2><span data-lang="en">Key design choices</span><span data-lang="zh">关键设计</span></h2>
+<ul><li><span data-lang="en">**24h SLA, not 24h latency**: scheduler backfills idle GPU capacity from interactive traffic; higher utilisation, lower cost.</span><span data-lang="zh">**24h SLA 而非固定延迟**：调度器用 batch 回填交互流量空闲 GPU，提高利用率、降本。</span></li><li><span data-lang="en">**Immutable input file**: content hash enables dedup + retry without re-upload.</span><span data-lang="zh">**不可变输入**：内容 hash 可去重与免重传重试。</span></li><li><span data-lang="en">**Partial progress visible**: polling returns {completed, failed, total}.</span><span data-lang="zh">**渐进式进度**：轮询返回 {completed, failed, total}。</span></li><li><span data-lang="en">**Per-row timeout + retry**: each line independent; failed rows go to errors.jsonl.</span><span data-lang="zh">**按行超时 + 重试**：每行独立；失败行汇入 errors.jsonl。</span></li></ul>
+<h2><span data-lang="en">Scale math</span><span data-lang="zh">规模估算</span></h2>
+<p><span data-lang="en">50 M requests/day x 2 k output tokens = 100 B tokens/day. Batch absorbs capacity beyond the ~70 B online budget. KV-cache warm-up across a batch further reduces cost.</span><span data-lang="zh">日 5000 万请求 x 2k 输出 = 1000 亿 token/日。batch 吸收超出在线 ~700 亿的余量。batch 内 KV cache 预热再降本。</span></p>
+<h2><span data-lang="en">Follow-ups</span><span data-lang="zh">追问</span></h2>
+<ul><li><span data-lang="en">Guarantee 24h on quiet days? priority bumps as deadline nears.</span><span data-lang="zh">安静日保 24h？临近 deadline 提升优先级。</span></li><li><span data-lang="en">Prompt cache across a batch? shared prefix detected, cached once, reused per row.</span><span data-lang="zh">batch 内 prompt 缓存？检测共享前缀，一次缓存多行复用。</span></li></ul>
+
+        <h2><span data-lang="en">Related study-guide topics</span><span data-lang="zh">相关学习手册专题</span></h2>
+        <ul><li><a href="../../guide/llm/llm-serving.html"><span data-lang="en">LLM serving</span><span data-lang="zh">LLM 推理服务</span></a></li><li><a href="../../guide/distributed/scheduling.html"><span data-lang="en">Scheduling</span><span data-lang="zh">调度</span></a></li></ul>
+      </article>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

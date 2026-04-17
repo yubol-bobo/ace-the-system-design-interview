@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>A31. Design a Rate Limiter for the Claude API - SD-Guide</title>
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../index.html" class="active"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../resources/index.html"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../about/index.html"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a>
+        <span class="sep">›</span>
+        <a href="../index.html"><span data-lang="en">Arena</span><span data-lang="zh">竞技场</span></a>
+        <span class="sep">›</span>
+        <span>A31</span>
+      </div>
+
+      <article class="prose wide">
+        <div class="question-meta" style="margin-bottom:1rem;">
+          <span class="tag company-anthropic">Anthropic</span>
+          <span class="tag freq-3">★★★ Frequent</span>
+          <span class="tag difficulty-medium">Medium</span>
+          <span class="tag">Rate Limit</span><span class="tag">Tokens</span><span class="tag">Tiers</span>
+        </div>
+
+        <h1>
+          <span data-lang="en">A31 · Design a Rate Limiter for the Claude API</span>
+          <span data-lang="zh">A31 · 为 Claude API 设计限流器</span>
+        </h1>
+
+        <div class="callout anthropic">
+          <h4><span data-lang="en">Verified source</span><span data-lang="zh">经核实出处</span></h4>
+          <p>Anthropic Claude API has documented tiered rate limits (<a href="https://docs.claude.com/en/api/rate-limits" target="_blank" rel="noopener">docs</a>). Reported at Anthropic onsites. Credibility <strong>A</strong>.</p>
+        </div>
+
+<h2><span data-lang="en">Dimensions</span><span data-lang="zh">维度</span></h2>
+<ul><li><span data-lang="en">**RPM** (requests per minute): coarse DoS guard.</span><span data-lang="zh">**RPM**（每分钟请求）：粗粒度 DoS 防护。</span></li><li><span data-lang="en">**ITPM / OTPM** input vs output tokens per minute: LLMs care about compute, not just request count.</span><span data-lang="zh">**ITPM / OTPM**：输入/输出 token 分别计——LLM 看重算力。</span></li><li><span data-lang="en">**TPD** tokens per day: soft budget cap per tier.</span><span data-lang="zh">**TPD**：日 token 预算，按层限。</span></li></ul>
+<h2><span data-lang="en">Architecture</span><span data-lang="zh">架构</span></h2>
+<div class="mermaid-container"><pre class="mermaid">
+flowchart LR
+  API --> GW
+  GW --> RL[Rate limit check - Redis Lua]
+  RL -->|deny| R429[429]
+  RL -->|allow| INF[Inference]
+  INF --> METER[Emit usage event]
+  METER --> RL
+</pre></div>
+<h2><span data-lang="en">Key decisions</span><span data-lang="zh">关键决策</span></h2>
+<ul><li><span data-lang="en">**Token reservation**: request reserves max possible output tokens; unused refunded post-completion.</span><span data-lang="zh">**token 预留**：入口按最大输出预扣；完成后返还未用量。</span></li><li><span data-lang="en">**Atomic Lua in Redis** for check-and-decrement across multiple buckets.</span><span data-lang="zh">**Redis Lua 原子**跨多桶 check-and-decrement。</span></li><li><span data-lang="en">**Sticky shard by org_id** minimises cross-shard chatter; global reconciliation for TPD.</span><span data-lang="zh">**按 org 黏附 shard** 减少跨分片；TPD 做全局对账。</span></li><li><span data-lang="en">**429 with Retry-After + ratelimit-remaining headers**: clients can self-throttle.</span><span data-lang="zh">**429 + Retry-After / remaining 头**：客户端自我节流。</span></li></ul>
+<h2><span data-lang="en">Follow-ups</span><span data-lang="zh">追问</span></h2>
+<ul><li><span data-lang="en">Burst handling? token bucket with burst = 2x refill.</span><span data-lang="zh">突发？token bucket，burst = 2x 填充速率。</span></li><li><span data-lang="en">Priority queue for enterprise? separate queue + weighted shared pool.</span><span data-lang="zh">企业优先？独立队列 + 加权共享池。</span></li></ul>
+
+        <h2><span data-lang="en">Related study-guide topics</span><span data-lang="zh">相关学习手册专题</span></h2>
+        <ul><li><a href="../../guide/classical/rate-limiter.html"><span data-lang="en">Rate limiter deep dive</span><span data-lang="zh">限流器深度</span></a></li><li><a href="../../guide/llm/llm-serving.html"><span data-lang="en">LLM serving</span><span data-lang="zh">LLM 推理服务</span></a></li></ul>
+      </article>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

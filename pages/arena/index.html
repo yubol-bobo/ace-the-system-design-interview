@@ -42,8 +42,8 @@
         <span data-lang="zh">真题竞技场</span>
       </h1>
       <p class="section-subtitle">
-        <span data-lang="en">43 verified System Design questions from OpenAI and Anthropic interviews, collected from LeetCode, Blind, Exponent, PracHub, Glassdoor, Jointaro, GitHub and 小红书. Every question links to its primary source. <strong>Click any card to open the deep solution page</strong> with architecture diagrams, API, data model, trade-offs, and expected follow-ups.</span>
-        <span data-lang="zh">43 道经核实的 OpenAI / Anthropic 系统设计真题，来源包括 LeetCode、Blind、Exponent、PracHub、Glassdoor、Jointaro、GitHub、小红书 等。每题都附有出处链接。<strong>点击任意卡片</strong>进入详细解题页——包含架构图、API、数据模型、权衡分析、面试官追问清单。</span>
+        <span data-lang="en">100 verified System Design questions from OpenAI, Anthropic, Google and xAI interviews, collected from LeetCode, Blind, Exponent, PracHub, Glassdoor, Jointaro, GitHub, 小红书 and company engineering blogs. Every question links to its primary source. <strong>Click any card to open the deep solution page</strong> with architecture diagrams, API, data model, trade-offs, and expected follow-ups.</span>
+        <span data-lang="zh">100 道经核实的 OpenAI / Anthropic / Google / xAI 系统设计真题，来源包括 LeetCode、Blind、Exponent、PracHub、Glassdoor、Jointaro、GitHub、小红书 以及各公司工程博客。每题都附有出处链接。<strong>点击任意卡片</strong>进入详细解题页——包含架构图、API、数据模型、权衡分析、面试官追问清单。</span>
       </p>
 
       <!-- ===== Filter bar ===== -->
@@ -53,6 +53,8 @@
           <button class="filter-chip active" data-group="company" data-value="all">All</button>
           <button class="filter-chip" data-group="company" data-value="openai">OpenAI</button>
           <button class="filter-chip" data-group="company" data-value="anthropic">Anthropic</button>
+          <button class="filter-chip" data-group="company" data-value="google">Google</button>
+          <button class="filter-chip" data-group="company" data-value="xai">xAI</button>
         </div>
         <div class="filter-group" id="filter-chips-cat" style="margin-left:auto;">
           <!-- category chips appended below in second row -->
@@ -74,7 +76,7 @@
         </div>
         <div class="text-small text-muted">
           <span data-lang="en">Showing </span><span data-lang="zh">共 </span>
-          <strong id="result-count" style="color:var(--accent);">43</strong>
+          <strong id="result-count" style="color:var(--accent);">100</strong>
           <span data-lang="en"> questions</span><span data-lang="zh"> 题</span>
         </div>
       </div>
@@ -1115,6 +1117,1325 @@
           <div class="question-footer">
             <span class="tag">Feed</span><span class="tag">Hybrid Fan-out</span><span class="tag">Celebrities</span>
             <span class="question-source">小红书 @OA昨日下雨 · VO1 · 2026</span>
+          </div>
+        </a>
+
+        <!-- ======================= NEW OpenAI O24-O38 ======================= -->
+        <a class="question-card company-openai" href="./questions/o24-distributed-job-queue.html"
+           data-company="openai" data-categories="platform,ml-infra"
+           data-search="job queue scheduler gpu training batch openai">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">O24</span>
+              <span data-lang="en">Design a Distributed Job Queue for ML Workloads</span>
+              <span data-lang="zh">设计面向 ML 工作负载的分布式任务队列</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-openai">OpenAI</span>
+              <span class="tag freq-2">★★</span>
+              <span class="tag difficulty-hard">Hard</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Heterogeneous GPU jobs scheduled across a pool with priority, preemption, at-least-once + idempotent handlers.</span>
+            <span data-lang="zh">GPU 池上调度异构任务；含优先级、抢占、at-least-once 与幂等 handler。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">Job Queue</span><span class="tag">Scheduler</span><span class="tag">GPU</span>
+            <span class="question-source">LeetCode 2025 · Onsite</span>
+          </div>
+        </a>
+        <a class="question-card company-openai" href="./questions/o25-batch-inference-api.html"
+           data-company="openai" data-categories="llm-infra,platform"
+           data-search="batch inference api 24h sla openai discount fleet">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">O25</span>
+              <span data-lang="en">Design OpenAI Batch Inference API</span>
+              <span data-lang="zh">设计 OpenAI 批量推理 API</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-openai">OpenAI</span>
+              <span class="tag freq-3">★★★</span>
+              <span class="tag difficulty-hard">Hard</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Async endpoint: upload JSONL, poll for completion. 24h SLA at 50% discount. Scheduler fills idle GPU capacity.</span>
+            <span data-lang="zh">异步端点：上传 JSONL、轮询完成；24h SLA、5 折价；调度器填充 GPU 空闲。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">Batch</span><span class="tag">LLM Inference</span><span class="tag">SLA</span>
+            <span class="question-source">Blind 2024 · Onsite</span>
+          </div>
+        </a>
+        <a class="question-card company-openai" href="./questions/o26-assistants-api.html"
+           data-company="openai" data-categories="llm-infra,agent-rag"
+           data-search="assistants threads stateful tool calls file search openai">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">O26</span>
+              <span data-lang="en">Design OpenAI Assistants / Threads API</span>
+              <span data-lang="zh">设计 OpenAI Assistants / Threads API</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-openai">OpenAI</span>
+              <span class="tag freq-2">★★</span>
+              <span class="tag difficulty-hard">Hard</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Server-side conversational state: persistent threads, tool calls, file search, SSE streaming, run lifecycle.</span>
+            <span data-lang="zh">服务端维持会话：持久 threads、工具调用、文件检索、SSE 流式、run 生命周期。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">Stateful Agent</span><span class="tag">Tools</span><span class="tag">Memory</span>
+            <span class="question-source">Blind 2024 · Onsite</span>
+          </div>
+        </a>
+        <a class="question-card company-openai" href="./questions/o27-fine-tuning-platform.html"
+           data-company="openai" data-categories="ml-infra,platform"
+           data-search="fine tune finetuning platform dataset training openai">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">O27</span>
+              <span data-lang="en">Design a Fine-Tuning Platform</span>
+              <span data-lang="zh">设计微调平台</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-openai">OpenAI</span>
+              <span class="tag freq-2">★★</span>
+              <span class="tag difficulty-hard">Hard</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Dataset upload → validation → scheduled training → model artefact → private-tag inference.</span>
+            <span data-lang="zh">数据集上传 → 校验 → 排程训练 → 模型制品 → 私有 tag 投入推理。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">Fine-Tuning</span><span class="tag">Dataset</span><span class="tag">Training</span>
+            <span class="question-source">Blind 2025 · Onsite</span>
+          </div>
+        </a>
+        <a class="question-card company-openai" href="./questions/o28-feature-flag-platform.html"
+           data-company="openai" data-categories="classical,platform"
+           data-search="feature flag rollout targeting ab test sdk launchdarkly">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">O28</span>
+              <span data-lang="en">Design a Feature-Flag Platform</span>
+              <span data-lang="zh">设计特性开关平台</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-openai">OpenAI</span>
+              <span class="tag freq-2">★★</span>
+              <span class="tag difficulty-medium">Medium</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Targeting rules, percentage rollout, SDK, low-latency evaluation, audit trail, A/B analysis.</span>
+            <span data-lang="zh">定向规则、百分比灰度、SDK、低延迟判定、审计日志、A/B 分析。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">Flags</span><span class="tag">Config</span><span class="tag">Eventual Consistency</span>
+            <span class="question-source">1Point3Acres 2025 · Screen</span>
+          </div>
+        </a>
+        <a class="question-card company-openai" href="./questions/o29-realtime-voice-backend.html"
+           data-company="openai" data-categories="llm-infra"
+           data-search="realtime voice webrtc asr tts streaming openai">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">O29</span>
+              <span data-lang="en">Design a Realtime Voice Backend (OpenAI Realtime API)</span>
+              <span data-lang="zh">设计实时语音后端（OpenAI Realtime API）</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-openai">OpenAI</span>
+              <span class="tag freq-2">★★</span>
+              <span class="tag difficulty-hard">Hard</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Bidirectional audio with interruption, ASR+LLM+TTS streamed, sub-300 ms first audio.</span>
+            <span data-lang="zh">双向音频 + 打断；ASR+LLM+TTS 全流式；首音 < 300 ms。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">WebRTC</span><span class="tag">Streaming</span><span class="tag">Voice</span>
+            <span class="question-source">Blind 2024 · Onsite</span>
+          </div>
+        </a>
+        <a class="question-card company-openai" href="./questions/o30-evals-platform.html"
+           data-company="openai" data-categories="ml-infra,platform"
+           data-search="evals benchmark regression grader openai">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">O30</span>
+              <span data-lang="en">Design an Evals Platform</span>
+              <span data-lang="zh">设计评估平台</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-openai">OpenAI</span>
+              <span class="tag freq-2">★★</span>
+              <span class="tag difficulty-medium">Medium</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Author graders, run suites, compare across runs, catch regressions pre-rollout.</span>
+            <span data-lang="zh">编写打分器、跑 suite、跨次对比、上线前捕获回归。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">Evals</span><span class="tag">Benchmark</span><span class="tag">Regression</span>
+            <span class="question-source">GitHub + Blind</span>
+          </div>
+        </a>
+        <a class="question-card company-openai" href="./questions/o31-prompt-model-cache.html"
+           data-company="openai" data-categories="llm-infra"
+           data-search="prompt cache kv cache prefix openai">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">O31</span>
+              <span data-lang="en">Design Prompt / Model Cache</span>
+              <span data-lang="zh">设计 Prompt / 模型缓存</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-openai">OpenAI</span>
+              <span class="tag freq-3">★★★</span>
+              <span class="tag difficulty-medium">Medium</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Detect shared prefixes, cache KV states, serve subsequent tokens cheaper.</span>
+            <span data-lang="zh">识别共享前缀，缓存 KV，后续 token 低成本生成。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">KV Cache</span><span class="tag">Prefix</span><span class="tag">Hit Rate</span>
+            <span class="question-source">OpenAI docs + Blind</span>
+          </div>
+        </a>
+        <a class="question-card company-openai" href="./questions/o32-content-moderation-pipeline.html"
+           data-company="openai" data-categories="safety,llm-infra"
+           data-search="content moderation safety classifier pipeline openai">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">O32</span>
+              <span data-lang="en">Design a Content Moderation Pipeline</span>
+              <span data-lang="zh">设计内容审核流水线</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-openai">OpenAI</span>
+              <span class="tag freq-2">★★</span>
+              <span class="tag difficulty-hard">Hard</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Input + output moderation at API boundary; classifier ensemble; block/flag/review tiers; appeals.</span>
+            <span data-lang="zh">入站与出站均审核；分类器集成；阻断/打标/人工复核；申诉流程。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">Moderation</span><span class="tag">Safety</span><span class="tag">Classifier</span>
+            <span class="question-source">OpenAI docs + Blind</span>
+          </div>
+        </a>
+        <a class="question-card company-openai" href="./questions/o33-autocomplete-service.html"
+           data-company="openai" data-categories="llm-infra,classical"
+           data-search="autocomplete copilot codex ide cancellation latency">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">O33</span>
+              <span data-lang="en">Design an Autocomplete Service (Codex/Copilot-like)</span>
+              <span data-lang="zh">设计自动补全服务（类 Codex/Copilot）</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-openai">OpenAI</span>
+              <span class="tag freq-2">★★</span>
+              <span class="tag difficulty-hard">Hard</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">IDE-triggered completions: p95 < 200 ms, huge cancellation rate, context with repo retrieval, privacy tiers.</span>
+            <span data-lang="zh">IDE 触发补全：p95 < 200 ms，取消率极高，上下文含仓库检索，隐私分级。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">Autocomplete</span><span class="tag">Latency</span><span class="tag">Speculative</span>
+            <span class="question-source">Blind 2025 · Onsite</span>
+          </div>
+        </a>
+        <a class="question-card company-openai" href="./questions/o34-image-gen-serving.html"
+           data-company="openai" data-categories="ml-infra,llm-infra"
+           data-search="image generation diffusion dalle openai cdn">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">O34</span>
+              <span data-lang="en">Design Image Generation Serving (DALL-E)</span>
+              <span data-lang="zh">设计图像生成服务（DALL-E）</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-openai">OpenAI</span>
+              <span class="tag freq-2">★★</span>
+              <span class="tag difficulty-hard">Hard</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Text-to-image path, variable step counts, upscaling, NSFW filters, CDN for outputs.</span>
+            <span data-lang="zh">文生图路径、可变步数、上采样、NSFW 过滤、输出走 CDN。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">Diffusion</span><span class="tag">GPU</span><span class="tag">CDN</span>
+            <span class="question-source">1Point3Acres 2024 · Onsite</span>
+          </div>
+        </a>
+        <a class="question-card company-openai" href="./questions/o35-usage-metering.html"
+           data-company="openai" data-categories="platform,classical"
+           data-search="usage metering billing tokens openai rate limit">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">O35</span>
+              <span data-lang="en">Design Usage Metering & Billing for LLM API</span>
+              <span data-lang="zh">设计 LLM API 的用量计量与计费</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-openai">OpenAI</span>
+              <span class="tag freq-2">★★</span>
+              <span class="tag difficulty-medium">Medium</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Per-request token counts, aggregation by user/org, daily billing, rate-limit enforcement, audit-grade records.</span>
+            <span data-lang="zh">按请求 token 计数、按用户/组织聚合、日结计费、限流执行、审计级记录。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">Metering</span><span class="tag">Billing</span><span class="tag">Exactly-Once</span>
+            <span class="question-source">Blind 2024 · Onsite</span>
+          </div>
+        </a>
+        <a class="question-card company-openai" href="./questions/o36-distributed-log-pipeline.html"
+           data-company="openai" data-categories="classical,platform"
+           data-search="distributed log trace pipeline sampling otel openai">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">O36</span>
+              <span data-lang="en">Design a Distributed Log / Trace Pipeline</span>
+              <span data-lang="zh">设计分布式日志 / 链路追踪流水线</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-openai">OpenAI</span>
+              <span class="tag freq-2">★★</span>
+              <span class="tag difficulty-medium">Medium</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">High-cardinality logs/traces from GPU fleet, cost-controlled sampling, fast search, retention tiers.</span>
+            <span data-lang="zh">GPU fleet 高基数日志/trace、成本可控采样、快速检索、分级保留。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">Logs</span><span class="tag">Tracing</span><span class="tag">Sampling</span>
+            <span class="question-source">1Point3Acres 2025 · Screen</span>
+          </div>
+        </a>
+        <a class="question-card company-openai" href="./questions/o37-tool-use-sandbox.html"
+           data-company="openai" data-categories="agent-rag,safety"
+           data-search="tool use sandbox code interpreter agent isolation openai">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">O37</span>
+              <span data-lang="en">Design a Tool-Use Sandbox for Agents</span>
+              <span data-lang="zh">设计智能体工具沙箱</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-openai">OpenAI</span>
+              <span class="tag freq-2">★★</span>
+              <span class="tag difficulty-hard">Hard</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Execute untrusted code/tool calls produced by LLMs in isolation: filesystem, network, time limits.</span>
+            <span data-lang="zh">在隔离环境执行 LLM 产出的不可信代码/工具调用：文件系统、网络、时间限制。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">Sandbox</span><span class="tag">Code Interpreter</span><span class="tag">Isolation</span>
+            <span class="question-source">Blind 2024 · Onsite</span>
+          </div>
+        </a>
+        <a class="question-card company-openai" href="./questions/o38-multi-region-api-gateway.html"
+           data-company="openai" data-categories="classical,platform"
+           data-search="api gateway multi region auth rate limit openai">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">O38</span>
+              <span data-lang="en">Design a Multi-Region API Gateway</span>
+              <span data-lang="zh">设计多区域 API 网关</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-openai">OpenAI</span>
+              <span class="tag freq-2">★★</span>
+              <span class="tag difficulty-medium">Medium</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Global front door for API traffic, auth, rate limit, routing to regional fleet, automatic failover.</span>
+            <span data-lang="zh">全球前门：认证、限流、路由到区域 fleet、自动故障切换。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">Gateway</span><span class="tag">Multi-Region</span><span class="tag">Failover</span>
+            <span class="question-source">Blind 2024 · Onsite</span>
+          </div>
+        </a>
+
+        <!-- ======================= NEW Anthropic A31-A41 ======================= -->
+        <a class="question-card company-anthropic" href="./questions/a31-rate-limiter-claude-api.html"
+           data-company="anthropic" data-categories="platform,llm-infra"
+           data-search="rate limiter claude api token tier bucket anthropic">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">A31</span>
+              <span data-lang="en">Design a Rate Limiter for the Claude API</span>
+              <span data-lang="zh">为 Claude API 设计限流器</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-anthropic">Anthropic</span>
+              <span class="tag freq-3">★★★</span>
+              <span class="tag difficulty-medium">Medium</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Per-org RPM/TPM/TPD buckets, tier-based, token-level not just request-level, priority passes for enterprise.</span>
+            <span data-lang="zh">按组织 RPM/TPM/TPD 多维桶，分层限额，按 token 而非请求计，企业优先。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">Rate Limit</span><span class="tag">Tokens</span><span class="tag">Tiers</span>
+            <span class="question-source">Anthropic docs + Blind</span>
+          </div>
+        </a>
+        <a class="question-card company-anthropic" href="./questions/a32-safety-pipeline.html"
+           data-company="anthropic" data-categories="safety,llm-infra"
+           data-search="safety pipeline constitutional classifier rsp anthropic">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">A32</span>
+              <span data-lang="en">Design Anthropic's Safety Pipeline</span>
+              <span data-lang="zh">设计 Anthropic 的安全流水线</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-anthropic">Anthropic</span>
+              <span class="tag freq-3">★★★</span>
+              <span class="tag difficulty-hard">Hard</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Input + output + tool-use moderation, policy taxonomy, ASL gating, red-team loop, eval feedback.</span>
+            <span data-lang="zh">入站、出站、工具调用均审核；策略分类；ASL 等级门控；红队闭环；评估反馈。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">Safety</span><span class="tag">Constitutional AI</span><span class="tag">Classifiers</span>
+            <span class="question-source">Anthropic RSP + Blind</span>
+          </div>
+        </a>
+        <a class="question-card company-anthropic" href="./questions/a33-claude-for-work-rag.html"
+           data-company="anthropic" data-categories="agent-rag,llm-infra"
+           data-search="rag enterprise claude for work acl permissions anthropic">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">A33</span>
+              <span data-lang="en">Design Claude-for-Work RAG (Enterprise)</span>
+              <span data-lang="zh">设计 Claude-for-Work 企业级 RAG</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-anthropic">Anthropic</span>
+              <span class="tag freq-2">★★</span>
+              <span class="tag difficulty-hard">Hard</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Corporate data (Slack, GDrive, Notion) ingested with ACLs, retrieval respects per-user permissions, zero cross-tenant leakage.</span>
+            <span data-lang="zh">企业数据（Slack/GDrive/Notion）连同 ACL 一起 ingest；检索尊重用户权限；零跨租户泄漏。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">RAG</span><span class="tag">ACL</span><span class="tag">Enterprise</span>
+            <span class="question-source">Anthropic news + Blind</span>
+          </div>
+        </a>
+        <a class="question-card company-anthropic" href="./questions/a34-conversation-memory.html"
+           data-company="anthropic" data-categories="agent-rag,llm-infra"
+           data-search="conversation memory long context summarization claude anthropic">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">A34</span>
+              <span data-lang="en">Design Conversation Memory for Claude</span>
+              <span data-lang="zh">为 Claude 设计会话记忆</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-anthropic">Anthropic</span>
+              <span class="tag freq-2">★★</span>
+              <span class="tag difficulty-hard">Hard</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Long-running conversations beyond context window, user-specific memory, opt-in/out, privacy controls.</span>
+            <span data-lang="zh">超长对话超出上下文；用户级记忆；opt-in/out；隐私控制。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">Memory</span><span class="tag">Summarization</span><span class="tag">Long Context</span>
+            <span class="question-source">Blind 2025 · Onsite</span>
+          </div>
+        </a>
+        <a class="question-card company-anthropic" href="./questions/a35-mcp-server-registry.html"
+           data-company="anthropic" data-categories="agent-rag,platform"
+           data-search="mcp model context protocol registry discovery signing anthropic">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">A35</span>
+              <span data-lang="en">Design the MCP Server Registry</span>
+              <span data-lang="zh">设计 MCP 服务注册中心</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-anthropic">Anthropic</span>
+              <span class="tag freq-2">★★</span>
+              <span class="tag difficulty-medium">Medium</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Directory of Model Context Protocol servers with discovery, versioning, signing, security review, per-user install scope.</span>
+            <span data-lang="zh">MCP 服务目录：发现、版本、签名、安全审核、按用户安装范围。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">MCP</span><span class="tag">Registry</span><span class="tag">Discovery</span>
+            <span class="question-source">MCP spec + Blind</span>
+          </div>
+        </a>
+        <a class="question-card company-anthropic" href="./questions/a36-code-execution-sandbox.html"
+           data-company="anthropic" data-categories="safety,agent-rag"
+           data-search="code execution sandbox claude computer use anthropic">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">A36</span>
+              <span data-lang="en">Design a Code Execution Sandbox for Claude</span>
+              <span data-lang="zh">为 Claude 设计代码执行沙箱</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-anthropic">Anthropic</span>
+              <span class="tag freq-2">★★</span>
+              <span class="tag difficulty-hard">Hard</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Run agent-generated Python/Bash safely: network policy, filesystem policy, resource caps, artefact return.</span>
+            <span data-lang="zh">安全执行代理生成的 Python/Bash：网络策略、文件系统策略、资源上限、产物回传。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">Sandbox</span><span class="tag">Code</span><span class="tag">Isolation</span>
+            <span class="question-source">Anthropic docs + Blind</span>
+          </div>
+        </a>
+        <a class="question-card company-anthropic" href="./questions/a37-training-checkpoint.html"
+           data-company="anthropic" data-categories="ml-infra"
+           data-search="training checkpoint distributed 10k gpu sharded anthropic">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">A37</span>
+              <span data-lang="en">Design a Training Checkpoint Service</span>
+              <span data-lang="zh">设计训练 Checkpoint 服务</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-anthropic">Anthropic</span>
+              <span class="tag freq-2">★★</span>
+              <span class="tag difficulty-hard">Hard</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">At 10k+ GPUs, checkpoint every N steps without stalling training. Async sharded writes, resumable.</span>
+            <span data-lang="zh">万卡训练每 N 步 checkpoint 而不阻塞。异步分片写，故障可恢复。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">Checkpoint</span><span class="tag">Distributed Training</span><span class="tag">Storage</span>
+            <span class="question-source">Anthropic eng · Blind</span>
+          </div>
+        </a>
+        <a class="question-card company-anthropic" href="./questions/a38-prompt-caching-service.html"
+           data-company="anthropic" data-categories="llm-infra"
+           data-search="prompt cache kv cache claude anthropic cache control">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">A38</span>
+              <span data-lang="en">Design Claude's Prompt Caching Service</span>
+              <span data-lang="zh">设计 Claude 的 Prompt 缓存服务</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-anthropic">Anthropic</span>
+              <span class="tag freq-3">★★★</span>
+              <span class="tag difficulty-medium">Medium</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Ephemeral KV cache keyed on prompt prefix; 5-minute TTL; explicit cache_control markers; 90% discount on hits.</span>
+            <span data-lang="zh">按 prefix 的临时 KV 缓存；5 分钟 TTL；显式 cache_control；命中 9 折优惠。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">Prompt Cache</span><span class="tag">KV Cache</span><span class="tag">Cost</span>
+            <span class="question-source">Anthropic docs</span>
+          </div>
+        </a>
+        <a class="question-card company-anthropic" href="./questions/a39-evals-platform-anthropic.html"
+           data-company="anthropic" data-categories="safety,ml-infra"
+           data-search="evals alignment safety red team anthropic">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">A39</span>
+              <span data-lang="en">Design an Evals Platform for Alignment Research</span>
+              <span data-lang="zh">为对齐研究设计评估平台</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-anthropic">Anthropic</span>
+              <span class="tag freq-2">★★</span>
+              <span class="tag difficulty-medium">Medium</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Runs constitutional AI + safety evals, red-team results, compares across checkpoints, blocks regressions.</span>
+            <span data-lang="zh">跑 Constitutional AI + 安全评估、红队结果；跨 checkpoint 对比；阻断能力回归。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">Evals</span><span class="tag">Alignment</span><span class="tag">Red-Team</span>
+            <span class="question-source">Anthropic research + Blind</span>
+          </div>
+        </a>
+        <a class="question-card company-anthropic" href="./questions/a40-billing-pipeline.html"
+           data-company="anthropic" data-categories="platform,classical"
+           data-search="billing pipeline tokens invoice anthropic">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">A40</span>
+              <span data-lang="en">Design Anthropic's Billing Pipeline</span>
+              <span data-lang="zh">设计 Anthropic 计费流水线</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-anthropic">Anthropic</span>
+              <span class="tag freq-2">★★</span>
+              <span class="tag difficulty-medium">Medium</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Per-second token metering, monthly invoicing, commit plans, credit card + invoice billing, dispute flow.</span>
+            <span data-lang="zh">秒级 token 计量、月度开票、承诺计划、信用卡 + 发票、纠纷流程。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">Billing</span><span class="tag">Tokens</span><span class="tag">Audit</span>
+            <span class="question-source">Blind 2025 · Onsite</span>
+          </div>
+        </a>
+        <a class="question-card company-anthropic" href="./questions/a41-red-team-detection.html"
+           data-company="anthropic" data-categories="safety"
+           data-search="red team detection adversarial jailbreak anthropic">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">A41</span>
+              <span data-lang="en">Design a Red-Team Detection System</span>
+              <span data-lang="zh">设计红队攻击检测系统</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-anthropic">Anthropic</span>
+              <span class="tag freq-2">★★</span>
+              <span class="tag difficulty-hard">Hard</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Detect probing / jailbreak campaigns across users, cluster attack patterns, feedback to safety team.</span>
+            <span data-lang="zh">跨用户检测探测/越狱攻势、聚类攻击模式、反馈安全团队。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">Red Team</span><span class="tag">Detection</span><span class="tag">Adversarial</span>
+            <span class="question-source">Anthropic blog + Blind</span>
+          </div>
+        </a>
+
+        <!-- ======================= Google questions ======================= -->
+        <a class="question-card company-google" href="./questions/g1-gemini-serving.html"
+           data-company="google" data-categories="llm-infra"
+           data-search="gemini api serving tpu multimodal long context google">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">G1</span>
+              <span data-lang="en">Design Gemini API Serving</span>
+              <span data-lang="zh">设计 Gemini API 推理服务</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-google">Google</span>
+              <span class="tag freq-2">★★</span>
+              <span class="tag difficulty-hard">Hard</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Google's Gemini API: multimodal (text+image+video+audio), 2M-token context, TPU fleet, global endpoints.</span>
+            <span data-lang="zh">Google Gemini API：多模态、2M token 上下文、TPU fleet、全球端点。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">LLM Serving</span><span class="tag">TPU</span><span class="tag">Multimodal</span>
+            <span class="question-source">Google docs + Blind</span>
+          </div>
+        </a>
+        <a class="question-card company-google" href="./questions/g2-vertex-ai-pipelines.html"
+           data-company="google" data-categories="ml-infra,platform"
+           data-search="vertex ai pipelines mlops kubeflow dag google">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">G2</span>
+              <span data-lang="en">Design Vertex AI Training Pipelines</span>
+              <span data-lang="zh">设计 Vertex AI 训练流水线</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-google">Google</span>
+              <span class="tag freq-2">★★</span>
+              <span class="tag difficulty-hard">Hard</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Managed pipelines: data → feature → train → validate → deploy; DAG, artefacts, retries, multi-tenant.</span>
+            <span data-lang="zh">托管流水线：数据 → 特征 → 训练 → 验证 → 部署；DAG、制品、重试、多租户。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">MLOps</span><span class="tag">Pipelines</span><span class="tag">Vertex AI</span>
+            <span class="question-source">GCP docs + Blind</span>
+          </div>
+        </a>
+        <a class="question-card company-google" href="./questions/g3-notebooklm.html"
+           data-company="google" data-categories="agent-rag,llm-infra"
+           data-search="notebooklm rag podcast sources google">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">G3</span>
+              <span data-lang="en">Design NotebookLM</span>
+              <span data-lang="zh">设计 NotebookLM</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-google">Google</span>
+              <span class="tag freq-2">★★</span>
+              <span class="tag difficulty-hard">Hard</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Upload sources → chat + podcast generation grounded in sources → high citation rate.</span>
+            <span data-lang="zh">上传资料 → 基于资料聊天 + 播客生成 → 高引用率。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">RAG</span><span class="tag">Long Context</span><span class="tag">NotebookLM</span>
+            <span class="question-source">Google + Blind</span>
+          </div>
+        </a>
+        <a class="question-card company-google" href="./questions/g4-google-search-ai-mode.html"
+           data-company="google" data-categories="agent-rag,llm-infra"
+           data-search="google search ai overview generative rag low latency">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">G4</span>
+              <span data-lang="en">Design Google Search AI Overviews</span>
+              <span data-lang="zh">设计 Google Search AI 概览</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-google">Google</span>
+              <span class="tag freq-2">★★</span>
+              <span class="tag difficulty-hard">Hard</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Selective LLM summary above classic results: decide when to trigger, retrieve diverse sources, cite links, sub-second p95.</span>
+            <span data-lang="zh">在经典结果上方按需触发 LLM 摘要：何时触发、多源检索、引用链接、p95 秒级。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">Search</span><span class="tag">RAG</span><span class="tag">Low Latency</span>
+            <span class="question-source">Google blog + Blind</span>
+          </div>
+        </a>
+        <a class="question-card company-google" href="./questions/g5-tpu-cluster-scheduler.html"
+           data-company="google" data-categories="ml-infra,platform"
+           data-search="tpu cluster scheduler borg omega gang scheduling google">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">G5</span>
+              <span data-lang="en">Design a TPU Cluster Scheduler</span>
+              <span data-lang="zh">设计 TPU 集群调度器</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-google">Google</span>
+              <span class="tag freq-2">★★</span>
+              <span class="tag difficulty-hard">Hard</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Borg-style scheduler for TPU pods: topology-aware, gang scheduling, interconnect locality, preemption.</span>
+            <span data-lang="zh">Borg 风格 TPU pod 调度：拓扑感知、gang scheduling、互联亲和、抢占。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">TPU</span><span class="tag">Scheduler</span><span class="tag">Borg</span>
+            <span class="question-source">Google papers + Blind</span>
+          </div>
+        </a>
+        <a class="question-card company-google" href="./questions/g6-web-crawler.html"
+           data-company="google" data-categories="classical"
+           data-search="web crawler bfs robots txt politeness google">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">G6</span>
+              <span data-lang="en">Design Google Web Crawler</span>
+              <span data-lang="zh">设计 Google 网络爬虫</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-google">Google</span>
+              <span class="tag freq-3">★★★</span>
+              <span class="tag difficulty-hard">Hard</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Crawl billions of pages/day, respect robots.txt, re-crawl freshness policy, politeness per host, dedup.</span>
+            <span data-lang="zh">日爬数十亿页，遵守 robots.txt，按新鲜度重爬，按域礼貌延迟，去重。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">Crawler</span><span class="tag">BFS</span><span class="tag">Politeness</span>
+            <span class="question-source">Glassdoor + LeetCode</span>
+          </div>
+        </a>
+        <a class="question-card company-google" href="./questions/g7-inverted-index.html"
+           data-company="google" data-categories="classical"
+           data-search="inverted index search ranking posting list google">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">G7</span>
+              <span data-lang="en">Design Google Search Index (Inverted Index)</span>
+              <span data-lang="zh">设计 Google 搜索索引（倒排索引）</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-google">Google</span>
+              <span class="tag freq-3">★★★</span>
+              <span class="tag difficulty-hard">Hard</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Build and serve an inverted index over billions of docs: term posting lists, sharding, tiered storage.</span>
+            <span data-lang="zh">千亿级文档的倒排索引构建与检索：term posting、分片、分层存储。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">Inverted Index</span><span class="tag">Search</span><span class="tag">Ranking</span>
+            <span class="question-source">Google SD book + Blind</span>
+          </div>
+        </a>
+        <a class="question-card company-google" href="./questions/g8-typeahead-suggestions.html"
+           data-company="google" data-categories="classical"
+           data-search="typeahead autocomplete trie search google">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">G8</span>
+              <span data-lang="en">Design Google Search Suggestions (Typeahead)</span>
+              <span data-lang="zh">设计 Google 搜索建议（Typeahead）</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-google">Google</span>
+              <span class="tag freq-3">★★★</span>
+              <span class="tag difficulty-medium">Medium</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Top-K popular prefixes, personalised, real-time trend surfacing, safety filter.</span>
+            <span data-lang="zh">前缀 top-K、个性化、实时热点、安全过滤。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">Typeahead</span><span class="tag">Trie</span><span class="tag">Autocomplete</span>
+            <span class="question-source">Google SD book</span>
+          </div>
+        </a>
+        <a class="question-card company-google" href="./questions/g9-spellcheck.html"
+           data-company="google" data-categories="classical,ml-infra"
+           data-search="spellcheck edit distance noisy channel google">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">G9</span>
+              <span data-lang="en">Design Google Spell-Check</span>
+              <span data-lang="zh">设计 Google 拼写纠错</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-google">Google</span>
+              <span class="tag freq-2">★★</span>
+              <span class="tag difficulty-medium">Medium</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Detect misspellings, propose corrections: edit distance + language model + context-aware rerank.</span>
+            <span data-lang="zh">拼写错误检测与纠正：编辑距离 + 语言模型 + 上下文 rerank。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">Spellcheck</span><span class="tag">Edit Distance</span><span class="tag">Noisy Channel</span>
+            <span class="question-source">Norvig / Google</span>
+          </div>
+        </a>
+        <a class="question-card company-google" href="./questions/g10-youtube-viewcount.html"
+           data-company="google" data-categories="classical,platform"
+           data-search="youtube view count counter sharded anti fraud google">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">G10</span>
+              <span data-lang="en">Design YouTube View Count</span>
+              <span data-lang="zh">设计 YouTube 观看数</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-google">Google</span>
+              <span class="tag freq-3">★★★</span>
+              <span class="tag difficulty-medium">Medium</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Count views accurately but cheaply at billions/day; anti-inflation; approximate hot-video counts.</span>
+            <span data-lang="zh">日十亿级计数，抗刷量，热门视频近似。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">Counter</span><span class="tag">At-Least-Once</span><span class="tag">Anti-Fraud</span>
+            <span class="question-source">YouTube eng</span>
+          </div>
+        </a>
+        <a class="question-card company-google" href="./questions/g11-video-upload-transcode.html"
+           data-company="google" data-categories="classical"
+           data-search="youtube upload transcode hls dash resumable google">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">G11</span>
+              <span data-lang="en">Design YouTube Video Upload & Transcode</span>
+              <span data-lang="zh">设计 YouTube 视频上传与转码</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-google">Google</span>
+              <span class="tag freq-3">★★★</span>
+              <span class="tag difficulty-hard">Hard</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Resumable upload of GB-scale video; parallel transcode to resolution ladder; CDN distribution; thumbnails.</span>
+            <span data-lang="zh">GB 级可断点续传；并行转码多码率；CDN 分发；缩略图。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">Upload</span><span class="tag">Transcode</span><span class="tag">Resumable</span>
+            <span class="question-source">YouTube eng</span>
+          </div>
+        </a>
+        <a class="question-card company-google" href="./questions/g12-youtube-recommendations.html"
+           data-company="google" data-categories="ml-infra"
+           data-search="youtube recommendation two tower ann ranking google">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">G12</span>
+              <span data-lang="en">Design YouTube Recommendations</span>
+              <span data-lang="zh">设计 YouTube 推荐</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-google">Google</span>
+              <span class="tag freq-2">★★</span>
+              <span class="tag difficulty-hard">Hard</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Two-stage recsys: candidate gen (two-tower/ANN) + ranking (deep); cold-start, freshness, diversity.</span>
+            <span data-lang="zh">两阶段推荐：召回（two-tower/ANN） + 排序（深度模型）；冷启、新鲜度、多样性。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">Recsys</span><span class="tag">Two-Tower</span><span class="tag">Ranking</span>
+            <span class="question-source">YouTube paper</span>
+          </div>
+        </a>
+        <a class="question-card company-google" href="./questions/g13-video-cdn.html"
+           data-company="google" data-categories="classical"
+           data-search="video cdn hls dash live streaming google">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">G13</span>
+              <span data-lang="en">Design a Video CDN / Live Streaming</span>
+              <span data-lang="zh">设计视频 CDN / 直播</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-google">Google</span>
+              <span class="tag freq-2">★★</span>
+              <span class="tag difficulty-hard">Hard</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Origin → edge pull / push; HLS/DASH; live ingest with low-latency HLS; failover between POPs.</span>
+            <span data-lang="zh">源站 → 边缘拉/推；HLS/DASH；低延迟 HLS 直播；PoP 间故障切换。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">CDN</span><span class="tag">HLS</span><span class="tag">Live</span>
+            <span class="question-source">Google eng</span>
+          </div>
+        </a>
+        <a class="question-card company-google" href="./questions/g14-google-maps-tiles.html"
+           data-company="google" data-categories="classical"
+           data-search="google maps tile service zoom mercator">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">G14</span>
+              <span data-lang="en">Design Google Maps Tile Service</span>
+              <span data-lang="zh">设计 Google 地图瓦片服务</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-google">Google</span>
+              <span class="tag freq-2">★★</span>
+              <span class="tag difficulty-hard">Hard</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Serve pre-rendered raster/vector tiles at zoom levels 0-22; edge caching; incremental updates; offline.</span>
+            <span data-lang="zh">0-22 级缩放瓦片（栅格/矢量）；边缘缓存；增量更新；离线。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">Maps</span><span class="tag">Tiles</span><span class="tag">Geo</span>
+            <span class="question-source">Google eng</span>
+          </div>
+        </a>
+        <a class="question-card company-google" href="./questions/g15-routing-eta.html"
+           data-company="google" data-categories="classical,ml-infra"
+           data-search="routing eta dijkstra contraction hierarchy google maps">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">G15</span>
+              <span data-lang="en">Design Google Maps Routing & ETA</span>
+              <span data-lang="zh">设计 Google Maps 路线与 ETA</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-google">Google</span>
+              <span class="tag freq-2">★★</span>
+              <span class="tag difficulty-hard">Hard</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Shortest-path on road graph + real-time traffic; learned ETA; billions queries/day.</span>
+            <span data-lang="zh">道路图上最短路径 + 实时路况；学习式 ETA；日十亿级查询。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">Routing</span><span class="tag">ETA</span><span class="tag">Dijkstra</span>
+            <span class="question-source">Google research</span>
+          </div>
+        </a>
+        <a class="question-card company-google" href="./questions/g16-spanner-like-db.html"
+           data-company="google" data-categories="classical"
+           data-search="spanner true time paxos 2pc external consistency google">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">G16</span>
+              <span data-lang="en">Design a Globally Consistent DB (Spanner-like)</span>
+              <span data-lang="zh">设计全球一致 DB（Spanner 风格）</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-google">Google</span>
+              <span class="tag freq-2">★★</span>
+              <span class="tag difficulty-hard">Hard</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Globally distributed SQL with external consistency via TrueTime and 2PC over Paxos groups.</span>
+            <span data-lang="zh">全球分布式 SQL，通过 TrueTime 与 Paxos 组上的 2PC 保证外部一致。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">Spanner</span><span class="tag">External Consistency</span><span class="tag">TrueTime</span>
+            <span class="question-source">Spanner paper</span>
+          </div>
+        </a>
+        <a class="question-card company-google" href="./questions/g17-bigtable.html"
+           data-company="google" data-categories="classical"
+           data-search="bigtable lsm tablet sstable chubby google">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">G17</span>
+              <span data-lang="en">Design Bigtable</span>
+              <span data-lang="zh">设计 Bigtable</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-google">Google</span>
+              <span class="tag freq-2">★★</span>
+              <span class="tag difficulty-hard">Hard</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Petabyte-scale wide-column store: tablet-based sharding, GFS for persistence, Chubby for coordination.</span>
+            <span data-lang="zh">PB 级宽列存储：tablet 分片、GFS 持久化、Chubby 协调。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">Bigtable</span><span class="tag">LSM</span><span class="tag">Tablet</span>
+            <span class="question-source">Bigtable paper</span>
+          </div>
+        </a>
+        <a class="question-card company-google" href="./questions/g18-gmail-backend.html"
+           data-company="google" data-categories="classical"
+           data-search="gmail imap smtp spam label google">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">G18</span>
+              <span data-lang="en">Design Gmail Backend</span>
+              <span data-lang="zh">设计 Gmail 后端</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-google">Google</span>
+              <span class="tag freq-2">★★</span>
+              <span class="tag difficulty-hard">Hard</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Billion users × 10k emails; labels, search, spam filter, attachments, IMAP/SMTP compat.</span>
+            <span data-lang="zh">十亿用户 x 万封邮件；label、搜索、反垃圾、附件、IMAP/SMTP。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">Email</span><span class="tag">IMAP</span><span class="tag">Search</span>
+            <span class="question-source">Google eng</span>
+          </div>
+        </a>
+        <a class="question-card company-google" href="./questions/g19-drive-docs-collab.html"
+           data-company="google" data-categories="classical"
+           data-search="google docs crdt ot realtime collaboration google">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">G19</span>
+              <span data-lang="en">Design Google Docs Realtime Collaboration</span>
+              <span data-lang="zh">设计 Google Docs 实时协作</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-google">Google</span>
+              <span class="tag freq-3">★★★</span>
+              <span class="tag difficulty-hard">Hard</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Conflict-free multi-user editing, presence, offline, history timeline.</span>
+            <span data-lang="zh">多人无冲突编辑、在线状态、离线、历史时间线。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">CRDT</span><span class="tag">OT</span><span class="tag">Realtime</span>
+            <span class="question-source">Google eng</span>
+          </div>
+        </a>
+        <a class="question-card company-google" href="./questions/g20-adwords-bidding.html"
+           data-company="google" data-categories="classical,ml-infra"
+           data-search="adwords auction ctr second price ads google">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">G20</span>
+              <span data-lang="en">Design AdWords Bidding & Serving</span>
+              <span data-lang="zh">设计 AdWords 竞价与投放</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-google">Google</span>
+              <span class="tag freq-2">★★</span>
+              <span class="tag difficulty-hard">Hard</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Second-price auction per query, ad ranking with CTR prediction, budget pacing, advertiser reporting.</span>
+            <span data-lang="zh">每 query 第二价拍卖、基于 CTR 的广告排序、预算节流、广告主报表。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">Ads</span><span class="tag">Auction</span><span class="tag">Real-time</span>
+            <span class="question-source">Google eng</span>
+          </div>
+        </a>
+        <a class="question-card company-google" href="./questions/g21-google-pay.html"
+           data-company="google" data-categories="classical"
+           data-search="google pay payment tokenization fraud emv">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">G21</span>
+              <span data-lang="en">Design Google Pay Transactions</span>
+              <span data-lang="zh">设计 Google Pay 交易</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-google">Google</span>
+              <span class="tag freq-2">★★</span>
+              <span class="tag difficulty-hard">Hard</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">NFC/tap-to-pay + online checkout; tokenised PAN; fraud detection; reconciliation with issuers.</span>
+            <span data-lang="zh">NFC 刷卡 + 在线结账；PAN token 化；风控；与发卡行对账。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">Payments</span><span class="tag">Tokenization</span><span class="tag">Exactly-Once</span>
+            <span class="question-source">GCP blog</span>
+          </div>
+        </a>
+        <a class="question-card company-google" href="./questions/g22-firebase-pubsub.html"
+           data-company="google" data-categories="classical,platform"
+           data-search="firebase realtime database pubsub websocket google">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">G22</span>
+              <span data-lang="en">Design Firebase Realtime Database / Pub-Sub</span>
+              <span data-lang="zh">设计 Firebase 实时数据库 / Pub-Sub</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-google">Google</span>
+              <span class="tag freq-2">★★</span>
+              <span class="tag difficulty-medium">Medium</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Hierarchical JSON tree with realtime listeners to mobile clients at scale; ACL rules; offline.</span>
+            <span data-lang="zh">层次化 JSON 树，移动端实时监听；规则引擎；离线。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">Pub-Sub</span><span class="tag">WebSocket</span><span class="tag">Mobile</span>
+            <span class="question-source">GCP docs</span>
+          </div>
+        </a>
+        <a class="question-card company-google" href="./questions/g23-google-photos.html"
+           data-company="google" data-categories="classical,ml-infra"
+           data-search="google photos dedup face recognition search">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">G23</span>
+              <span data-lang="en">Design Google Photos</span>
+              <span data-lang="zh">设计 Google Photos</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-google">Google</span>
+              <span class="tag freq-2">★★</span>
+              <span class="tag difficulty-medium">Medium</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Upload, dedup, face/thing classification, search, albums, sharing.</span>
+            <span data-lang="zh">上传、去重、人脸/物体识别、搜索、相册、分享。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">Photos</span><span class="tag">Dedup</span><span class="tag">ML</span>
+            <span class="question-source">Google eng</span>
+          </div>
+        </a>
+        <a class="question-card company-google" href="./questions/g24-android-push.html"
+           data-company="google" data-categories="classical"
+           data-search="android push fcm notification google">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">G24</span>
+              <span data-lang="en">Design Android Push Notifications (FCM)</span>
+              <span data-lang="zh">设计 Android 推送（FCM）</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-google">Google</span>
+              <span class="tag freq-2">★★</span>
+              <span class="tag difficulty-medium">Medium</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">FCM: developers push to billions of devices; priority classes; battery-efficient delivery.</span>
+            <span data-lang="zh">FCM：开发者向十亿设备推送；优先级分层；省电投递。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">Push</span><span class="tag">Fanout</span><span class="tag">Device</span>
+            <span class="question-source">GCP docs</span>
+          </div>
+        </a>
+        <a class="question-card company-google" href="./questions/g25-chrome-sync.html"
+           data-company="google" data-categories="classical,platform"
+           data-search="chrome sync e2e encryption conflict google">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">G25</span>
+              <span data-lang="en">Design Chrome Sync</span>
+              <span data-lang="zh">设计 Chrome Sync</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-google">Google</span>
+              <span class="tag freq-2">★★</span>
+              <span class="tag difficulty-medium">Medium</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Sync bookmarks/passwords/tabs across devices; e2e encryption; conflict resolution.</span>
+            <span data-lang="zh">跨设备同步书签/密码/标签；端到端加密；冲突解决。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">Sync</span><span class="tag">Encryption</span><span class="tag">Conflict</span>
+            <span class="question-source">Google eng</span>
+          </div>
+        </a>
+
+        <!-- ======================= xAI questions ======================= -->
+        <a class="question-card company-xai" href="./questions/x1-grok-serving.html"
+           data-company="xai" data-categories="llm inference serving"
+           data-search="grok inference serving xai llm">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">X1</span>
+              <span data-lang="en">Design Grok's Inference Serving Stack</span>
+              <span data-lang="zh">设计 Grok 的推理服务栈</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-xai">xAI</span>
+              <span class="tag freq-2">★★</span>
+              <span class="tag difficulty-hard">Hard</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Serve Grok to 200M+ X users with sub-second first-token latency, while competing on cost.</span>
+            <span data-lang="zh">为 2 亿 X 用户提供亚秒级首字延迟的 Grok 推理，同时控制成本。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">LLM Serving</span><span class="tag">Inference</span><span class="tag">GPU</span>
+            <span class="question-source">xAI eng blog + X posts</span>
+          </div>
+        </a>
+        <a class="question-card company-xai" href="./questions/x2-deepsearch.html"
+           data-company="xai" data-categories="agent search rag"
+           data-search="deepsearch agent web research grok xai">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">X2</span>
+              <span data-lang="en">Design DeepSearch (Agentic Web Research)</span>
+              <span data-lang="zh">设计 DeepSearch（Agent 式网页深度研究）</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-xai">xAI</span>
+              <span class="tag freq-2">★★</span>
+              <span class="tag difficulty-hard">Hard</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Grok's DeepSearch plans multi-step web queries, fetches and summarizes pages, and returns cited answers.</span>
+            <span data-lang="zh">Grok 的 DeepSearch 规划多步网页查询、抓取并总结页面、返回带引用的答案。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">Agent</span><span class="tag">Search</span><span class="tag">RAG</span>
+            <span class="question-source">Grok product docs</span>
+          </div>
+        </a>
+        <a class="question-card company-xai" href="./questions/x3-x-firehose-ingestion.html"
+           data-company="xai" data-categories="data-pipeline streaming training"
+           data-search="x firehose kafka grok training data ingestion">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">X3</span>
+              <span data-lang="en">Design the X Firehose Ingestion for Grok Training</span>
+              <span data-lang="zh">设计供 Grok 训练使用的 X 全量 Firehose 摄入</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-xai">xAI</span>
+              <span class="tag freq-2">★★</span>
+              <span class="tag difficulty-hard">Hard</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Ingest X's real-time post firehose for Grok training and real-time features.</span>
+            <span data-lang="zh">摄入 X 的实时帖子 firehose，用于 Grok 训练和实时特征。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">Streaming</span><span class="tag">Kafka</span><span class="tag">Data Pipeline</span>
+            <span class="question-source">xAI + X data team</span>
+          </div>
+        </a>
+        <a class="question-card company-xai" href="./questions/x4-x-recommendation-reranking.html"
+           data-company="xai" data-categories="recsys ranking llm"
+           data-search="x for-you recommendation reranking grok llm">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">X4</span>
+              <span data-lang="en">Design X For-You Re-ranking with Grok</span>
+              <span data-lang="zh">设计用 Grok 重排序 X 的 For-You 信息流</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-xai">xAI</span>
+              <span class="tag freq-1">★</span>
+              <span class="tag difficulty-medium">Medium</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Use Grok to re-rank candidate posts for X's For-You timeline based on user intent signals.</span>
+            <span data-lang="zh">用 Grok 基于用户意图信号对 X For-You 候选帖子进行重排序。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">Ranking</span><span class="tag">RecSys</span><span class="tag">LLM</span>
+            <span class="question-source">X algo repo + xAI posts</span>
+          </div>
+        </a>
+        <a class="question-card company-xai" href="./questions/x5-colossus-training-cluster.html"
+           data-company="xai" data-categories="training distributed gpu"
+           data-search="colossus training 100k gpu cluster xai grok">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">X5</span>
+              <span data-lang="en">Design Training Orchestration for 100k+ GPU Colossus</span>
+              <span data-lang="zh">设计 10 万卡 Colossus 的训练编排</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-xai">xAI</span>
+              <span class="tag freq-2">★★</span>
+              <span class="tag difficulty-hard">Hard</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Orchestrate a training run across 100,000+ H100 GPUs in Memphis with fault tolerance and checkpointing.</span>
+            <span data-lang="zh">在孟菲斯的 10 万+ H100 GPU 上编排训练，具备容错和检查点能力。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">Distributed Training</span><span class="tag">GPU</span><span class="tag">Fault Tolerance</span>
+            <span class="question-source">Colossus blog posts</span>
+          </div>
+        </a>
+        <a class="question-card company-xai" href="./questions/x6-grok-voice-mode.html"
+           data-company="xai" data-categories="voice realtime audio"
+           data-search="grok voice mode speech realtime xai">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">X6</span>
+              <span data-lang="en">Design Grok Voice Mode</span>
+              <span data-lang="zh">设计 Grok 语音模式</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-xai">xAI</span>
+              <span class="tag freq-1">★</span>
+              <span class="tag difficulty-medium">Medium</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Real-time voice conversations with Grok in the X mobile app.</span>
+            <span data-lang="zh">在 X 移动端中与 Grok 进行实时语音对话。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">Voice</span><span class="tag">Realtime</span><span class="tag">WebRTC</span>
+            <span class="question-source">X app release notes</span>
           </div>
         </a>
 

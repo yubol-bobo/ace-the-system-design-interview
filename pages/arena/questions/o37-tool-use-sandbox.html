@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>O37. Design a Tool-Use Sandbox for Agents - SD-Guide</title>
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../index.html" class="active"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../resources/index.html"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../about/index.html"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a>
+        <span class="sep">›</span>
+        <a href="../index.html"><span data-lang="en">Arena</span><span data-lang="zh">竞技场</span></a>
+        <span class="sep">›</span>
+        <span>O37</span>
+      </div>
+
+      <article class="prose wide">
+        <div class="question-meta" style="margin-bottom:1rem;">
+          <span class="tag company-openai">OpenAI</span>
+          <span class="tag freq-2">★★ Frequent</span>
+          <span class="tag difficulty-hard">Hard</span>
+          <span class="tag">Sandbox</span><span class="tag">Code Interpreter</span><span class="tag">Isolation</span>
+        </div>
+
+        <h1>
+          <span data-lang="en">O37 · Design a Tool-Use Sandbox for Agents</span>
+          <span data-lang="zh">O37 · 设计智能体工具沙箱</span>
+        </h1>
+
+        <div class="callout openai">
+          <h4><span data-lang="en">Verified source</span><span data-lang="zh">经核实出处</span></h4>
+          <p>OpenAI Code Interpreter / Assistants tools are public. Onsite reports confirm. Credibility <strong>A</strong>.</p>
+        </div>
+
+<h2><span data-lang="en">Architecture</span><span data-lang="zh">架构</span></h2>
+<div class="mermaid-container"><pre class="mermaid">
+flowchart LR
+  Agent --> DISP[Tool Dispatcher]
+  DISP --> VM1[Firecracker MicroVM]
+  DISP --> VM2[Firecracker MicroVM]
+  VM1 --> FS[(Ephemeral FS)]
+  VM1 --> NET[Egress proxy - allow-list]
+  VM1 --> RES[Result Collector]
+  RES --> Agent
+</pre></div>
+<h2><span data-lang="en">Key decisions</span><span data-lang="zh">关键决策</span></h2>
+<ul><li><span data-lang="en">**MicroVM per session** (Firecracker/gVisor): kernel isolation beats container isolation for untrusted code.</span><span data-lang="zh">**按会话 microVM**（Firecracker/gVisor）：内核隔离优于容器。</span></li><li><span data-lang="en">**Egress allow-list + SSRF guard**: block cloud metadata IPs; only approved hosts reachable.</span><span data-lang="zh">**出站白名单 + SSRF 守护**：禁访元数据 IP，仅放行白名单。</span></li><li><span data-lang="en">**Resource caps**: wall-clock, CPU-s, RAM, syscall rate; OOM-kill before host impact.</span><span data-lang="zh">**资源上限**：墙钟、CPU 时间、RAM、系统调用速率；OOM 先 kill。</span></li><li><span data-lang="en">**Warm pool** of pre-booted VMs to hide 200-500 ms cold-start.</span><span data-lang="zh">**预热池**预启 VM 隐藏 200-500 ms 冷启动。</span></li></ul>
+<h2><span data-lang="en">Follow-ups</span><span data-lang="zh">追问</span></h2>
+<ul><li><span data-lang="en">File persistence? per-thread volume survives across tool calls.</span><span data-lang="zh">文件持久？每 thread 一个卷，跨工具调用保留。</span></li><li><span data-lang="en">Prompt injection from tool output? treat output as untrusted user text; policy layer scans.</span><span data-lang="zh">工具输出注入？视输出为不可信用户文本，策略层扫描。</span></li></ul>
+
+        <h2><span data-lang="en">Related study-guide topics</span><span data-lang="zh">相关学习手册专题</span></h2>
+        <ul><li><a href="../../guide/safety/agent-sandbox.html"><span data-lang="en">Agent sandboxing</span><span data-lang="zh">智能体沙箱</span></a></li></ul>
+      </article>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

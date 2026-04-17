@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>A36. Design a Code Execution Sandbox for Claude - SD-Guide</title>
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../index.html" class="active"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../resources/index.html"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../about/index.html"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a>
+        <span class="sep">›</span>
+        <a href="../index.html"><span data-lang="en">Arena</span><span data-lang="zh">竞技场</span></a>
+        <span class="sep">›</span>
+        <span>A36</span>
+      </div>
+
+      <article class="prose wide">
+        <div class="question-meta" style="margin-bottom:1rem;">
+          <span class="tag company-anthropic">Anthropic</span>
+          <span class="tag freq-2">★★ Frequent</span>
+          <span class="tag difficulty-hard">Hard</span>
+          <span class="tag">Sandbox</span><span class="tag">Code</span><span class="tag">Isolation</span>
+        </div>
+
+        <h1>
+          <span data-lang="en">A36 · Design a Code Execution Sandbox for Claude</span>
+          <span data-lang="zh">A36 · 为 Claude 设计代码执行沙箱</span>
+        </h1>
+
+        <div class="callout anthropic">
+          <h4><span data-lang="en">Verified source</span><span data-lang="zh">经核实出处</span></h4>
+          <p>Anthropic Computer Use / Code Execution features live. Asked at onsites. Credibility <strong>A</strong>.</p>
+        </div>
+
+<h2><span data-lang="en">Architecture</span><span data-lang="zh">架构</span></h2>
+<div class="mermaid-container"><pre class="mermaid">
+flowchart LR
+  AgentLoop --> Dispatch
+  Dispatch --> VM[Firecracker microVM]
+  VM --> EGRESS[Egress proxy]
+  VM --> FS[(Ephemeral FS)]
+  VM --> ART[(Artefact collector)]
+  ART --> AgentLoop
+</pre></div>
+<h2><span data-lang="en">Key decisions</span><span data-lang="zh">关键决策</span></h2>
+<ul><li><span data-lang="en">**MicroVM per session**, see O37 for base architecture.</span><span data-lang="zh">**每会话一台 microVM**，基础架构见 O37。</span></li><li><span data-lang="en">**Three network modes**: none (default), allow-list, full (enterprise only, logged).</span><span data-lang="zh">**三种网络模式**：无（默认）、白名单、完全（仅企业，审计）。</span></li><li><span data-lang="en">**Artifact capture**: stdout/stderr/image/HTML returned; binary artefacts via signed URL.</span><span data-lang="zh">**产物捕获**：stdout/stderr/图像/HTML 回传；二进制经签名 URL。</span></li><li><span data-lang="en">**Prompt-injection defense**: tool outputs rendered in a quoted frame and re-scanned before feeding back.</span><span data-lang="zh">**防注入**：工具输出放入引用帧，回灌前再次扫描。</span></li></ul>
+<h2><span data-lang="en">Follow-ups</span><span data-lang="zh">追问</span></h2>
+<ul><li><span data-lang="en">Long-running scripts? checkpointable; VM can suspend to disk.</span><span data-lang="zh">长时脚本？可 checkpoint；VM 可挂起到磁盘。</span></li><li><span data-lang="en">Reusing state across tool calls? per-thread volume mounted in each VM.</span><span data-lang="zh">跨工具复用状态？每 thread 卷挂载到 VM。</span></li></ul>
+
+        <h2><span data-lang="en">Related study-guide topics</span><span data-lang="zh">相关学习手册专题</span></h2>
+        <ul><li><a href="../../guide/safety/agent-sandbox.html"><span data-lang="en">Agent sandboxing</span><span data-lang="zh">智能体沙箱</span></a></li></ul>
+      </article>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

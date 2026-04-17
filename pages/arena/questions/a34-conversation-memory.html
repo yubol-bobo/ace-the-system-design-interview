@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>A34. Design Conversation Memory for Claude - SD-Guide</title>
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../index.html" class="active"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../resources/index.html"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../about/index.html"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a>
+        <span class="sep">›</span>
+        <a href="../index.html"><span data-lang="en">Arena</span><span data-lang="zh">竞技场</span></a>
+        <span class="sep">›</span>
+        <span>A34</span>
+      </div>
+
+      <article class="prose wide">
+        <div class="question-meta" style="margin-bottom:1rem;">
+          <span class="tag company-anthropic">Anthropic</span>
+          <span class="tag freq-2">★★ Frequent</span>
+          <span class="tag difficulty-hard">Hard</span>
+          <span class="tag">Memory</span><span class="tag">Summarization</span><span class="tag">Long Context</span>
+        </div>
+
+        <h1>
+          <span data-lang="en">A34 · Design Conversation Memory for Claude</span>
+          <span data-lang="zh">A34 · 为 Claude 设计会话记忆</span>
+        </h1>
+
+        <div class="callout anthropic">
+          <h4><span data-lang="en">Verified source</span><span data-lang="zh">经核实出处</span></h4>
+          <p>Anthropic announced memory features. Reported on Blind 2025. Credibility <strong>B</strong>.</p>
+        </div>
+
+<h2><span data-lang="en">Architecture</span><span data-lang="zh">架构</span></h2>
+<div class="mermaid-container"><pre class="mermaid">
+flowchart LR
+  Msg --> CUR[Current window]
+  CUR --> SUM[Async summariser]
+  SUM --> MEM[(Memory store per user)]
+  Query --> RETR[Retrieve relevant memory]
+  RETR --> CUR
+  User --> CTRL[Privacy dashboard]
+  CTRL --> MEM
+</pre></div>
+<h2><span data-lang="en">Key decisions</span><span data-lang="zh">关键决策</span></h2>
+<ul><li><span data-lang="en">**Tiered memory**: short-term (in-context), medium-term (conversation summary), long-term (user profile facts).</span><span data-lang="zh">**分层记忆**：短时（上下文）、中时（会话摘要）、长时（用户画像事实）。</span></li><li><span data-lang="en">**Fact extraction over raw text**: structured facts resist drift and enable editing.</span><span data-lang="zh">**抽取事实而非原文**：结构化事实抗漂移且可编辑。</span></li><li><span data-lang="en">**User-visible & editable**: memory dashboard lets user inspect, delete, pause.</span><span data-lang="zh">**用户可见可编辑**：记忆面板支持查看、删除、暂停。</span></li><li><span data-lang="en">**Opt-in per workspace**: enterprise default off; consumer opt-in.</span><span data-lang="zh">**按工作区 opt-in**：企业默认关闭；消费者 opt-in。</span></li></ul>
+<h2><span data-lang="en">Follow-ups</span><span data-lang="zh">追问</span></h2>
+<ul><li><span data-lang="en">Conflicting memories? recency + explicit user correction wins.</span><span data-lang="zh">记忆冲突？近期 + 用户显式纠正优先。</span></li><li><span data-lang="en">PII storage? redact or hash before persistence.</span><span data-lang="zh">PII 存储？持久化前脱敏或哈希。</span></li></ul>
+
+        <h2><span data-lang="en">Related study-guide topics</span><span data-lang="zh">相关学习手册专题</span></h2>
+        <ul><li><a href="../../guide/llm/memory.html"><span data-lang="en">Agent memory</span><span data-lang="zh">智能体记忆</span></a></li></ul>
+      </article>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

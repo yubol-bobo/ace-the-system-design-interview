@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>G4. Design Google Search AI Overviews - SD-Guide</title>
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../index.html" class="active"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../resources/index.html"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../about/index.html"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a>
+        <span class="sep">›</span>
+        <a href="../index.html"><span data-lang="en">Arena</span><span data-lang="zh">竞技场</span></a>
+        <span class="sep">›</span>
+        <span>G4</span>
+      </div>
+
+      <article class="prose wide">
+        <div class="question-meta" style="margin-bottom:1rem;">
+          <span class="tag company-google">Google</span>
+          <span class="tag freq-2">★★ Frequent</span>
+          <span class="tag difficulty-hard">Hard</span>
+          <span class="tag">Search</span><span class="tag">RAG</span><span class="tag">Low Latency</span>
+        </div>
+
+        <h1>
+          <span data-lang="en">G4 · Design Google Search AI Overviews</span>
+          <span data-lang="zh">G4 · 设计 Google Search AI 概览</span>
+        </h1>
+
+        <div class="callout google">
+          <h4><span data-lang="en">Verified source</span><span data-lang="zh">经核实出处</span></h4>
+          <p>Google AI Overviews launched 2024 (<a href="https://blog.google/products/search/generative-ai-search/" target="_blank" rel="noopener">blog</a>). Credibility <strong>B</strong>.</p>
+        </div>
+
+<h2><span data-lang="en">Key decisions</span><span data-lang="zh">关键决策</span></h2>
+<ul><li><span data-lang="en">**Gate by query class**: classifier decides whether AI overview adds value.</span><span data-lang="zh">**按 query 类别门控**：分类器判断是否有增量价值。</span></li><li><span data-lang="en">**Reuse index**: retrieve from classic search index instead of a new vector index.</span><span data-lang="zh">**复用索引**：从经典搜索索引取源，省心省钱。</span></li><li><span data-lang="en">**Streamed below fold**: first tokens < 500 ms; tail writes as user scrolls.</span><span data-lang="zh">**折叠下流式**：首 token < 500 ms；用户滚动时继续写。</span></li><li><span data-lang="en">**Link-forward UX**: clickable cited sources preserve publisher traffic.</span><span data-lang="zh">**链接优先 UX**：引用可点击——保出版方流量。</span></li></ul>
+<h2><span data-lang="en">Follow-ups</span><span data-lang="zh">追问</span></h2>
+<ul><li><span data-lang="en">Misinformation? prefer authoritative sources; confidence thresholds; fallback to classic.</span><span data-lang="zh">错误信息？优先权威源；置信度阈值；回退经典结果。</span></li></ul>
+
+        <h2><span data-lang="en">Related study-guide topics</span><span data-lang="zh">相关学习手册专题</span></h2>
+        <ul><li><a href="../../guide/llm/rag.html"><span data-lang="en">RAG</span><span data-lang="zh">RAG</span></a></li></ul>
+      </article>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

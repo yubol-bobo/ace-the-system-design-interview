@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>X2. Design DeepSearch (Agentic Web Research) - SD-Guide</title>
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../index.html" class="active"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../resources/index.html"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../about/index.html"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a>
+        <span class="sep">›</span>
+        <a href="../index.html"><span data-lang="en">Arena</span><span data-lang="zh">竞技场</span></a>
+        <span class="sep">›</span>
+        <span>X2</span>
+      </div>
+
+      <article class="prose wide">
+        <div class="question-meta" style="margin-bottom:1rem;">
+          <span class="tag company-xai">xAI</span>
+          <span class="tag freq-2">★★ Frequent</span>
+          <span class="tag difficulty-hard">Hard</span>
+          <span class="tag">Agent</span><span class="tag">Search</span><span class="tag">RAG</span>
+        </div>
+
+        <h1>
+          <span data-lang="en">X2 · Design DeepSearch (Agentic Web Research)</span>
+          <span data-lang="zh">X2 · 设计 DeepSearch（Agent 式网页深度研究）</span>
+        </h1>
+
+        <div class="callout xai">
+          <h4><span data-lang="en">Verified source</span><span data-lang="zh">经核实出处</span></h4>
+          <p>Grok's DeepSearch feature launched 2025; pattern described in xAI blog posts and matches OpenAI's Deep Research / Perplexity patterns. Credibility <strong>C</strong>.</p>
+        </div>
+
+<h2><span data-lang="en">Problem</span><span data-lang="zh">问题</span></h2>
+<p><span data-lang="en">DeepSearch takes a user question, decides it needs web research, plans sub-queries, fetches pages (often from X for fresh signal), synthesizes an answer, and cites sources. Design the pipeline to handle 1M queries/day with 30-90s latency budget.</span><span data-lang="zh">DeepSearch 接收用户问题，判断是否需要网页研究，规划子查询，抓取页面（常从 X 获取时效性信号），综合出答案并附引用。设计流水线以支持每天 100 万次查询，延迟预算 30-90 秒。</span></p>
+<h2><span data-lang="en">Architecture</span><span data-lang="zh">架构</span></h2>
+<div class="mermaid-container"><pre class="mermaid">
+flowchart TB
+  U[User] --> P[Planner LLM]
+  P --> Q{Need web?}
+  Q -->|no| A[Direct answer]
+  Q -->|yes| S[Sub-query generator]
+  S --> F[Fetcher pool]
+  F --> X[X firehose]
+  F --> W[Web crawler]
+  F --> C[Content cache]
+  F --> SUM[Per-page summarizer]
+  SUM --> SYN[Synthesizer LLM]
+  SYN --> CITE[Citation formatter]
+  CITE --> U
+</pre></div>
+<h2><span data-lang="en">Key decisions</span><span data-lang="zh">关键决策</span></h2>
+<ul><li><span data-lang="en">Planner is a separate, smaller LLM call — decouples planning from synthesis to reduce token cost.</span><span data-lang="zh">Planner 是独立的、更小的 LLM 调用——将规划与综合解耦以降低 token 成本。</span></li><li><span data-lang="en">Parallel fetch pool with per-domain rate limits and polite User-Agent.</span><span data-lang="zh">并行抓取池，按域名设置速率限制，使用合规的 User-Agent。</span></li><li><span data-lang="en">Per-page summarization before synthesis — keeps final context window manageable (e.g. 20 pages × 500 tokens).</span><span data-lang="zh">综合前先做分页摘要——使最终上下文可控（如 20 页 × 500 token）。</span></li><li><span data-lang="en">X-firehose integration is xAI's moat: fresh signal unavailable to OpenAI/Anthropic. Rank X posts by author credibility × recency.</span><span data-lang="zh">X 全量 firehose 是 xAI 的护城河：OpenAI/Anthropic 拿不到的时效信号。按作者可信度 × 时效对 X 帖子排序。</span></li><li><span data-lang="en">Stream intermediate reasoning to the user so 60s latency feels interactive.</span><span data-lang="zh">向用户流式输出中间推理过程，让 60 秒延迟也感觉有交互性。</span></li></ul>
+<h2><span data-lang="en">Follow-ups</span><span data-lang="zh">追问</span></h2>
+<ul><li><span data-lang="en">How do you handle hallucinated citations? (Verify each citation against fetched content.)</span><span data-lang="zh">如何处理虚构的引用？（对每条引用与抓取内容做校验。）</span></li><li><span data-lang="en">How do you prevent prompt injection from fetched web pages?</span><span data-lang="zh">如何防止从抓取页面注入 prompt？</span></li></ul>
+
+        <h2><span data-lang="en">Related study-guide topics</span><span data-lang="zh">相关学习手册专题</span></h2>
+        <ul><li><a href="./o16-llm-enterprise-search.html"><span data-lang="en">LLM Enterprise Search (O16)</span><span data-lang="zh">LLM 企业搜索（O16）</span></a></li><li><a href="./a25-agentic-system.html"><span data-lang="en">Agentic System (A25)</span><span data-lang="zh">Agent 系统（A25）</span></a></li></ul>
+      </article>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

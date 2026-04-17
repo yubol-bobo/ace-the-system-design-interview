@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>O24. Design a Distributed Job Queue for ML Workloads - SD-Guide</title>
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../index.html" class="active"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../resources/index.html"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../about/index.html"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a>
+        <span class="sep">›</span>
+        <a href="../index.html"><span data-lang="en">Arena</span><span data-lang="zh">竞技场</span></a>
+        <span class="sep">›</span>
+        <span>O24</span>
+      </div>
+
+      <article class="prose wide">
+        <div class="question-meta" style="margin-bottom:1rem;">
+          <span class="tag company-openai">OpenAI</span>
+          <span class="tag freq-2">★★ Frequent</span>
+          <span class="tag difficulty-hard">Hard</span>
+          <span class="tag">Job Queue</span><span class="tag">Scheduler</span><span class="tag">GPU</span>
+        </div>
+
+        <h1>
+          <span data-lang="en">O24 · Design a Distributed Job Queue for ML Workloads</span>
+          <span data-lang="zh">O24 · 设计面向 ML 工作负载的分布式任务队列</span>
+        </h1>
+
+        <div class="callout openai">
+          <h4><span data-lang="en">Verified source</span><span data-lang="zh">经核实出处</span></h4>
+          <p>Reported on <a href="https://leetcode.com/discuss" target="_blank" rel="noopener">LeetCode Discuss</a> and 一亩三分地 - "design a job queue that schedules training jobs across our cluster". Credibility <strong>B</strong>.</p>
+        </div>
+
+<h2><span data-lang="en">Scope & goals</span><span data-lang="zh">范围与目标</span></h2>
+<p><span data-lang="en">Multi-tenant submission of heterogeneous GPU jobs (train / eval / batch-infer). SLOs: p95 scheduling latency < 30 s for small jobs; long jobs are checkpointable and preemptible; fair-share across teams.</span><span data-lang="zh">多租户提交异构 GPU 任务（训练/评估/批量推理）。SLO：小任务 p95 调度 < 30 s；长任务可 checkpoint 与抢占；团队间公平配额。</span></p>
+<h2><span data-lang="en">Architecture</span><span data-lang="zh">架构</span></h2>
+<div class="mermaid-container"><pre class="mermaid">
+flowchart LR
+  Clients --> API[Submit API]
+  API --> Q[(Priority Queue / Redis streams)]
+  S[Scheduler] --> Q
+  S --> P[Placement / Bin-pack]
+  P --> N1[Node agent 1]
+  P --> N2[Node agent 2]
+  N1 --> CK[(Checkpoint Store)]
+  S --> DB[(Postgres jobs & leases)]
+</pre></div>
+<h2><span data-lang="en">Job state machine</span><span data-lang="zh">任务状态机</span></h2>
+<pre><code>QUEUED -&gt; ASSIGNED -&gt; RUNNING -&gt; (SUCCEEDED | FAILED | PREEMPTED)
+PREEMPTED -&gt; QUEUED (with last checkpoint)</code></pre>
+<h2><span data-lang="en">Key decisions</span><span data-lang="zh">关键决策</span></h2>
+<ul><li><span data-lang="en">**Leased work stealing**: workers atomically CAS a lease row for N minutes; no central dispatcher bottleneck.</span><span data-lang="zh">**租约式 work-stealing**：worker 通过 CAS 原子抢占 lease；避免中心派发瓶颈。</span></li><li><span data-lang="en">**Priority classes** (P0 online eval, P1 training, P2 batch) with weighted fair-share; higher classes preempt lower.</span><span data-lang="zh">**优先级类**（P0 在线评估、P1 训练、P2 批量）+ 加权公平份额；高优先级抢占低优先级。</span></li><li><span data-lang="en">**Gang scheduling** for multi-node training: only start when all N slots ready to avoid deadlock.</span><span data-lang="zh">多节点训练 **gang scheduling**：N 个 slot 就绪才启动，防止死锁。</span></li><li><span data-lang="en">**Checkpoint on preempt**: worker gets SIGTERM then flushes to object store then resumes elsewhere.</span><span data-lang="zh">**抢占时 checkpoint**：worker 收到 SIGTERM -> 落盘到对象存储 -> 在其他节点恢复。</span></li></ul>
+<h2><span data-lang="en">Follow-ups</span><span data-lang="zh">追问</span></h2>
+<ul><li><span data-lang="en">How do you prevent head-of-line blocking by a 1-week job? per-class queues, bin-packing, backfill small jobs.</span><span data-lang="zh">如何避免一周级长任务 HoL？按 class 拆队列 + 装箱 + 小任务 backfill。</span></li><li><span data-lang="en">Exactly-once task execution? at-least-once + idempotent handler keyed by task_id.</span><span data-lang="zh">Exactly-once？at-least-once + 以 task_id 幂等的 handler。</span></li></ul>
+
+        <h2><span data-lang="en">Related study-guide topics</span><span data-lang="zh">相关学习手册专题</span></h2>
+        <ul><li><a href="../../guide/distributed/queuing.html"><span data-lang="en">Queueing &amp; fair-share</span><span data-lang="zh">队列与公平调度</span></a></li><li><a href="../../guide/ml/training-infra.html"><span data-lang="en">Training infra</span><span data-lang="zh">训练基础设施</span></a></li></ul>
+      </article>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>
