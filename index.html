@@ -113,46 +113,96 @@
           <span data-lang="en">Each frontier lab interviews differently. Pick your track — or browse all 100 questions.</span>
           <span data-lang="zh">每家前沿实验室面试风格各异。选择公司——或浏览全部 100 道真题。</span>
         </p>
-        <div class="grid-3" style="grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));">
-          <a class="feature-card openai" href="./pages/arena/index.html?company=openai">
-            <span class="feature-icon">△</span>
-            <h3>OpenAI</h3>
-            <p data-lang="en">
-              <strong>Engineering-first research org.</strong> Expect brutally hard coding, traditional distributed-systems questions (Webhooks, CI/CD, Slack, rate limiters) plus ChatGPT-scale AI product design. Interviewers will drill into every component's implementation details.
-            </p>
-            <p data-lang="zh">
-              <strong>以工程为先的研究机构。</strong>编码题极难，考察传统分布式系统（Webhook、CI/CD、Slack、限流器）与 ChatGPT 级别 AI 产品设计。面试官会对每个组件追问到实现细节。
-            </p>
-            <div class="question-meta">
-              <span class="tag company-openai">Webhook Delivery</span>
-              <span class="tag company-openai">GitHub Actions</span>
-              <span class="tag company-openai">OpenAI Playground</span>
-            </div>
-            <span class="arrow">
-              <span data-lang="en">Browse OpenAI questions →</span>
-              <span data-lang="zh">查看 OpenAI 真题 →</span>
-            </span>
-          </a>
+        <div class="company-stage" data-autoplay="6000">
+          <button class="company-stage-nav prev" type="button" aria-label="Previous company">‹</button>
+          <div class="company-stage-viewport">
+            <a class="feature-card company-slide openai is-active" href="./pages/arena/index.html?company=openai">
+              <span class="feature-icon">△</span>
+              <h3>OpenAI</h3>
+              <p data-lang="en">
+                <strong>Engineering-first research org.</strong> Expect brutally hard coding, traditional distributed-systems questions (Webhooks, CI/CD, Slack, rate limiters) plus ChatGPT-scale AI product design. Interviewers will drill into every component's implementation details.
+              </p>
+              <p data-lang="zh">
+                <strong>以工程为先的研究机构。</strong>编码题极难，考察传统分布式系统（Webhook、CI/CD、Slack、限流器）与 ChatGPT 级别 AI 产品设计。面试官会对每个组件追问到实现细节。
+              </p>
+              <div class="question-meta">
+                <span class="tag company-openai">Webhook Delivery</span>
+                <span class="tag company-openai">GitHub Actions</span>
+                <span class="tag company-openai">OpenAI Playground</span>
+              </div>
+              <span class="arrow">
+                <span data-lang="en">Browse 38 OpenAI questions →</span>
+                <span data-lang="zh">查看 38 道 OpenAI 真题 →</span>
+              </span>
+            </a>
 
-          <a class="feature-card anthropic" href="./pages/arena/index.html?company=anthropic">
-            <span class="feature-icon">★</span>
-            <h3>Anthropic</h3>
-            <p data-lang="en">
-              <strong>Mission-driven, safety-first lab.</strong> Interviews center on LLM infrastructure — inference batching, GPU scheduling, model downloaders, prompt playgrounds — with <strong>AI Safety as a per-round gate</strong>. Expect pressure on failure modes, abstraction, and conversation-driving.
-            </p>
-            <p data-lang="zh">
-              <strong>使命驱动、安全优先的实验室。</strong>围绕 LLM 基础设施考察——推理批处理、GPU 调度、模型分发、Prompt 平台——<strong>AI Safety 每轮都是门槛</strong>。面试官关注故障模式、抽象能力、驱动对话。
-            </p>
-            <div class="question-meta">
-              <span class="tag company-anthropic">Inference Batching</span>
-              <span class="tag company-anthropic">KV Cache</span>
-              <span class="tag company-anthropic">Model Downloader</span>
-            </div>
-            <span class="arrow">
-              <span data-lang="en">Browse Anthropic questions →</span>
-              <span data-lang="zh">查看 Anthropic 真题 →</span>
-            </span>
-          </a>
+            <a class="feature-card company-slide anthropic" href="./pages/arena/index.html?company=anthropic">
+              <span class="feature-icon">★</span>
+              <h3>Anthropic</h3>
+              <p data-lang="en">
+                <strong>Mission-driven, safety-first lab.</strong> Interviews center on LLM infrastructure — inference batching, GPU scheduling, model downloaders, prompt playgrounds — with <strong>AI Safety as a per-round gate</strong>. Expect pressure on failure modes, abstraction, and conversation-driving.
+              </p>
+              <p data-lang="zh">
+                <strong>使命驱动、安全优先的实验室。</strong>围绕 LLM 基础设施考察——推理批处理、GPU 调度、模型分发、Prompt 平台——<strong>AI Safety 每轮都是门槛</strong>。面试官关注故障模式、抽象能力、驱动对话。
+              </p>
+              <div class="question-meta">
+                <span class="tag company-anthropic">Inference Batching</span>
+                <span class="tag company-anthropic">KV Cache</span>
+                <span class="tag company-anthropic">Model Downloader</span>
+              </div>
+              <span class="arrow">
+                <span data-lang="en">Browse 31 Anthropic questions →</span>
+                <span data-lang="zh">查看 31 道 Anthropic 真题 →</span>
+              </span>
+            </a>
+
+            <a class="feature-card company-slide google" href="./pages/arena/index.html?company=google">
+              <span class="feature-icon">◆</span>
+              <h3>Google</h3>
+              <p data-lang="en">
+                <strong>Product-scale AI plus classical infra.</strong> Gemini-family serving (TPU pools, multimodal, 2M-token context), Search &amp; Ads platform depth, and Google-scale distributed-systems rigor. Interviewers favor correctness, capacity math, and ML-infra specifics.
+              </p>
+              <p data-lang="zh">
+                <strong>产品级 AI 与经典基建并重。</strong>Gemini 系列推理（TPU 池、多模态、2M token 上下文）、搜索与广告平台深度、Google 级分布式系统严谨度。面试官偏好正确性、容量估算、ML 基建细节。
+              </p>
+              <div class="question-meta">
+                <span class="tag company-google">Gemini API</span>
+                <span class="tag company-google">TPU Serving</span>
+                <span class="tag company-google">Vector Search</span>
+              </div>
+              <span class="arrow">
+                <span data-lang="en">Browse 25 Google questions →</span>
+                <span data-lang="zh">查看 25 道 Google 真题 →</span>
+              </span>
+            </a>
+
+            <a class="feature-card company-slide xai" href="./pages/arena/index.html?company=xai">
+              <span class="feature-icon">✦</span>
+              <h3>xAI</h3>
+              <p data-lang="en">
+                <strong>Lean, product-led, fast-moving.</strong> Inference serving for Grok (GPU stack, batching, streaming), agentic DeepSearch over the X corpus, and end-to-end systems under real deadlines. Smaller loops, generalist expectations, ship-first culture.
+              </p>
+              <p data-lang="zh">
+                <strong>精干、产品导向、迭代极快。</strong>Grok 推理服务（GPU 栈、批处理、流式）、基于 X 语料的 DeepSearch agent、在真实时限下的端到端系统。面试轮数更少，要求通才，崇尚先发货。
+              </p>
+              <div class="question-meta">
+                <span class="tag company-xai">Grok Serving</span>
+                <span class="tag company-xai">DeepSearch</span>
+                <span class="tag company-xai">Streaming</span>
+              </div>
+              <span class="arrow">
+                <span data-lang="en">Browse 6 xAI questions →</span>
+                <span data-lang="zh">查看 6 道 xAI 真题 →</span>
+              </span>
+            </a>
+          </div>
+          <button class="company-stage-nav next" type="button" aria-label="Next company">›</button>
+          <div class="company-stage-dots" role="tablist" aria-label="Select company">
+            <button type="button" data-index="0" class="is-active" aria-label="OpenAI"></button>
+            <button type="button" data-index="1" aria-label="Anthropic"></button>
+            <button type="button" data-index="2" aria-label="Google"></button>
+            <button type="button" data-index="3" aria-label="xAI"></button>
+          </div>
         </div>
       </section>
 

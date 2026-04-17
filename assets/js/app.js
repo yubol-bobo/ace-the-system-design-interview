@@ -117,6 +117,41 @@
     window.mermaid.run({ querySelector: '.mermaid' }).catch(() => {});
   }
 
+  // ---------- Company carousel (landing page) ----------
+  function initCompanyStage() {
+    const stage = document.querySelector('.company-stage');
+    if (!stage) return;
+    const slides = Array.from(stage.querySelectorAll('.company-slide'));
+    const dots = Array.from(stage.querySelectorAll('.company-stage-dots button'));
+    const prev = stage.querySelector('.company-stage-nav.prev');
+    const next = stage.querySelector('.company-stage-nav.next');
+    if (slides.length < 2) return;
+
+    let idx = Math.max(0, slides.findIndex((s) => s.classList.contains('is-active')));
+    const autoplayMs = parseInt(stage.dataset.autoplay || '0', 10);
+    let timer = null;
+
+    function show(i) {
+      idx = (i + slides.length) % slides.length;
+      slides.forEach((s, j) => s.classList.toggle('is-active', j === idx));
+      dots.forEach((d, j) => d.classList.toggle('is-active', j === idx));
+    }
+    function startAutoplay() {
+      stopAutoplay();
+      if (autoplayMs > 0) timer = setInterval(() => show(idx + 1), autoplayMs);
+    }
+    function stopAutoplay() { if (timer) { clearInterval(timer); timer = null; } }
+
+    if (prev) prev.addEventListener('click', (e) => { e.preventDefault(); show(idx - 1); startAutoplay(); });
+    if (next) next.addEventListener('click', (e) => { e.preventDefault(); show(idx + 1); startAutoplay(); });
+    dots.forEach((d, i) => d.addEventListener('click', (e) => { e.preventDefault(); show(i); startAutoplay(); }));
+
+    stage.addEventListener('mouseenter', stopAutoplay);
+    stage.addEventListener('mouseleave', startAutoplay);
+
+    startAutoplay();
+  }
+
   // ---------- Init ----------
   function init() {
     // Apply stored language & theme ASAP
@@ -130,6 +165,7 @@
     if (themeBtn) themeBtn.addEventListener('click', toggleTheme);
 
     markActiveNav();
+    initCompanyStage();
 
     // Initial mermaid render
     if (window.mermaid && document.querySelectorAll('.mermaid').length) {
@@ -203,6 +239,18 @@
           state[group] = value;
           applyFilters();
         });
+      }
+
+      // Pre-filter from ?company= URL param (used by the landing-page carousel)
+      const params = new URLSearchParams(location.search);
+      const initialCompany = params.get('company');
+      if (initialCompany && ['openai', 'anthropic', 'google', 'xai'].includes(initialCompany) && chipsContainer) {
+        const match = chipsContainer.querySelector(`[data-group="company"][data-value="${initialCompany}"]`);
+        if (match) {
+          chipsContainer.querySelectorAll('[data-group="company"]').forEach((c) => c.classList.remove('active'));
+          match.classList.add('active');
+          state.company = initialCompany;
+        }
       }
 
       applyFilters();
