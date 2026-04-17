@@ -26,10 +26,6 @@ pages/
   guide/                # Study guide topics (6 tracks, 20 pages)
   resources/            # External resource links
   about/                # Methodology & roadmap
-scripts/                # Python generators that build the HTML from structured data
-  gen_guide.py          #   — renders study-guide topic pages
-  topics_*.py           #   — bilingual content definitions, one per track
-  book-tocs.md          #   — chapter maps used as source grounding
 books/                  # (local-only, gitignored) reference PDFs/EPUBs
 ```
 
@@ -47,16 +43,6 @@ Open `index.html` in a browser, or serve locally:
 ```bash
 python -m http.server 8000
 # then visit http://localhost:8000
-```
-
-## Rebuilding Study-Guide Pages
-
-The HTML under `pages/guide/` is generated from structured bilingual content in `scripts/topics_*.py`. To regenerate after editing:
-
-```bash
-cd scripts
-python3 gen_guide.py all          # regenerate every topic page
-python3 gen_guide.py topics_llm   # just one track
 ```
 
 ## Deployment
