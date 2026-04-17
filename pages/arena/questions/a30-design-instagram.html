@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>A30. Design Instagram (Feed Generation) — SD-Guide</title>
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../index.html" class="active"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../resources/index.html"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../about/index.html"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a>
+        <span class="sep">›</span>
+        <a href="../index.html"><span data-lang="en">Arena</span><span data-lang="zh">竞技场</span></a>
+        <span class="sep">›</span>
+        <span>A30</span>
+      </div>
+
+      <article class="prose wide">
+        <div class="question-meta" style="margin-bottom:1rem;">
+          <span class="tag company-anthropic">Anthropic</span>
+          <span class="tag freq-3">★★★ Frequent</span>
+          <span class="tag difficulty-hard">Hard</span>
+          <span class="tag">Feed</span><span class="tag">Hybrid Fan-out</span><span class="tag">Celebrities</span>
+        </div>
+
+        <h1>
+          <span data-lang="en">A30 · Design Instagram (Feed Generation)</span>
+          <span data-lang="zh">A30 · 设计 Instagram（信息流生成）</span>
+        </h1>
+
+        <div class="callout anthropic">
+          <h4><span data-lang="en">Verified source</span><span data-lang="zh">经核实出处</span></h4>
+          <p><span data-lang="en">小红书 @OA昨日下雨 (2026): Anthropic VO1 System Design was "Design Instagram." The interviewer asked for overall architecture → then pressed hard on <strong>feed generation</strong> and <strong>celebrities with millions of followers</strong>. The candidate's accepted answer: hybrid (push for normal accounts, pull for celebrities). Credibility <strong>C</strong> (candidate-attributed, 2026).</span><span data-lang="zh">来自小红书 @OA昨日下雨（2026）：Anthropic VO1 SD 题为 "Design Instagram"。面试官要求整体架构后主打追问 <strong>feed 生成</strong> 和 <strong>百万粉明星</strong> 的处理。候选人采纳答案：hybrid（普通用户 push，明星 pull）。可信度 <strong>C</strong>（候选人自述，2026）。</span></p>
+        </div>
+
+        <h2><span data-lang="en">Scope: focus on the feed, not the whole product</span><span data-lang="zh">范围：聚焦信息流，不是整个产品</span></h2>
+        <p><span data-lang="en">Instagram has photo upload, stories, reels, DMs, explore. In a 45-min SD, scope to: <strong>post creation, home feed generation, follow/unfollow</strong>. Mention others briefly. Explicitly name the bottleneck you're going to design around: <em>home feed read latency at 10⁹ followers / post</em>.</span><span data-lang="zh">Instagram 有图片上传、Stories、Reels、DM、Explore。45 分钟 SD 建议收敛到 <strong>发帖、主页信息流生成、关注/取消关注</strong>。其他轻提即可。直接点出要优化的瓶颈：<em>头部用户单条帖子的 10⁹ 粉丝主页 feed 读延迟</em>。</span></p>
+
+        <h2><span data-lang="en">Data model</span><span data-lang="zh">数据模型</span></h2>
+        <pre><code>User(user_id, name, follower_count, is_celebrity)
+Post(post_id, author_id, media_url, caption, created_at)
+Follow(follower_id, followee_id, created_at)   -- partition by follower_id for "whom I follow"
+                                              -- secondary partition by followee_id for "my followers"
+Feed(user_id, post_id, rank_score, inserted_at) -- materialized home feed (push model)
+</code></pre>
+
+        <h2><span data-lang="en">Feed generation: the three models + when</span><span data-lang="zh">Feed 生成：三种模式与适用场景</span></h2>
+        <table>
+          <thead><tr><th>Model</th><th>Write cost</th><th>Read cost</th><th>Good for</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Pull / fan-out-on-read</strong></td><td>O(1)</td><td><span data-lang="en">O(F) — fetch from each followee; rank; return.</span><span data-lang="zh">O(F) — 遍历每个关注对象拉取；排序；返回。</span></td><td><span data-lang="en">Users who follow few or who read rarely.</span><span data-lang="zh">关注数少或阅读稀疏的用户。</span></td></tr>
+            <tr><td><strong>Push / fan-out-on-write</strong></td><td><span data-lang="en">O(followers) — write to each inbox.</span><span data-lang="zh">O(粉丝数) — 写入每个粉丝 inbox。</span></td><td>O(1)</td><td><span data-lang="en">Normal users (few thousand followers).</span><span data-lang="zh">普通用户（几千粉丝）。</span></td></tr>
+            <tr><td><strong>Hybrid</strong></td><td><span data-lang="en">Push for normal; <em>skip push</em> for celebrity posts.</span><span data-lang="zh">普通用户 push；明星帖子<em>不 push</em>。</span></td><td><span data-lang="en">Merge materialized inbox + pulled celebrity posts at read time.</span><span data-lang="zh">读时合并已物化 inbox 与拉取的明星帖子。</span></td><td><span data-lang="en">Production reality.</span><span data-lang="zh">生产最优解。</span></td></tr>
+          </tbody>
+        </table>
+
+        <h2><span data-lang="en">The exact answer to "how do you handle celebrities?"</span><span data-lang="zh">对「明星怎么办？」的标准答案</span></h2>
+        <div class="callout anthropic">
+          <p><span data-lang="en"><strong>"Pure push would make celebrity writes catastrophic — a single post fans out to 10⁸ inboxes. Pure pull hurts every user's read latency. I'd use a hybrid: flag <code>is_celebrity</code> above some follower threshold (e.g., 100K). For celebrities, skip the push: their posts stay in their own timeline only. At feed-read time, take the pre-materialized inbox (normal authors) and pull from celebrities the user follows, merge, rank, paginate. Cache the merged feed per user for 30–60 s."</strong></span><span data-lang="zh"><strong>"纯 push 会让名人写入灾难——单帖扇出到 10⁸ inbox。纯 pull 损害每个用户的读延迟。采用 hybrid：超过阈值（如 10 万粉丝）标记为 <code>is_celebrity</code>。名人帖子不做 push，只留在自己的时间线。读 feed 时：取已物化 inbox（普通作者）+ 从用户关注的名人拉取，合并、排序、分页。按用户缓存合并后的 feed 30–60 秒。"</strong></span></p>
+        </div>
+
+        <h2><span data-lang="en">Architecture</span><span data-lang="zh">架构</span></h2>
+        <div class="mermaid-container"><pre class="mermaid">
+flowchart LR
+  U[Uploader] --> MS[Media Service] --> OBJ[(S3 / CDN)]
+  MS --> PS[Post Service] --> PDB[(Posts DB)]
+  PS --> K[Kafka: new_post]
+  K --> FAN{is_celebrity?}
+  FAN -- No --> FO[Fan-out Workers<br/>batched inserts] --> FDB[(Feed / inbox store)]
+  FAN -- Yes --> SKIP[(No fan-out; posts stay in author timeline)]
+  R[Reader] --> FS[Feed Service]
+  FS --> FDB
+  FS --> CEL[Celebrity-timeline cache<br/>per user's followed celebs]
+  FS --> RANK[Ranker<br/>recency + engagement]
+  FS --> C[(Per-user feed cache)]
+        </pre></div>
+
+        <h2><span data-lang="en">Read-scaling the database (the documented follow-up)</span><span data-lang="zh">数据库读扩展（帖子提到的追问）</span></h2>
+        <ul>
+          <li><span data-lang="en"><strong>Read replicas + routing</strong>: most feed reads can tolerate replica lag of seconds; route authenticated "my feed" to replicas.</span><span data-lang="zh"><strong>读副本 + 路由</strong>：feed 读普遍能容忍秒级副本滞后；鉴权后的「我的 feed」走副本。</span></li>
+          <li><span data-lang="en"><strong>Shard by user_id</strong> for Follow and Feed tables (each user's inbox co-located).</span><span data-lang="zh"><strong>按 user_id 分片</strong> Follow 与 Feed 表（每用户 inbox 局部化）。</span></li>
+          <li><span data-lang="en"><strong>Hot-key caching</strong>: celebrity timelines are the worst hotspots — cache their recent posts in Redis with tight TTL; pre-warm via cache-aside on post.</span><span data-lang="zh"><strong>热 key 缓存</strong>：名人时间线是最严重热点——用 Redis 短 TTL 缓存近期帖；发帖时 cache-aside 预热。</span></li>
+          <li><span data-lang="en"><strong>Materialize top-N per user</strong>: last 500 feed items; beyond that, lazy pull.</span><span data-lang="zh"><strong>每用户仅物化 top-N</strong>：最近 500 条；更久的惰性拉取。</span></li>
+          <li><span data-lang="en"><strong>Tiered storage</strong>: hot (7d) in SSD / KV; warm (90d) in columnar; cold in object store.</span><span data-lang="zh"><strong>分层存储</strong>：热（7 天）在 SSD/KV；温（90 天）在列存；冷在对象存储。</span></li>
+        </ul>
+
+        <h2><span data-lang="en">Ranking (just enough)</span><span data-lang="zh">排序（够用即可）</span></h2>
+        <p><span data-lang="en">Score each candidate post with <code>recency × engagement × affinity</code>. Train a lightweight two-tower model offline; serve features from a feature store; score top ~300 candidates per user online, return top 30.</span><span data-lang="zh">每个候选帖子用 <code>时近性 × 互动度 × 亲密度</code> 打分。离线训练轻量双塔；在线从特征平台取特征，打分前 ~300 候选，返回前 30。</span></p>
+
+        <h2><span data-lang="en">Follow-ups</span><span data-lang="zh">追问</span></h2>
+        <ul>
+          <li><span data-lang="en"><strong>Consistency of follow → feed?</strong> Eventual; but show a "Following → latest posts" link that pulls directly for freshness.</span><span data-lang="zh"><strong>关注→feed 的一致性？</strong>最终一致；UI 上提供「关注者最新」链接直接拉取以保新鲜。</span></li>
+          <li><span data-lang="en"><strong>Unfollow cleanup?</strong> Lazy: don't delete existing inbox rows; filter by current follow set at read time (cheap with bloom).</span><span data-lang="zh"><strong>取消关注的清理？</strong>惰性处理：不清已有 inbox 行；读时按当前关注集过滤（bloom 很便宜）。</span></li>
+          <li><span data-lang="en"><strong>Live sports / event spikes?</strong> Same as celebrity: pull-only for event-tagged accounts during the spike; fall back to hybrid post-event.</span><span data-lang="zh"><strong>大赛/事件尖峰？</strong>与名人同理：尖峰期相关账号仅走 pull；事件后恢复 hybrid。</span></li>
+          <li><span data-lang="en"><strong>DAG-style follow graphs for stories?</strong> Separate store; stories aren't materialized per viewer — pulled from author and fanned into ephemeral cache.</span><span data-lang="zh"><strong>Stories 的关注图？</strong>独立存储；stories 不按观众物化——从作者拉取，fan 进瞬时缓存。</span></li>
+          <li><span data-lang="en"><strong>Multi-device ordering?</strong> Client keeps a seen-cursor per device; server returns feed items strictly after cursor.</span><span data-lang="zh"><strong>多设备顺序？</strong>客户端每设备维护 seen cursor；服务端返回游标之后的 feed。</span></li>
+        </ul>
+
+        <h2><span data-lang="en">Related study-guide topics</span><span data-lang="zh">相关学习手册专题</span></h2>
+        <ul>
+          <li><a href="../../guide/classical/news-feed.html"><span data-lang="en">News feed &amp; fan-out</span><span data-lang="zh">信息流与 fan-out</span></a></li>
+          <li><a href="../../guide/distributed/replication-consistency.html"><span data-lang="en">Replication &amp; consistency</span><span data-lang="zh">复制与一致性</span></a></li>
+          <li><a href="../../guide/ml/recommenders.html"><span data-lang="en">Recommender systems</span><span data-lang="zh">推荐系统</span></a></li>
+        </ul>
+      </article>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>O21. Design a Chat Room — SD-Guide</title>
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../index.html" class="active"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../resources/index.html"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../about/index.html"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a>
+        <span class="sep">›</span>
+        <a href="../index.html"><span data-lang="en">Arena</span><span data-lang="zh">竞技场</span></a>
+        <span class="sep">›</span>
+        <span>O21</span>
+      </div>
+
+      <article class="prose wide">
+        <div class="question-meta" style="margin-bottom:1rem;">
+          <span class="tag company-openai">OpenAI</span>
+          <span class="tag freq-2">★★ Frequent</span>
+          <span class="tag difficulty-medium">Medium-Hard</span>
+          <span class="tag">WebSocket</span><span class="tag">Pub/Sub</span><span class="tag">Room State</span>
+        </div>
+
+        <h1>
+          <span data-lang="en">O21 · Design a Chat Room</span>
+          <span data-lang="zh">O21 · 设计聊天室</span>
+        </h1>
+
+        <div class="callout openai">
+          <h4><span data-lang="en">Verified source</span><span data-lang="zh">经核实出处</span></h4>
+          <p><span data-lang="en">Listed in 小红书 @Infra+RL+Robots recruiter post (2026) as one of OpenAI's 5 SD-pool questions. Distinct from O4 (Design Slack) — a Chat Room has a single logical room with many members, no DMs / workspaces / threads. Credibility <strong>B</strong>.</span><span data-lang="zh">来自小红书 @Infra+RL+Robots 招聘官（2026）列出的 OpenAI 五大 SD 题池之一。与 O4（Slack）不同——聊天室是单一逻辑房间多成员，不含 DM / 工作区 / Thread。可信度 <strong>B</strong>。</span></p>
+        </div>
+
+        <h2><span data-lang="en">Scoping: Chat Room ≠ Slack</span><span data-lang="zh">范围：聊天室 ≠ Slack</span></h2>
+        <table>
+          <thead><tr><th>Capability</th><th>Chat Room (O21)</th><th>Slack (O4)</th></tr></thead>
+          <tbody>
+            <tr><td>Room structure</td><td><span data-lang="en">Single room id, broadcast to all joined members.</span><span data-lang="zh">单房间 id，广播给所有加入成员。</span></td><td><span data-lang="en">Workspaces → channels → threads → DMs.</span><span data-lang="zh">工作区 → 频道 → Thread → DM。</span></td></tr>
+            <tr><td>History</td><td><span data-lang="en">Bounded or session-based; some variants are ephemeral.</span><span data-lang="zh">有界或 session 内；部分变体瞬时。</span></td><td><span data-lang="en">Permanent, searchable, paginated.</span><span data-lang="zh">永久保存、可搜索、分页。</span></td></tr>
+            <tr><td>Ordering</td><td><span data-lang="en">Per-room monotonic seq.</span><span data-lang="zh">每房间单调递增 seq。</span></td><td><span data-lang="en">Per-channel seq.</span><span data-lang="zh">每频道 seq。</span></td></tr>
+            <tr><td>Presence</td><td><span data-lang="en">Active member list, typing indicators.</span><span data-lang="zh">在线成员列表、正在输入指示。</span></td><td><span data-lang="en">User-global presence (online/away).</span><span data-lang="zh">用户全局在线状态（在线/离开）。</span></td></tr>
+          </tbody>
+        </table>
+
+        <h2><span data-lang="en">Architecture</span><span data-lang="zh">架构</span></h2>
+        <div class="mermaid-container"><pre class="mermaid">
+flowchart LR
+  C1[Client A] & C2[Client B] --> LB[WS Load Balancer<br/>sticky by room_id]
+  LB --> WS1[WS Gateway 1]
+  LB --> WS2[WS Gateway 2]
+  WS1 & WS2 --> RC[Room Coordinator<br/>Redis pub/sub]
+  WS1 & WS2 --> MSG[Message Service]
+  MSG --> DB[(Messages: room_id, seq, payload)]
+  MSG --> SEQ[Seq Generator<br/>Redis INCR per room]
+  WS1 --> PRES[Presence Service<br/>Redis TTL]
+        </pre></div>
+
+        <h2><span data-lang="en">Message flow (hot path)</span><span data-lang="zh">消息流（热路径）</span></h2>
+        <ol>
+          <li><span data-lang="en">Client sends over existing WS: <code>{type:"msg", room_id, client_msg_id, text}</code>.</span><span data-lang="zh">客户端通过已有 WS 发送 <code>{type:"msg", room_id, client_msg_id, text}</code>。</span></li>
+          <li><span data-lang="en">Gateway dedups on <code>client_msg_id</code>, calls Message Service.</span><span data-lang="zh">网关按 <code>client_msg_id</code> 去重，调用 Message Service。</span></li>
+          <li><span data-lang="en">Message Service assigns <code>seq = INCR room:{id}:seq</code>, persists, then publishes to <code>room:{id}</code> channel.</span><span data-lang="zh">Message Service 通过 <code>INCR room:{id}:seq</code> 分配 seq，持久化后发布到 <code>room:{id}</code> 频道。</span></li>
+          <li><span data-lang="en">All WS gateways subscribing to that channel push to local clients.</span><span data-lang="zh">所有订阅该频道的 WS 网关将消息推送到本地客户端。</span></li>
+        </ol>
+
+        <h2><span data-lang="en">Connection &amp; room state</span><span data-lang="zh">连接与房间状态</span></h2>
+        <ul>
+          <li><span data-lang="en"><strong>Sticky routing</strong>: hash <code>room_id</code> → a shard of WS gateways → keeps pub/sub fan-out local.</span><span data-lang="zh"><strong>粘性路由</strong>：<code>room_id</code> 哈希 → 一组 WS 网关 → 保持 pub/sub 本地 fan-out。</span></li>
+          <li><span data-lang="en"><strong>Join/Leave</strong>: WS gateway maintains <code>Map&lt;room_id, Set&lt;conn&gt;&gt;</code>; on join, subscribe to Redis channel; on last-leaver, unsubscribe.</span><span data-lang="zh"><strong>加入/离开</strong>：WS 网关维护 <code>Map&lt;room_id, Set&lt;conn&gt;&gt;</code>；加入时订阅 Redis 频道；最后一人离开时退订。</span></li>
+          <li><span data-lang="en"><strong>Reconnect</strong>: client sends <code>last_seq</code>; server ships missed messages then subscribes stream.</span><span data-lang="zh"><strong>重连</strong>：客户端带 <code>last_seq</code>；服务端补发 + 订阅流。</span></li>
+        </ul>
+
+        <h2><span data-lang="en">Follow-ups</span><span data-lang="zh">追问</span></h2>
+        <ul>
+          <li><span data-lang="en"><strong>10K-member room fan-out storm?</strong> Shard the room across multiple pub/sub channels; or switch to a dedicated "mega-room" service that buffers and batches pushes.</span><span data-lang="zh"><strong>1 万人大房间 fan-out 风暴？</strong>把房间拆到多个 pub/sub 子频道；或切到专用「超级房间」服务做缓冲批量推送。</span></li>
+          <li><span data-lang="en"><strong>Typing indicators at scale?</strong> Not persisted; rate-limited (e.g., 1 "typing" event per 3 s per user); use a separate ephemeral pub/sub topic.</span><span data-lang="zh"><strong>大规模正在输入？</strong>不持久化；限流（每用户每 3 秒 1 次）；用独立的瞬时 pub/sub 主题。</span></li>
+          <li><span data-lang="en"><strong>Moderation?</strong> Synchronous blocklist/regex check inline; async classifier after; client can render a "pending-review" placeholder.</span><span data-lang="zh"><strong>内容审核？</strong>同步 blocklist/正则；异步分类器；客户端渲染「审核中」占位。</span></li>
+          <li><span data-lang="en"><strong>End-to-end encryption?</strong> Signal-like; server stores ciphertext + metadata only; but room join needs key rotation on member change.</span><span data-lang="zh"><strong>端到端加密？</strong>Signal 风格；服务端仅存密文 + 元数据；成员变更时需密钥轮换。</span></li>
+        </ul>
+
+        <h2><span data-lang="en">Related study-guide topics</span><span data-lang="zh">相关学习手册专题</span></h2>
+        <ul>
+          <li><a href="../../guide/classical/news-feed.html"><span data-lang="en">Fan-out strategies</span><span data-lang="zh">Fan-out 策略</span></a></li>
+          <li><a href="../../guide/distributed/partitioning.html"><span data-lang="en">Partitioning &amp; sticky routing</span><span data-lang="zh">分区与粘性路由</span></a></li>
+        </ul>
+      </article>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

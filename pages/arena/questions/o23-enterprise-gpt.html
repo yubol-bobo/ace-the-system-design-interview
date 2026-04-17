@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>O23. Enterprise GPT for 20K Employees — SD-Guide</title>
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../index.html" class="active"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../resources/index.html"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../about/index.html"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a>
+        <span class="sep">›</span>
+        <a href="../index.html"><span data-lang="en">Arena</span><span data-lang="zh">竞技场</span></a>
+        <span class="sep">›</span>
+        <span>O23</span>
+      </div>
+
+      <article class="prose wide">
+        <div class="question-meta" style="margin-bottom:1rem;">
+          <span class="tag company-openai">OpenAI</span>
+          <span class="tag freq-3">★★★ Frequent</span>
+          <span class="tag difficulty-hard">Hard</span>
+          <span class="tag">RAG</span><span class="tag">ACL</span><span class="tag">Citations</span>
+        </div>
+
+        <h1>
+          <span data-lang="en">O23 · Enterprise GPT for a 20K-Employee Company (RAG + ACL)</span>
+          <span data-lang="zh">O23 · 2 万人企业的 Enterprise GPT（RAG + ACL）</span>
+        </h1>
+
+        <div class="callout openai">
+          <h4><span data-lang="en">Verified source</span><span data-lang="zh">经核实出处</span></h4>
+          <p><span data-lang="en">小红书 @Justin (2026) — candidate got <strong>Strong Hire</strong> with a 4-layer decomposition. Distinct from O16 (LLM-powered Enterprise Search) in four ways:<br>① explicitly 20K-employee scale, ② per-document ACL is a first-class requirement, ③ P95 &lt; 2 s latency budget, ④ EN/中 multilingual, ⑤ continuous-learning loop from feedback. Credibility <strong>B/C</strong> (candidate-attributed, detailed).</span><span data-lang="zh">来自小红书 @Justin（2026）——候选人用四层架构拿到 <strong>Strong Hire</strong>。与 O16（LLM Enterprise Search）的区别在：① 明确 2 万人规模、② 文档级 ACL 是一等需求、③ P95 &lt; 2 秒延迟预算、④ 中英双语、⑤ 反馈驱动的持续学习闭环。可信度 <strong>B/C</strong>（候选人自述，细节充分）。</span></p>
+        </div>
+
+        <h2><span data-lang="en">Requirements (the exact interview spec)</span><span data-lang="zh">需求（面试原题）</span></h2>
+        <ol>
+          <li><span data-lang="en"><strong>Accurate answer</strong> with <strong>traceable citations</strong> (to the exact paragraph / version).</span><span data-lang="zh"><strong>准确回答</strong>，带<strong>可追溯引用</strong>（到具体段落/版本）。</span></li>
+          <li><span data-lang="en"><strong>ACL correctness</strong>: an employee sees only content they're authorised to see.</span><span data-lang="zh"><strong>权限正确</strong>：员工只能看到有权限的内容。</span></li>
+          <li><span data-lang="en"><strong>P95 &lt; 2 s</strong> (excluding model inference, which can stream).</span><span data-lang="zh"><strong>P95 &lt; 2 秒</strong>（不含模型推理，推理可做 streaming）。</span></li>
+          <li><span data-lang="en"><strong>Multilingual</strong>: EN + 中 at minimum.</span><span data-lang="zh"><strong>多语言</strong>：至少中英。</span></li>
+          <li><span data-lang="en"><strong>Continuous learning</strong>: offline metrics improve, online complaints drop.</span><span data-lang="zh"><strong>持续学习</strong>：离线指标稳定提升，线上投诉率下降。</span></li>
+          <li><span data-lang="en">Sources: Confluence, Google Docs, PDFs, Slack announcements, ticket KBs, PRDs.</span><span data-lang="zh">来源：Confluence、Google Docs、PDF、Slack 公告、工单知识库、PRD。</span></li>
+        </ol>
+
+        <h2><span data-lang="en">The 4-layer architecture (the Strong-Hire answer)</span><span data-lang="zh">四层架构（Strong Hire 答法）</span></h2>
+        <div class="mermaid-container"><pre class="mermaid">
+flowchart TB
+  subgraph L1["①Ingestion & Chunking"]
+    CONN[Connectors<br/>Confluence · GDocs · Slack · PDFs · Jira] --> NORM[Normalizer<br/>dedupe, lang-detect, PII scrub]
+    NORM --> CHUNK[Chunker<br/>semantic + overlap]
+    CHUNK --> EMB[Embedding<br/>multilingual e5 / bge-m3]
+    EMB --> IDX[(Vector Index<br/>+ keyword index)]
+    CHUNK --> META[(Doc Metadata<br/>acl_ids, version, lang)]
+  end
+
+  subgraph L2["② Retriever"]
+    Q[Query] --> QR[Query rewrite<br/>LLM lite + HyDE opt.]
+    QR --> HY[Hybrid search<br/>BM25 + vector]
+    HY --> ACL[ACL filter<br/>user_acl ∩ chunk_acl]
+    ACL --> RR[Reranker<br/>cross-encoder]
+  end
+
+  subgraph L3["③ Evaluator"]
+    RR --> EV[Answerability & coverage check]
+    EV -->|insufficient| FB[Refuse / "I don't know"]
+    EV -->|ok| GEN
+  end
+
+  subgraph L4["④ Generator"]
+    GEN[Prompt assembly<br/>system + ctx + citations] --> LLM[LLM inference<br/>streaming]
+    LLM --> POST[Post-check:<br/>citation binding + PII guard]
+    POST --> USR[User + feedback capture]
+  end
+
+  USR -.thumb/complaint.-> FB2[Feedback store] --> EVAL[Offline eval<br/>factuality, citation@k]
+  EVAL --> L1
+  EVAL --> L2
+        </pre></div>
+
+        <h2><span data-lang="en">Per-document ACL done right</span><span data-lang="zh">文档级 ACL 的正确做法</span></h2>
+        <ul>
+          <li><span data-lang="en"><strong>Store ACL with the chunk, not only the doc.</strong> Each chunk inherits doc ACL but can be overridden by section-level rules (e.g., PRD appendix).</span><span data-lang="zh"><strong>ACL 存在 chunk 级，不只是文档级。</strong>每个 chunk 继承文档 ACL，可被段级规则覆盖（如 PRD 附录）。</span></li>
+          <li><span data-lang="en"><strong>ACL as a first-class filter in retrieval.</strong> Post-filter leaks information (top-K might all be restricted → "I know nothing" reveals presence). Use <strong>pre-filter</strong> via a posting-list intersection at the vector/keyword index level.</span><span data-lang="zh"><strong>ACL 是检索中的一等过滤器。</strong>后过滤会泄露信息（top-K 全被禁 → "我什么都不知道"反而暴露存在）。应用 <strong>前过滤</strong>，在向量/关键词索引层做 posting-list 交集。</span></li>
+          <li><span data-lang="en"><strong>Principal expansion</strong>: flatten user → groups → roles into a set of acl_ids at request time; cache per-user in Redis with short TTL.</span><span data-lang="zh"><strong>主体展开</strong>：请求时把 用户 → 组 → 角色 展开为 acl_ids 集合；Redis 短 TTL 缓存按用户。</span></li>
+          <li><span data-lang="en"><strong>Never train on restricted content.</strong> Fine-tuning and eval sets filter by ACL; log hash-only to keep audit trail without leakage.</span><span data-lang="zh"><strong>绝不用受限内容训练。</strong>微调/评测集按 ACL 过滤；日志只存 hash 以审计而不泄露。</span></li>
+        </ul>
+
+        <h2><span data-lang="en">P95 &lt; 2 s latency budget (retrieval stack)</span><span data-lang="zh">P95 &lt; 2 秒 延迟预算（不含推理）</span></h2>
+        <table>
+          <thead><tr><th>Stage</th><th>Target</th><th>Technique</th></tr></thead>
+          <tbody>
+            <tr><td>Query rewrite</td><td>&lt; 150 ms</td><td><span data-lang="en">Small model; skip if query is unambiguous.</span><span data-lang="zh">小模型；无歧义直接跳过。</span></td></tr>
+            <tr><td>Hybrid retrieval</td><td>&lt; 250 ms</td><td><span data-lang="en">Parallel BM25 + vector; ACL pre-filter at index level.</span><span data-lang="zh">BM25 与向量并行；索引层 ACL 前过滤。</span></td></tr>
+            <tr><td>Rerank</td><td>&lt; 400 ms</td><td><span data-lang="en">Top-100 → top-8 cross-encoder; batch; cache top rerank results.</span><span data-lang="zh">top-100 → top-8 cross-encoder；批处理；缓存 rerank 结果。</span></td></tr>
+            <tr><td>Evaluator + prompt build</td><td>&lt; 200 ms</td><td><span data-lang="en">Simple heuristic + template fill.</span><span data-lang="zh">简单启发式 + 模板拼接。</span></td></tr>
+            <tr><td>First token (model)</td><td>streamed</td><td><span data-lang="en">Out of budget by design → user sees streaming.</span><span data-lang="zh">按约定不计入预算 → 用户看到流式输出。</span></td></tr>
+          </tbody>
+        </table>
+
+        <h2><span data-lang="en">Multilingual (EN + 中)</span><span data-lang="zh">多语言（中英）</span></h2>
+        <ul>
+          <li><span data-lang="en"><strong>Multilingual embeddings</strong> (bge-m3, e5-multilingual): same vector space, no translate-at-query.</span><span data-lang="zh"><strong>多语言 embedding</strong>（bge-m3、e5-multilingual）：同向量空间，无需查询时翻译。</span></li>
+          <li><span data-lang="en"><strong>Chunk-language tag</strong> → boost chunks in the user's language but don't exclude cross-language hits.</span><span data-lang="zh"><strong>Chunk 语言标签</strong> → 轻加权用户语言，不排除跨语言命中。</span></li>
+          <li><span data-lang="en"><strong>Answer language = user question language</strong> by default; cite in original.</span><span data-lang="zh"><strong>回答语言 = 用户提问语言</strong>（默认）；引用保留原文。</span></li>
+        </ul>
+
+        <h2><span data-lang="en">Continuous learning loop</span><span data-lang="zh">持续学习闭环</span></h2>
+        <ol>
+          <li><span data-lang="en">Capture <code>(query, retrieved, answer, thumb, complaint)</code> tuples.</span><span data-lang="zh">捕获 <code>(query, retrieved, answer, thumb, complaint)</code> 四元组。</span></li>
+          <li><span data-lang="en">Weekly offline eval: factuality, citation@k, refusal correctness, ACL-leak probes.</span><span data-lang="zh">每周离线评测：事实性、citation@k、拒答准确、ACL 泄漏探针。</span></li>
+          <li><span data-lang="en">Hard-negative mining for retriever fine-tuning; prompt-template AB.</span><span data-lang="zh">Retriever 的难负样本挖掘；Prompt 模板 AB。</span></li>
+          <li><span data-lang="en">Gate rollout on "complaint rate ↓ and factuality ↑ both significant".</span><span data-lang="zh">上线门槛：投诉率↓ 且 事实性↑ 双显著。</span></li>
+        </ol>
+
+        <h2><span data-lang="en">Follow-ups</span><span data-lang="zh">追问（原帖在 Generator 被深挖）</span></h2>
+        <ul>
+          <li><span data-lang="en"><strong>Citation binding</strong>: force the model to emit <code>[doc_id:chunk_id]</code> tokens; post-checker verifies every claim maps to cited chunks; drop uncited sentences or refuse.</span><span data-lang="zh"><strong>引用绑定</strong>：强制模型输出 <code>[doc_id:chunk_id]</code> 标记；后检器验证每条断言都映射到引用 chunk；未引用句删除或拒答。</span></li>
+          <li><span data-lang="en"><strong>Fresh-write → instant availability?</strong> Dual-write to a "recent" index (small, cheap) while the batch indexer catches up; merge at query time.</span><span data-lang="zh"><strong>刚写入内容的即时可见？</strong>双写到"近期索引"（小、便宜），同时批量索引追进度；查询时合并。</span></li>
+          <li><span data-lang="en"><strong>Eval that catches ACL leaks?</strong> Red-team probe set: known sensitive Qs issued as different personas; assert no restricted chunk appears in retrieval.</span><span data-lang="zh"><strong>如何保证 ACL 不被绕过？</strong>Red-team 探针集：敏感问题以不同 persona 提问；断言检索结果无受限 chunk。</span></li>
+          <li><span data-lang="en"><strong>Cost guardrails?</strong> Per-employee monthly token budget; shrink context aggressively when near cap.</span><span data-lang="zh"><strong>成本护栏？</strong>按员工月度 token 预算；接近上限时激进缩上下文。</span></li>
+        </ul>
+
+        <h2><span data-lang="en">Related study-guide topics</span><span data-lang="zh">相关学习手册专题</span></h2>
+        <ul>
+          <li><a href="../../guide/llm/rag.html"><span data-lang="en">RAG deep dive</span><span data-lang="zh">RAG 深度</span></a></li>
+          <li><a href="../../guide/llm/llm-evaluation.html"><span data-lang="en">LLM evaluation</span><span data-lang="zh">LLM 评测</span></a></li>
+          <li><a href="../../guide/safety/safety-engineering.html"><span data-lang="en">Safety engineering</span><span data-lang="zh">安全工程</span></a></li>
+        </ul>
+      </article>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

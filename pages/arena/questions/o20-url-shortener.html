@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>O20. Design a URL Shortener — SD-Guide</title>
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../index.html" class="active"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../resources/index.html"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../about/index.html"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a>
+        <span class="sep">›</span>
+        <a href="../index.html"><span data-lang="en">Arena</span><span data-lang="zh">竞技场</span></a>
+        <span class="sep">›</span>
+        <span>O20</span>
+      </div>
+
+      <article class="prose wide">
+        <div class="question-meta" style="margin-bottom:1rem;">
+          <span class="tag company-openai">OpenAI</span>
+          <span class="tag freq-3">★★★ Frequent</span>
+          <span class="tag difficulty-medium">Medium</span>
+          <span class="tag">Base62</span><span class="tag">Redirect</span><span class="tag">Hot Cache</span>
+        </div>
+
+        <h1>
+          <span data-lang="en">O20 · Design a URL Shortener (Shorten URL)</span>
+          <span data-lang="zh">O20 · 设计短链接系统</span>
+        </h1>
+
+        <div class="callout openai">
+          <h4><span data-lang="en">Verified source</span><span data-lang="zh">经核实出处</span></h4>
+          <p><span data-lang="en">Reported on 小红书 by @Infra+RL+Robots (Recruiter) as one of OpenAI's <strong>five SD-pool classics</strong> — candidates are told to prepare all five rather than bet on one. Candidate in that post had prepared the CI/CD track and got hit with this instead. Credibility <strong>B</strong> (recruiter-attributed, 2026).</span><span data-lang="zh">来源：小红书 @Infra+RL+Robots 招聘官，明确点名为 OpenAI 的<strong>五大 SD 题池之一</strong>——建议全部准备而不是赌一道。帖子里候选人重点准备 CI/CD，结果考了这题。可信度 <strong>B</strong>（招聘官明示，2026）。</span></p>
+          <p><span data-lang="en">Cross-referenced: Alex Xu V1 Ch.8, ByteByteGo "Design a URL Shortener", IGotAnOffer.</span><span data-lang="zh">交叉参考：Alex Xu V1 第 8 章、ByteByteGo「短链设计」、IGotAnOffer。</span></p>
+        </div>
+
+        <h2><span data-lang="en">Functional requirements</span><span data-lang="zh">功能需求</span></h2>
+        <ul>
+          <li><span data-lang="en"><code>POST /shorten {url}</code> → returns 7-char short code.</span><span data-lang="zh"><code>POST /shorten {url}</code> → 返回 7 位短码。</span></li>
+          <li><span data-lang="en"><code>GET /{code}</code> → 301/302 redirect to original URL.</span><span data-lang="zh"><code>GET /{code}</code> → 301/302 跳转原 URL。</span></li>
+          <li><span data-lang="en">Optional: custom alias, expiration, per-user analytics.</span><span data-lang="zh">可选：自定义别名、过期时间、按用户统计。</span></li>
+        </ul>
+
+        <h2><span data-lang="en">Back-of-envelope</span><span data-lang="zh">容量估算</span></h2>
+        <p><span data-lang="en">Assume 100M new URLs/day → ~1.2K write QPS; <strong>read/write = 100:1</strong> → 120K read QPS (peak ~500K). 10 years retention → 365 B URLs. With 7-char Base62 you get 62⁷ ≈ 3.5 T addresses → safe.</span><span data-lang="zh">假设每天 1 亿新链接 → 写 QPS ~1.2K；<strong>读写比 100:1</strong> → 读 QPS 12 万（峰值 ~50 万）。保留 10 年 → 3650 亿链接。7 位 Base62 = 62⁷ ≈ 3.5 万亿地址 → 充裕。</span></p>
+
+        <h2><span data-lang="en">Short-code generation — three options</span><span data-lang="zh">短码生成的三种方案</span></h2>
+        <table>
+          <thead><tr><th>Option</th><th>How</th><th>Trade-off</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><strong>Hash-of-URL (MD5/SHA1 → base62[0:7])</strong></td>
+              <td><span data-lang="en">Deterministic; same URL → same code.</span><span data-lang="zh">确定性；同 URL → 同短码。</span></td>
+              <td><span data-lang="en">Collisions need resolution (rehash + probe). Hard to customize.</span><span data-lang="zh">冲突需处理（rehash + 探测）。难以自定义。</span></td>
+            </tr>
+            <tr>
+              <td><strong>Auto-increment ID → Base62 encode</strong></td>
+              <td><span data-lang="en">Single counter or sharded counters (Snowflake-like).</span><span data-lang="zh">单计数器或分片计数器（Snowflake 风格）。</span></td>
+              <td><span data-lang="en">Easy & no collisions; but IDs are guessable (enumeration attack) and hot-shard risk.</span><span data-lang="zh">简单无冲突；但 ID 可枚举（攻击面）、热分片风险。</span></td>
+            </tr>
+            <tr>
+              <td><strong>Pre-generated code pool</strong></td>
+              <td><span data-lang="en">Offline job fills a "free codes" queue; workers <code>POP</code> to assign.</span><span data-lang="zh">离线任务填充"空闲短码"队列；worker 从中 <code>POP</code> 分配。</span></td>
+              <td><span data-lang="en">Decouples gen from assign, trivial to scale, but requires pool monitoring.</span><span data-lang="zh">生成与分配解耦，扩展简单，但需监控池水位。</span></td>
+            </tr>
+          </tbody>
+        </table>
+        <p><span data-lang="en"><strong>Recommended</strong>: sharded counter + Base62 for simplicity; add per-user custom-alias path that goes through a separate uniqueness check.</span><span data-lang="zh"><strong>推荐</strong>：分片计数器 + Base62，简单易扩展；自定义别名走独立唯一性校验路径。</span></p>
+
+        <h2><span data-lang="en">Architecture</span><span data-lang="zh">架构</span></h2>
+        <div class="mermaid-container"><pre class="mermaid">
+flowchart LR
+  U[Client] --> LB[Load Balancer]
+  LB --> API[Shortener API]
+  API --> IDG[ID Generator<br/>sharded counter]
+  API --> DB[(KV Store: code → url)]
+  API --> CACHE[Redis hot-link cache]
+  U2[Reader] --> LB2[LB + CDN]
+  LB2 --> R[Redirect Service]
+  R --> CACHE
+  R --> DB
+  R -.async.-> AN[Analytics pipeline<br/>Kafka → ClickHouse]
+        </pre></div>
+
+        <h2><span data-lang="en">Data model</span><span data-lang="zh">数据模型</span></h2>
+        <pre><code>url_map:
+  code        VARCHAR(7)  PRIMARY KEY
+  long_url    TEXT
+  user_id     UUID        -- NULL for anonymous
+  created_at  TIMESTAMP
+  expires_at  TIMESTAMP   -- NULL = never
+
+Index on (user_id, created_at) for user dashboards.
+</code></pre>
+
+        <h2><span data-lang="en">Read path: cache hierarchy</span><span data-lang="zh">读路径：缓存层次</span></h2>
+        <ol>
+          <li><span data-lang="en">CDN edge cache for the 301 itself (TTL = min(expires_at - now, 10m)).</span><span data-lang="zh">CDN 边缘缓存 301 响应（TTL = min(expires_at − now, 10 分钟)）。</span></li>
+          <li><span data-lang="en">Redis LRU for hot codes (&gt;80 % hit-rate target).</span><span data-lang="zh">Redis LRU 缓存热门短码（目标命中率 &gt;80 %）。</span></li>
+          <li><span data-lang="en">KV store (Cassandra / DynamoDB) as authority.</span><span data-lang="zh">KV 存储（Cassandra / DynamoDB）作为权威。</span></li>
+        </ol>
+
+        <h2><span data-lang="en">Follow-ups</span><span data-lang="zh">追问</span></h2>
+        <ul>
+          <li><span data-lang="en"><strong>301 vs 302?</strong> 302 if you want per-click analytics (browser re-hits server). 301 is cacheable by CDN → faster but loses tracking.</span><span data-lang="zh"><strong>301 还是 302？</strong>要做点击分析就用 302（浏览器每次回源）。301 可被 CDN 缓存 → 更快但失去跟踪。</span></li>
+          <li><span data-lang="en"><strong>Expired / deleted?</strong> Soft-delete with <code>expires_at</code>; GC job. Serve 410 Gone.</span><span data-lang="zh"><strong>过期/删除？</strong>用 <code>expires_at</code> 软删除；GC 作业清理。返回 410 Gone。</span></li>
+          <li><span data-lang="en"><strong>Abuse / malware URLs?</strong> Async Safe-Browsing lookup at creation, block known-bad; periodic re-scan.</span><span data-lang="zh"><strong>滥用 / 恶意链接？</strong>创建时异步查 Safe-Browsing，阻止已知恶意；周期性重扫。</span></li>
+          <li><span data-lang="en"><strong>Custom alias race?</strong> Use DB unique constraint; retry on conflict with friendly error.</span><span data-lang="zh"><strong>自定义别名竞争？</strong>DB 唯一约束；冲突时重试并给出友好错误。</span></li>
+          <li><span data-lang="en"><strong>Analytics without hot-row DB writes?</strong> Fire-and-forget Kafka event; ClickHouse for aggregation.</span><span data-lang="zh"><strong>不在热路径写 DB 做统计？</strong>发送 Kafka 事件即走；ClickHouse 聚合。</span></li>
+        </ul>
+
+        <h2><span data-lang="en">Related study-guide topics</span><span data-lang="zh">相关学习手册专题</span></h2>
+        <ul>
+          <li><a href="../../guide/distributed/partitioning.html"><span data-lang="en">Partitioning &amp; sharded counters</span><span data-lang="zh">分区与分片计数器</span></a></li>
+          <li><a href="../../guide/foundations/estimation.html"><span data-lang="en">Back-of-envelope estimation</span><span data-lang="zh">容量估算</span></a></li>
+        </ul>
+      </article>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

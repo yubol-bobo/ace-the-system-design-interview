@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>O22. Design a Toy Language Interpreter — SD-Guide</title>
+  <link rel="stylesheet" href="../../../assets/css/main.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="../../../index.html"><span class="nav-brand-logo">SD</span><span>SD-Guide</span></a>
+      <ul class="nav-links">
+        <li><a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a></li>
+        <li><a href="../index.html" class="active"><span data-lang="en">真题 Arena</span><span data-lang="zh">真题竞技场</span></a></li>
+        <li><a href="../../guide/index.html"><span data-lang="en">Study Guide</span><span data-lang="zh">学习手册</span></a></li>
+        <li><a href="../../resources/index.html"><span data-lang="en">Resources</span><span data-lang="zh">资源</span></a></li>
+        <li><a href="../../about/index.html"><span data-lang="en">About</span><span data-lang="zh">关于</span></a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn" id="lang-toggle">中文</button>
+        <button class="icon-btn" id="theme-toggle">☀</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-body">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="../../../index.html"><span data-lang="en">Home</span><span data-lang="zh">首页</span></a>
+        <span class="sep">›</span>
+        <a href="../index.html"><span data-lang="en">Arena</span><span data-lang="zh">竞技场</span></a>
+        <span class="sep">›</span>
+        <span>O22</span>
+      </div>
+
+      <article class="prose wide">
+        <div class="question-meta" style="margin-bottom:1rem;">
+          <span class="tag company-openai">OpenAI</span>
+          <span class="tag freq-2">★★ Frequent</span>
+          <span class="tag difficulty-hard">Hard</span>
+          <span class="tag">Lexer/Parser</span><span class="tag">AST</span><span class="tag">Sandbox</span>
+        </div>
+
+        <h1>
+          <span data-lang="en">O22 · Design a Toy Language Interpreter</span>
+          <span data-lang="zh">O22 · 设计自定义语言解释器</span>
+        </h1>
+
+        <div class="callout openai">
+          <h4><span data-lang="en">Verified source</span><span data-lang="zh">经核实出处</span></h4>
+          <p><span data-lang="en">Reported on 小红书 @Infra+RL+Robots as one of OpenAI's 5 SD-pool questions (2026). Fits OpenAI's taste for "real engineering" SD — not a distributed system but a language runtime you'd ship inside Code Interpreter / tool-use sandboxes. Credibility <strong>B</strong>.</span><span data-lang="zh">来自小红书 @Infra+RL+Robots（2026），OpenAI 五大 SD 题池之一。符合 OpenAI 偏好「工程实感」的 SD 风格——不是分布式系统而是 Code Interpreter / 工具沙箱可能用到的语言运行时。可信度 <strong>B</strong>。</span></p>
+        </div>
+
+        <h2><span data-lang="en">Pipeline</span><span data-lang="zh">执行流水线</span></h2>
+        <div class="mermaid-container"><pre class="mermaid">
+flowchart LR
+  S[Source] --> L[Lexer<br/>tokens]
+  L --> P[Parser<br/>AST]
+  P --> SA[Semantic Analyzer<br/>resolve + type-check]
+  SA --> E[Evaluator<br/>tree walker]
+  E --> R[Runtime<br/>heap, env, stdlib]
+  R --> O[Output / stdio]
+  E -.quota.-> SB[Sandbox limits<br/>steps, mem, time]
+        </pre></div>
+
+        <h2><span data-lang="en">Language surface (scoped for a 60-min whiteboard)</span><span data-lang="zh">语言特性（按 60 分钟白板量裁剪）</span></h2>
+        <ul>
+          <li><span data-lang="en"><strong>Values</strong>: int, float, bool, string, list, map, function.</span><span data-lang="zh"><strong>值</strong>：int、float、bool、string、list、map、function。</span></li>
+          <li><span data-lang="en"><strong>Syntax</strong>: <code>let x = ...</code>, <code>if/else</code>, <code>while</code>, <code>fn name(args) { ... }</code>, first-class functions.</span><span data-lang="zh"><strong>语法</strong>：<code>let x = ...</code>、<code>if/else</code>、<code>while</code>、<code>fn name(args) { ... }</code>、一等函数。</span></li>
+          <li><span data-lang="en"><strong>Scoping</strong>: lexical; nested environments (parent-pointer trees).</span><span data-lang="zh"><strong>作用域</strong>：词法；嵌套 env（父指针树）。</span></li>
+          <li><span data-lang="en"><strong>Stdlib</strong>: <code>print</code>, <code>len</code>, <code>range</code>, JSON round-trip. Everything else is a tool call.</span><span data-lang="zh"><strong>标准库</strong>：<code>print</code>、<code>len</code>、<code>range</code>、JSON 往返。其他全部走工具调用。</span></li>
+        </ul>
+
+        <h2><span data-lang="en">Parser choice</span><span data-lang="zh">语法分析选型</span></h2>
+        <table>
+          <thead><tr><th>Option</th><th>When</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Recursive descent</strong></td><td><span data-lang="en">Best for whiteboard; hand-written; easy debugging.</span><span data-lang="zh">白板首选；手写；调试友好。</span></td></tr>
+            <tr><td><strong>Pratt parsing</strong></td><td><span data-lang="en">Clean operator precedence; pairs with recursive descent.</span><span data-lang="zh">优雅处理运算符优先级；与递归下降配合。</span></td></tr>
+            <tr><td><strong>Parser generator (ANTLR, yacc)</strong></td><td><span data-lang="en">Mention for production; don't write one live.</span><span data-lang="zh">生产环境可提；白板不现场写。</span></td></tr>
+          </tbody>
+        </table>
+
+        <h2><span data-lang="en">Evaluator: tree-walk vs bytecode</span><span data-lang="zh">求值：树遍历 vs 字节码</span></h2>
+        <p><span data-lang="en">Start with <strong>tree-walking</strong>: <code>eval(node, env)</code> dispatches on AST type. Simple, debuggable, ~1-2× slower than bytecode. Mention bytecode VM (stack machine, constant pool, instruction decode loop) as the natural upgrade when perf matters.</span><span data-lang="zh">先用<strong>树遍历</strong>：<code>eval(node, env)</code> 按 AST 类型分发。简单、易调试、比字节码慢 1-2 倍。提及字节码 VM（栈机器、常量池、指令解码循环）作为性能升级方向。</span></p>
+
+        <h2><span data-lang="en">Sandbox &amp; safety (OpenAI's real reason to ask this)</span><span data-lang="zh">沙箱与安全（OpenAI 真正在乎的）</span></h2>
+        <ul>
+          <li><span data-lang="en"><strong>Step budget</strong>: increment counter per eval step; throw <code>OutOfSteps</code> after N.</span><span data-lang="zh"><strong>步数预算</strong>：每步自增计数器；超 N 抛 <code>OutOfSteps</code>。</span></li>
+          <li><span data-lang="en"><strong>Memory cap</strong>: custom heap with allocated-byte tracking; refuse allocations past ceiling.</span><span data-lang="zh"><strong>内存上限</strong>：自定义堆跟踪已分配字节；超上限拒绝分配。</span></li>
+          <li><span data-lang="en"><strong>Wall-clock watchdog</strong>: separate thread cancels execution past deadline.</span><span data-lang="zh"><strong>墙钟看门狗</strong>：独立线程到期取消执行。</span></li>
+          <li><span data-lang="en"><strong>No host escape</strong>: no raw FS, network, or exec — only explicit stdlib + tool calls.</span><span data-lang="zh"><strong>无宿主逃逸</strong>：无裸 FS、网络、exec —— 只暴露标准库 + 工具调用。</span></li>
+          <li><span data-lang="en"><strong>Deterministic mode</strong>: fix PRNG seed; freeze time; makes testing and judging reproducible.</span><span data-lang="zh"><strong>确定性模式</strong>：固定 PRNG 种子；冻结时间；测试与判题可复现。</span></li>
+        </ul>
+
+        <h2><span data-lang="en">Error UX</span><span data-lang="zh">错误提示</span></h2>
+        <ul>
+          <li><span data-lang="en">Token / node carries <code>(line, col, span)</code>; errors render a caret-underlined snippet.</span><span data-lang="zh">Token / 节点带 <code>(line, col, span)</code>；错误渲染带下划线的片段。</span></li>
+          <li><span data-lang="en">Separate <code>SyntaxError</code>, <code>NameError</code>, <code>TypeError</code>, <code>RuntimeError</code>.</span><span data-lang="zh">区分 <code>SyntaxError</code>、<code>NameError</code>、<code>TypeError</code>、<code>RuntimeError</code>。</span></li>
+        </ul>
+
+        <h2><span data-lang="en">Follow-ups</span><span data-lang="zh">追问</span></h2>
+        <ul>
+          <li><span data-lang="en"><strong>Add closures?</strong> Capture surrounding environment by reference in the <code>Function</code> value.</span><span data-lang="zh"><strong>加闭包？</strong>在 <code>Function</code> 值中按引用捕获外层 env。</span></li>
+          <li><span data-lang="en"><strong>Add types?</strong> HM type inference for let/fn; escape hatch with <code>any</code>.</span><span data-lang="zh"><strong>加类型？</strong>let/fn 用 HM 类型推导；用 <code>any</code> 做逃逸口。</span></li>
+          <li><span data-lang="en"><strong>REPL vs script?</strong> REPL keeps one long-lived env; script starts fresh. Both wrapped in same sandbox.</span><span data-lang="zh"><strong>REPL vs 脚本？</strong>REPL 保持长 env；脚本每次新 env。都在同一沙箱。</span></li>
+          <li><span data-lang="en"><strong>How would Code Interpreter use this?</strong> Each user message opens a fresh VM; tool-call results come back as values injected into the env.</span><span data-lang="zh"><strong>Code Interpreter 如何用？</strong>每条用户消息开新 VM；工具调用结果作为值注入 env。</span></li>
+        </ul>
+
+        <h2><span data-lang="en">Related study-guide topics</span><span data-lang="zh">相关学习手册专题</span></h2>
+        <ul>
+          <li><a href="../../guide/safety/safety-engineering.html"><span data-lang="en">Safety engineering &amp; sandboxing</span><span data-lang="zh">安全工程与沙箱</span></a></li>
+          <li><a href="../../guide/llm/agentic-patterns.html"><span data-lang="en">Agentic patterns (tool use)</span><span data-lang="zh">Agent 工具调用模式</span></a></li>
+        </ul>
+      </article>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="../../../assets/js/app.js"></script>
+</body>
+</html>

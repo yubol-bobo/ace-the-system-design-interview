@@ -42,8 +42,8 @@
         <span data-lang="zh">真题竞技场</span>
       </h1>
       <p class="section-subtitle">
-        <span data-lang="en">35+ verified System Design questions from OpenAI and Anthropic interviews, collected from LeetCode, Blind, Exponent, PracHub, Glassdoor, Jointaro, and GitHub. Every question links to its primary source. <strong>Click any card to open the deep solution page</strong> with architecture diagrams, API, data model, trade-offs, and expected follow-ups.</span>
-        <span data-lang="zh">35+ 道经核实的 OpenAI / Anthropic 系统设计真题，来源包括 LeetCode、Blind、Exponent、PracHub、Glassdoor、Jointaro、GitHub 等。每题都附有出处链接。<strong>点击任意卡片</strong>进入详细解题页——包含架构图、API、数据模型、权衡分析、面试官追问清单。</span>
+        <span data-lang="en">43 verified System Design questions from OpenAI and Anthropic interviews, collected from LeetCode, Blind, Exponent, PracHub, Glassdoor, Jointaro, GitHub and 小红书. Every question links to its primary source. <strong>Click any card to open the deep solution page</strong> with architecture diagrams, API, data model, trade-offs, and expected follow-ups.</span>
+        <span data-lang="zh">43 道经核实的 OpenAI / Anthropic 系统设计真题，来源包括 LeetCode、Blind、Exponent、PracHub、Glassdoor、Jointaro、GitHub、小红书 等。每题都附有出处链接。<strong>点击任意卡片</strong>进入详细解题页——包含架构图、API、数据模型、权衡分析、面试官追问清单。</span>
       </p>
 
       <!-- ===== Filter bar ===== -->
@@ -74,7 +74,7 @@
         </div>
         <div class="text-small text-muted">
           <span data-lang="en">Showing </span><span data-lang="zh">共 </span>
-          <strong id="result-count" style="color:var(--accent);">36</strong>
+          <strong id="result-count" style="color:var(--accent);">43</strong>
           <span data-lang="en"> questions</span><span data-lang="zh"> 题</span>
         </div>
       </div>
@@ -540,6 +540,102 @@
           </div>
         </a>
 
+        <a class="question-card company-openai" href="./questions/o20-url-shortener.html"
+           data-company="openai" data-categories="classical"
+           data-search="url shortener bit.ly tinyurl shorten base62 hash collision redirect">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">O20</span>
+              <span data-lang="en">Design a URL Shortener (Shorten URL)</span>
+              <span data-lang="zh">设计短链接系统</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-openai">OpenAI</span>
+              <span class="tag freq-3">★★★</span>
+              <span class="tag difficulty-medium">Medium</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">One of OpenAI's five SD-pool classics. Base62 vs hash-of-URL, redirect path cache, write/read ratio, analytics, custom aliases, expiration.</span>
+            <span data-lang="zh">OpenAI 五大 SD 题池之一。Base62 vs URL 哈希、重定向路径缓存、读写比、分析、自定义别名、过期。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">Base62</span><span class="tag">Redirect</span><span class="tag">Hot Cache</span>
+            <span class="question-source">小红书 @Infra+RL+Robots · 2026 SD pool</span>
+          </div>
+        </a>
+
+        <a class="question-card company-openai" href="./questions/o21-chat-room.html"
+           data-company="openai" data-categories="classical"
+           data-search="chat room websocket pubsub single room multi room presence typing indicator">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">O21</span>
+              <span data-lang="en">Design a Chat Room</span>
+              <span data-lang="zh">设计聊天室</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-openai">OpenAI</span>
+              <span class="tag freq-2">★★</span>
+              <span class="tag difficulty-medium">Medium-Hard</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Narrower than Slack (O4): single/multi chat rooms, WebSocket + pub/sub, presence, message ordering, history pagination. No DMs, workspaces, or threads.</span>
+            <span data-lang="zh">比 Slack（O4）窄：单/多聊天室、WebSocket + pub/sub、在线状态、消息顺序、历史翻页。不含 DM、工作区、Thread。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">WebSocket</span><span class="tag">Pub/Sub</span><span class="tag">Room State</span>
+            <span class="question-source">小红书 @Infra+RL+Robots · 2026 SD pool</span>
+          </div>
+        </a>
+
+        <a class="question-card company-openai" href="./questions/o22-toy-language.html"
+           data-company="openai" data-categories="classical,platform"
+           data-search="toy language interpreter dsl lexer parser ast evaluator sandbox repl">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">O22</span>
+              <span data-lang="en">Design a Toy Language Interpreter</span>
+              <span data-lang="zh">设计自定义语言解释器</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-openai">OpenAI</span>
+              <span class="tag freq-2">★★</span>
+              <span class="tag difficulty-hard">Hard</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Language-runtime flavor: lexer → parser → AST → tree-walking evaluator. Sandbox, memory/time limits, stdlib surface area, REPL vs script mode, error UX.</span>
+            <span data-lang="zh">语言运行时：词法 → 语法 → AST → 树遍历求值。沙箱、内存/时间上限、标准库边界、REPL vs 脚本模式、错误提示。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">Lexer/Parser</span><span class="tag">AST</span><span class="tag">Sandbox</span>
+            <span class="question-source">小红书 @Infra+RL+Robots · 2026 SD pool</span>
+          </div>
+        </a>
+
+        <a class="question-card company-openai" href="./questions/o23-enterprise-gpt.html"
+           data-company="openai" data-categories="agent-rag,ml-infra,safety"
+           data-search="enterprise gpt rag confluence google docs slack acl citation multilingual strong hire">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">O23</span>
+              <span data-lang="en">Enterprise GPT for a 20K-Employee Company (RAG + ACL)</span>
+              <span data-lang="zh">2 万人企业的 Enterprise GPT（RAG + ACL）</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-openai">OpenAI</span>
+              <span class="tag freq-3">★★★</span>
+              <span class="tag difficulty-hard">Hard</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">"Strong Hire" real question. Four-layer: ingestion/chunking → retriever → evaluator → generator. Traceable citations, per-doc ACLs, P95 &lt; 2s, EN/中 multilingual, online learning from feedback.</span>
+            <span data-lang="zh">「Strong Hire」真题。四层架构：采集/分块 → 检索 → 评估 → 生成。可追溯引用、按文档 ACL、P95 &lt; 2s、中英双语、基于反馈的在线学习。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">RAG</span><span class="tag">ACL</span><span class="tag">Citations</span>
+            <span class="question-source">小红书 @Justin (Strong Hire) · 2026</span>
+          </div>
+        </a>
+
         <!-- ======================= Anthropic questions ======================= -->
 
         <a class="question-card company-anthropic" href="./questions/a11-llm-inference-service.html"
@@ -995,6 +1091,30 @@
           <div class="question-footer">
             <span class="tag">Open-ended</span><span class="tag">Trade-offs</span><span class="tag">Scope</span>
             <span class="question-source">linkjob.ai</span>
+          </div>
+        </a>
+
+        <a class="question-card company-anthropic" href="./questions/a30-design-instagram.html"
+           data-company="anthropic" data-categories="classical"
+           data-search="instagram feed fanout celebrity hybrid push pull timeline photo post storage">
+          <div class="question-header">
+            <div class="question-title"><span class="question-id">A30</span>
+              <span data-lang="en">Design Instagram (Feed Generation)</span>
+              <span data-lang="zh">设计 Instagram（信息流生成）</span>
+            </div>
+            <div class="question-meta">
+              <span class="tag company-anthropic">Anthropic</span>
+              <span class="tag freq-3">★★★</span>
+              <span class="tag difficulty-hard">Hard</span>
+            </div>
+          </div>
+          <p class="question-desc">
+            <span data-lang="en">Feed generation is the crux: push vs pull vs hybrid. Interviewer will push on celebrities with millions of followers → answer is hybrid. Follow-up probes DB read scaling.</span>
+            <span data-lang="zh">Feed 生成是核心：push vs pull vs hybrid。面试官一定会追问"百万粉明星"→ 正解是 hybrid。后续追问数据库读扩展。</span>
+          </p>
+          <div class="question-footer">
+            <span class="tag">Feed</span><span class="tag">Hybrid Fan-out</span><span class="tag">Celebrities</span>
+            <span class="question-source">小红书 @OA昨日下雨 · VO1 · 2026</span>
           </div>
         </a>
 
