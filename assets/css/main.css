@@ -470,22 +470,27 @@ body::before {
   position: relative;
   display: grid;
   grid-template-columns: 1fr;
-  grid-template-rows: 1fr;
+  grid-template-rows: auto;
+  min-height: 0;
 }
 
 .company-slide {
-  grid-column: 1;
-  grid-row: 1;
+  grid-column: 1 / 2;
+  grid-row: 1 / 2;
   opacity: 0;
+  visibility: hidden;
   pointer-events: none;
-  transform: translateY(4px);
-  transition: opacity 0.45s ease, transform 0.45s ease;
+  transform: translateY(6px);
+  transition: opacity 0.45s ease, transform 0.45s ease, visibility 0s linear 0.45s;
 }
 
 .company-slide.is-active {
   opacity: 1;
+  visibility: visible;
   pointer-events: auto;
   transform: translateY(0);
+  transition: opacity 0.45s ease, transform 0.45s ease, visibility 0s linear 0s;
+  z-index: 2;
 }
 
 .company-stage-nav {
