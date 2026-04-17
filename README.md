@@ -1,4 +1,4 @@
-# SD-Guide — Ace the System Design Interview
+# Ace the System Design Interview
 
 Bilingual (English / 中文) study hub for system design interviews at OpenAI, Anthropic, and other frontier AI labs.
 
