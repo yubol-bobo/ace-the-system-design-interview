@@ -9,7 +9,7 @@ Bilingual (English / 中文) study hub for system design interviews at OpenAI, A
 | Section | Description |
 |---------|-------------|
 | **真题 Arena** | 100 verified interview questions (38 OpenAI + 31 Anthropic + 25 Google + 6 xAI) with sources, filterable by company, category, difficulty, and frequency. Each question has a detailed solution page covering architecture, APIs, data models, trade-offs, and follow-ups. |
-| **Study Guide** | 20 deep-dive topic notes across 6 tracks: Foundations, Distributed Systems, Classical Designs, LLM Systems, ML Systems, and Safety. Cross-references 7 canonical books by chapter. |
+| **Study Guide** | 20 deep-dive topic notes across 6 tracks: Foundations, Distributed Systems, Classical Designs, LLM Systems, ML Systems, and Safety. Cross-references 8 canonical books by chapter. |
 | **Resources** | Curated books, blogs, courses, and repos ranked by interview relevance. |
 | **About & Roadmap** | Methodology, credibility scoring (S/A/B/C/D), an 8-week study plan, and the site's tech stack. |
 
