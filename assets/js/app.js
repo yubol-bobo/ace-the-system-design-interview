@@ -117,7 +117,7 @@
     window.mermaid.run({ querySelector: '.mermaid' }).catch(() => {});
   }
 
-  // ---------- Company carousel (landing page) ----------
+  // ---------- Company carousel (3D coverflow on landing page) ----------
   function initCompanyStage() {
     const stage = document.querySelector('.company-stage');
     if (!stage) return;
@@ -125,30 +125,81 @@
     const dots = Array.from(stage.querySelectorAll('.company-stage-dots button'));
     const prev = stage.querySelector('.company-stage-nav.prev');
     const next = stage.querySelector('.company-stage-nav.next');
-    if (slides.length < 2) return;
+    const n = slides.length;
+    if (n < 2) return;
 
     let idx = Math.max(0, slides.findIndex((s) => s.classList.contains('is-active')));
     const autoplayMs = parseInt(stage.dataset.autoplay || '0', 10);
     let timer = null;
+    let isHovered = false;
 
+    const POS_CLASSES = ['is-active', 'is-next', 'is-prev', 'is-back'];
+
+    // Compute each slide's position relative to the current center, and
+    // apply the matching class. This produces the 3D coverflow layout.
     function show(i) {
-      idx = (i + slides.length) % slides.length;
-      slides.forEach((s, j) => s.classList.toggle('is-active', j === idx));
+      idx = ((i % n) + n) % n;
+      slides.forEach((slide, j) => {
+        POS_CLASSES.forEach((c) => slide.classList.remove(c));
+        const rel = ((j - idx) + n) % n;
+        if (rel === 0) slide.classList.add('is-active');
+        else if (rel === 1) slide.classList.add('is-next');
+        else if (rel === n - 1) slide.classList.add('is-prev');
+        else slide.classList.add('is-back');
+      });
       dots.forEach((d, j) => d.classList.toggle('is-active', j === idx));
+
+      // Tint the stage's glow to the active company's colour.
+      const active = slides[idx];
+      if (active) {
+        const m = active.className.match(/\b(openai|anthropic|google|xai)\b/);
+        if (m) {
+          stage.style.setProperty('--accent-glow',
+            `var(--${m[1]}-glow, rgba(255,255,255,0.12))`);
+        }
+      }
     }
+
     function startAutoplay() {
       stopAutoplay();
-      if (autoplayMs > 0) timer = setInterval(() => show(idx + 1), autoplayMs);
+      if (autoplayMs > 0 && !isHovered) {
+        timer = setInterval(() => show(idx + 1), autoplayMs);
+      }
     }
-    function stopAutoplay() { if (timer) { clearInterval(timer); timer = null; } }
+    function stopAutoplay() {
+      if (timer) { clearInterval(timer); timer = null; }
+    }
 
-    if (prev) prev.addEventListener('click', (e) => { e.preventDefault(); show(idx - 1); startAutoplay(); });
-    if (next) next.addEventListener('click', (e) => { e.preventDefault(); show(idx + 1); startAutoplay(); });
-    dots.forEach((d, i) => d.addEventListener('click', (e) => { e.preventDefault(); show(i); startAutoplay(); }));
+    if (prev) prev.addEventListener('click', (e) => {
+      e.preventDefault(); show(idx - 1); startAutoplay();
+    });
+    if (next) next.addEventListener('click', (e) => {
+      e.preventDefault(); show(idx + 1); startAutoplay();
+    });
+    dots.forEach((d, i) => d.addEventListener('click', (e) => {
+      e.preventDefault(); show(i); startAutoplay();
+    }));
 
-    stage.addEventListener('mouseenter', stopAutoplay);
-    stage.addEventListener('mouseleave', startAutoplay);
+    // Click a side card → rotate it into center instead of following the link.
+    slides.forEach((slide, i) => {
+      slide.addEventListener('click', (e) => {
+        if (!slide.classList.contains('is-active')) {
+          e.preventDefault();
+          show(i);
+          startAutoplay();
+        }
+      });
+    });
 
+    stage.addEventListener('mouseenter', () => { isHovered = true;  stopAutoplay(); });
+    stage.addEventListener('mouseleave', () => { isHovered = false; startAutoplay(); });
+
+    // Pause the rotation when the tab is hidden.
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) stopAutoplay(); else startAutoplay();
+    });
+
+    show(idx);       // paint initial 3D layout
     startAutoplay();
   }
 
