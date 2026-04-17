@@ -8,8 +8,8 @@ Bilingual (English / 中文) study hub for system design interviews at OpenAI, A
 
 | Section | Description |
 |---------|-------------|
-| **真题 Arena** | 36+ verified interview questions (OpenAI & Anthropic) with sources, filterable by company, category, difficulty, and frequency. Each question has a detailed solution page covering architecture, APIs, data models, trade-offs, and follow-ups. |
-| **Study Guide** | 18 deep-dive topic notes across 5 tracks: Foundations, Distributed Systems, Classical Designs, LLM Systems, and ML Systems. Cross-references 7 canonical books by chapter. |
+| **真题 Arena** | 38 verified interview questions (16 OpenAI + 22 Anthropic) with sources, filterable by company, category, difficulty, and frequency. Each question has a detailed solution page covering architecture, APIs, data models, trade-offs, and follow-ups. |
+| **Study Guide** | 20 deep-dive topic notes across 6 tracks: Foundations, Distributed Systems, Classical Designs, LLM Systems, ML Systems, and Safety. Cross-references 7 canonical books by chapter. |
 | **Resources** | Curated books, blogs, courses, and repos ranked by interview relevance. |
 | **About & Roadmap** | Methodology, credibility scoring (S/A/B/C/D), an 8-week study plan, and the site's tech stack. |
 
@@ -17,15 +17,20 @@ Bilingual (English / 中文) study hub for system design interviews at OpenAI, A
 
 ```
 index.html              # Landing page
+.nojekyll               # Tells GitHub Pages to serve files literally
 assets/
-  css/main.css          # Styles
-  js/app.js             # Theme toggle, language switch, filtering
+  css/main.css          # Styles (~1,000 lines)
+  js/app.js             # Theme toggle, language switch, arena filtering
 pages/
-  arena/                # Interview question index + individual question pages
-  guide/                # Study guide topics (foundations, distributed, classical, llm, ml, safety)
+  arena/                # Arena index + 38 question detail pages
+  guide/                # Study guide topics (6 tracks, 20 pages)
   resources/            # External resource links
   about/                # Methodology & roadmap
-books/                  # Reference PDFs/EPUBs (7 canonical texts)
+scripts/                # Python generators that build the HTML from structured data
+  gen_guide.py          #   — renders study-guide topic pages
+  topics_*.py           #   — bilingual content definitions, one per track
+  book-tocs.md          #   — chapter maps used as source grounding
+books/                  # (local-only, gitignored) reference PDFs/EPUBs
 ```
 
 ## Features
@@ -44,9 +49,23 @@ python -m http.server 8000
 # then visit http://localhost:8000
 ```
 
+## Rebuilding Study-Guide Pages
+
+The HTML under `pages/guide/` is generated from structured bilingual content in `scripts/topics_*.py`. To regenerate after editing:
+
+```bash
+cd scripts
+python3 gen_guide.py all          # regenerate every topic page
+python3 gen_guide.py topics_llm   # just one track
+```
+
 ## Deployment
 
-The site is deployed via GitHub Pages from the `main` branch.
+The site is deployed via GitHub Pages from the `main` branch at repository root. The `.nojekyll` file disables Jekyll processing so paths like `pages/arena/index.html` work as-is.
+
+## Disclaimer
+
+Not affiliated with OpenAI or Anthropic. Content synthesised from publicly available interview reports (LeetCode, Blind, PracHub, Glassdoor, Jointaro, GitHub) and canonical textbooks. Reference PDFs are kept locally and are not included in this repository.
 
 ## License
 

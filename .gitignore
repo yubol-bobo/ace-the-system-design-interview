@@ -1,0 +1,23 @@
+# System / editor
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.vscode/
+.idea/
+
+# Claude Code local state
+.claude/
+.mcp.json
+
+# Copyrighted reference books — kept locally but never pushed
+books/*.pdf
+books/*.epub
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Scratch / temp
+*.log
+.tmp/
